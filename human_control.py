@@ -12,16 +12,16 @@ class McsHumanControlEnv(McsEnv):
             self.step_output = super().step(action=action_str)
         elif "Look" in action_str:
             if action_str == "LookUp":
-                self.step_output = super().step(action="RotateLook", **args)
+                self.step_output = super().step(action="LookUp", **args)
             elif action_str == "LookDown":
-                self.step_output = super().step(action="RotateLook", **args)
+                self.step_output = super().step(action="LookDown", **args)
             else:
                 raise NotImplementedError
         elif "Rotate" in action_str:
             if action_str == "RotateLeft":
-                self.step_output = super().step(action="RotateLook", **args)
+                self.step_output = super().step(action="RotateLeft", **args)
             elif action_str == "RotateRight":
-                self.step_output = super().step(action="RotateLook", **args)
+                self.step_output = super().step(action="RotateRight", **args)
             else:
                 self.step_output = super().step(action="RotateObject", objectId=args['objectId'], rotationY=10)
         elif action_str == "PickupObject":
@@ -73,8 +73,8 @@ class McsHumanControlEnv(McsEnv):
         print("Camera Field of view {}".format(self.step_output.camera_field_of_view))
         print("Visible Objects:")
         for obj in self.step_output.object_list:
-            print("Distance {:.3f} to {}-{}-{} ({:.3f},{:.3f},{:.3f})".format(
-                obj.distance_in_world, obj.shape, obj.uuid, obj.color, obj.position['x'], obj.position['y'], obj.position['z'])
+            print("Distance {:.3f} to {} {} ({:.3f},{:.3f},{:.3f})".format(
+                obj.distance_in_world, obj.shape, obj.uuid, obj.position['x'], obj.position['y'], obj.position['z'])
             )
 
         for obj in self.step_output.structural_object_list:
@@ -114,10 +114,12 @@ if __name__ == '__main__':
             rt = 10
             env.step("RotateRight", rotation=float(rt))
         elif action == "r":
-            hrz = input("Look Up! Enter the horizon: ")
+            # hrz = input("Look Up! Enter the horizon: ")
+            hrz = 10
             env.step("LookUp", horizon=-float(hrz))
         elif action == "f":
-            hrz = input("Look Down! Enter the horizon: ")
+            # hrz = input("Look Down! Enter the horizon: ")
+            hrz = 10
             env.step("LookDown", horizon=float(hrz))
         elif action == "U":
             obj = input("Pickup Object! Enter the object ID: ")

@@ -6,7 +6,7 @@ inheriting the predefined methods and can be extended for particular tasks.
 import os
 import platform
 import random
-import machine_common_sense
+import machine_common_sense as mcs
 
 class McsEnv:
     """
@@ -23,7 +23,7 @@ class McsEnv:
 
         os.environ['MCS_CONFIG_FILE_PATH'] = "mcs_config.json"
 
-        self.controller = machine_common_sense.MCS.create_controller(
+        self.controller = mcs.create_controller(
             os.path.join(app)
         )
 
@@ -58,10 +58,10 @@ class McsEnv:
             if not random_init:
                 self.current_scene += 1
                 # print(self.all_scenes[self.current_scene])
-                self.scene_config, status = machine_common_sense.MCS.load_config_json_file(self.all_scenes[self.current_scene])
+                self.scene_config, status = mcs.load_config_json_file(self.all_scenes[self.current_scene])
             else:
                 self.current_scene = random.randint(0, len(self.all_scenes) - 1)
-                self.scene_config, status = machine_common_sense.MCS.load_config_json_file(self.all_scenes[self.current_scene])
+                self.scene_config, status = mcs.load_config_json_file(self.all_scenes[self.current_scene])
         # if "goal" in self.scene_config:
         #     print(self.scene_config['goal']["description"])
         # if "answer" in self.scene_config:
