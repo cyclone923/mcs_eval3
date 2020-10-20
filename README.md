@@ -22,7 +22,7 @@ pip show ai2thor
 
 ### Unity Application
 
-The latest release of the MCS Unity app is `0.0.10`
+The latest release of the MCS Unity app is `0.3.0`
 
 1. Ensure that both the Unity App and the TAR are in the same directory called "unity_app".
 
