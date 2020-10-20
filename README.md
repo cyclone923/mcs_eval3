@@ -33,16 +33,16 @@ cd unity_app
 
 2. If you have a Linux system
 
-[Download the Latest MCS Unity App](https://github.com/NextCenturyCorporation/MCS/releases/download/0.0.10/MCS-AI2-THOR-Unity-App-v0.0.10.x86_64)
+[Download the Latest MCS Unity App](https://github.com/NextCenturyCorporation/MCS/releases/download/0.3.0/MCS-AI2-THOR-Unity-App-v0.3.0.x86_64)
 
 ```
-wget https://github.com/NextCenturyCorporation/MCS/releases/download/0.0.10/MCS-AI2-THOR-Unity-App-v0.0.10.x86_64
+wget https://github.com/NextCenturyCorporation/MCS/releases/download/0.3.0/MCS-AI2-THOR-Unity-App-v0.3.0.x86_64
 ```
 
-[Download the Latest MCS Unity Data Directory TAR](https://github.com/NextCenturyCorporation/MCS/releases/download/0.0.10/MCS-AI2-THOR-Unity-App-v0.0.10_Data.tar.gz)
+[Download the Latest MCS Unity Data Directory TAR](https://github.com/NextCenturyCorporation/MCS/releases/download/0.3.0/MCS-AI2-THOR-Unity-App-v0.3.0_Data.tar.gz)
 
 ```
-wget https://github.com/NextCenturyCorporation/MCS/releases/download/0.0.10/MCS-AI2-THOR-Unity-App-v0.0.10_Data.tar.gz
+wget https://github.com/NextCenturyCorporation/MCS/releases/download/0.3.0/MCS-AI2-THOR-Unity-App-v0.3.0_Data.tar.gz
 ```
 
 Untar the Data Directory:
@@ -59,10 +59,10 @@ chmod a+x MCS-AI2-THOR-Unity-App-v0.0.10.x86_64
 
 3. If you have a Mac system
 
-[Download the Latest MCS Unity App](https://github.com/NextCenturyCorporation/MCS/releases/download/0.0.10/MCS-AI2-THOR-Unity-App-v0.0.10-mac.zip)
+[Download the Latest MCS Unity App](https://github.com/NextCenturyCorporation/MCS/releases/download/0.3.0/MCS-AI2-THOR-Unity-App-v0.3.0-mac.zip)
 
 ```
-wget https://github.com/NextCenturyCorporation/MCS/releases/download/0.0.10/MCS-AI2-THOR-Unity-App-v0.0.10-mac.zip
+wget https://github.com/NextCenturyCorporation/MCS/releases/download/0.3.0/MCS-AI2-THOR-Unity-App-v0.3.0-mac.zip
 ```
 Unzip the app:
 
