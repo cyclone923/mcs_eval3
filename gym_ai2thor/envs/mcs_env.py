@@ -21,7 +21,7 @@ class McsEnv:
         else:
             app = None
 
-        os.environ['MCS_CONFIG_FILE_PATH'] = os.path.join(os.getcwd(), "mcs_config")
+        os.environ['MCS_CONFIG_FILE_PATH'] = os.path.join(os.getcwd(), "mcs_config.yaml.yaml")
 
         self.controller = mcs.create_controller(
             os.path.join(app)

@@ -48,13 +48,13 @@ wget https://github.com/NextCenturyCorporation/MCS/releases/download/0.3.0/MCS-A
 Untar the Data Directory:
 
 ```
-tar -xzvf MCS-AI2-THOR-Unity-App-v0.0.10_Data.tar.gz
+tar -xzvf MCS-AI2-THOR-Unity-App-v0.3.0_Data.tar.gz
 ```
 
 Mark the Unity App as executable:
 
 ```
-chmod a+x MCS-AI2-THOR-Unity-App-v0.0.10.x86_64
+chmod a+x MCS-AI2-THOR-Unity-App-v0.3.0.x86_64
 ```
 
 3. If you have a Mac system

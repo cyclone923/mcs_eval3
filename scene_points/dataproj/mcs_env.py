@@ -13,7 +13,7 @@ import pickle
 class McsEnv:
     def __init__(self, base, scenes, filter=None):
         base = Path(base)
-        os.environ['MCS_CONFIG_FILE_PATH'] = str(base/'mcs_config')
+        os.environ['MCS_CONFIG_FILE_PATH'] = str(base/'mcs_config.yaml')
         app = base/'MCS-AI2-THOR-Unity-App-v0.1.0.x86_64'
         self.controller = machine_common_sense.MCS.create_controller(str(app))
         self.read_scenes(scenes, filter)
