@@ -15,13 +15,13 @@ class McsEnv:
     def __init__(self, task=None, scene_type=None, seed=None, start_scene_number=0, frame_collector=None):
 
         if platform.system() == "Linux":
-            app = "unity_app/MCS-AI2-THOR-Unity-App-v0.0.10.x86_64"
+            app = "unity_app/MCS-AI2-THOR-Unity-App-v0.3.0.x86_64"
         elif platform.system() == "Darwin":
             app = "unity_app/MCSai2thor.app/Contents/MacOS/MCSai2thor"
         else:
             app = None
 
-        os.environ['MCS_CONFIG_FILE_PATH'] = "mcs_config.json"
+        os.environ['MCS_CONFIG_FILE_PATH'] = os.path.join(os.getcwd(), "mcs_config")
 
         self.controller = mcs.create_controller(
             os.path.join(app)

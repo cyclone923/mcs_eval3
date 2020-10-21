@@ -73,22 +73,28 @@ class McsHumanControlEnv(McsEnv):
         print("Camera Field of view {}".format(self.step_output.camera_field_of_view))
         print("Visible Objects:")
         for obj in self.step_output.object_list:
-            print("Distance {:.3f} to {} {} ({:.3f},{:.3f},{:.3f})".format(
-                obj.distance_in_world, obj.shape, obj.uuid, obj.position['x'], obj.position['y'], obj.position['z'])
+            print("Distance {:.3f} to {} {} ({:.3f},{:.3f},{:.3f}) with {} bdbox points".format(
+                obj.distance_in_world, obj.shape, obj.uuid,
+                obj.position['x'], obj.position['y'], obj.position['z'], len(obj.dimensions))
             )
 
         for obj in self.step_output.structural_object_list:
             if "wall" not in obj.uuid:
                 continue
-            print("Distance {:.3f} to {} ({:.3f},{:.3f},{:.3f})".format(
-                obj.distance_in_world, obj.uuid, obj.position['x'], obj.position['y'], obj.position['z'])
+            print("Distance {:.3f} to {} {} ({:.3f},{:.3f},{:.3f}) with {} bdbox points".format(
+                obj.distance_in_world, obj.shape, obj.uuid,
+                obj.position['x'], obj.position['y'], obj.position['z'], len(obj.dimensions))
             )
+
+        print("{} depth images returned".format(len(self.step_output.depth_mask_list)))
+        print("{} object images returned".format(len(self.step_output.object_mask_list)))
+        print("{} scene images returned".format(len(self.step_output.image_list)))
 
 
 
 
 if __name__ == '__main__':
-    start_scene_number = 0
+    start_scene_number = 2
     collector = Frame_collector(scene_dir="simple_task_img", start_scene_number=start_scene_number)
     env = McsHumanControlEnv(task="interaction_scenes", scene_type="transferral", start_scene_number=start_scene_number, frame_collector=collector)
     env.reset()
