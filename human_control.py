@@ -1,5 +1,9 @@
 from gym_ai2thor.envs.mcs_env import McsEnv
 from frame_collector import Frame_collector
+import numpy as np
+import sys
+
+np.set_printoptions(threshold=sys.maxsize, linewidth=sys.maxsize)
 
 class McsHumanControlEnv(McsEnv):
     def __init__(self,  **args):
@@ -23,26 +27,19 @@ class McsHumanControlEnv(McsEnv):
             elif action_str == "RotateRight":
                 self.step_output = super().step(action="RotateRight", **args)
             else:
-                self.step_output = super().step(action="RotateObject", objectId=args['objectId'], rotationY=10)
+                self.step_output = super().step(action="RotateObject", **args)
         elif action_str == "PickupObject":
             self.step_output = super().step(action="PickupObject", **args)
-            if self.step_output.return_status == "SUCCESSFUL":
-                self.hand_object = args['objectId']
+            print("PickObject {}".format(self.step_output.return_status))
         elif action_str == "PutObject":
-            args["objectId"] = self.hand_object
             self.step_output = super().step(action="PutObject", **args)
-            if self.step_output.return_status == "SUCCESSFUL":
-                self.hand_object = None
+            print("PutObject {}".format(self.step_output.return_status))
         elif action_str == "DropObject":
-            args["objectId"] = self.hand_object
             self.step_output = super().step(action="DropObject", **args)
-            if self.step_output.return_status == "SUCCESSFUL":
-                self.hand_object = None
+            print("DropObject {}".format(self.step_output.return_status))
         elif action_str == "ThrowObject":
-            args["objectId"] = self.hand_object
             self.step_output = super().step(action="ThrowObject", **args)
-            if self.step_output.return_status == "SUCCESSFUL":
-                self.hand_object = None
+            print("ThrowObject {}".format(self.step_output.return_status))
         elif action_str == "PushObject":
             self.step_output = super().step(action="PushObject", **args)
         elif action_str == "PullObject":
@@ -54,17 +51,21 @@ class McsHumanControlEnv(McsEnv):
         else:
             self.step_output = super().step(action=action_str)
 
-
     def print_step_output(self):
         print("- " * 20)
+        depth_img = np.array(self.step_output.depth_mask_list[0])
+        print(depth_img)
         print("Previous Action Status: {}".format(self.step_output.return_status))
         if hasattr(self.step_output, "reward"):
             print("Previous Reward: {}".format(self.step_output.reward))
+        p = {'x': None, 'y': None, 'z': None}
+        if self.step_output.position is not None:
+            p = self.step_output.position
         print(
-            "Agent at: ({:.2f}, {:.2f}, {:.2f}), HeadTilt: {:.2f}, Rotation: {:.2f}, HandObject: {}".format(
-                self.step_output.position['x'],
-                self.step_output.position['y'],
-                self.step_output.position['z'],
+            "Agent at: ({}, {}, {}), HeadTilt: {:.2f}, Rotation: {}, HandObject: {}".format(
+                p['x'],
+                p['y'],
+                p['z'],
                 self.step_output.head_tilt,
                 self.step_output.rotation,
                 self.hand_object
@@ -89,8 +90,7 @@ class McsHumanControlEnv(McsEnv):
         print("{} depth images returned".format(len(self.step_output.depth_mask_list)))
         print("{} object images returned".format(len(self.step_output.object_mask_list)))
         print("{} scene images returned".format(len(self.step_output.image_list)))
-
-
+        print("{} objects' properties".format(len(self.step_output.object_list)))
 
 
 if __name__ == '__main__':
@@ -100,8 +100,6 @@ if __name__ == '__main__':
     env.reset()
 
     while True:
-        env.print_step_output()
-        print("- "*10)
         action = input("Enter Action: ")
         if action == "w":
             env.step("MoveAhead", amount=0.5)
@@ -128,11 +126,11 @@ if __name__ == '__main__':
             hrz = 10
             env.step("LookDown", horizon=float(hrz))
         elif action == "U":
-            obj = input("Pickup Object! Enter the object ID: ")
-            env.step("PickupObject", objectId=obj)
+            x, y = input("Pickup Object! Enter the object x and y coord on 2D image separated by space:").split()
+            env.step("PickupObject", objectImageCoordsX=int(x),  objectImageCoordsY=int(y))
         elif action == "I":
-            rec = input("Put Object! Enter the receptacle ID: ")
-            env.step("PutObject", receptacleObjectId=rec)
+            x, y = input("Put Object! Enter the receptacle x and y coord on 2D image separated by space:").split()
+            env.step("PutObject", objectImageCoordsX=int(x),  objectImageCoordsY=int(y))
         elif action == "O":
             print("Drop Object!")
             env.step("DropObject")
@@ -141,25 +139,25 @@ if __name__ == '__main__':
             force = input("Throw Object! Enter the force: ")
             env.step("ThrowObject", force=int(force), objectDirectionY=env.step_output.head_tilt)
         elif action == "J":
-            obj = input("Push Object! Enter the object ID: ")
-            env.step("PushObject", objectId=obj)
+            x, y = input("Push Object! Enter the object x and y coord on 2D image separated by space:").split()
+            env.step("PushObject", objectImageCoordsX=int(x),  objectImageCoordsY=int(y))
         elif action == "K":
-            obj = input("Pull Object! Enter the object ID: ")
-            env.step("PullObject", objectId=obj)
+            x, y = input("Pull Object! Enter the object x and y coord on 2D image separated by space:").split()
+            env.step("PullObject", objectImageCoordsX=int(x),  objectImageCoordsY=int(y))
         elif action == "L":
-            obj = input("Rotate Object! Enter the object ID: ")
-            env.step("RotateObject", objectId=obj)
+            x, y = input("Rotate Object! Enter the object x and y coord on 2D image separated by space:").split()
+            env.step("RotateObject", objectImageCoordsX=int(x),  objectImageCoordsY=int(y), rotationY=10)
         elif action == "N":
-            obj = input("Open Object! Enter the object ID: ")
-            env.step("OpenObject", objectId=obj)
+            x, y = input("Open Object! Enter the object x and y coord on 2D image separated by space:").split()
+            env.step("OpenObject", objectImageCoordsX=int(x),  objectImageCoordsY=int(y))
         elif action == "M":
-            obj = input("Close Object! Enter the object ID: ")
-            env.step("CloseObject", objectId=obj)
-        elif action == "Y":
-            action_command = input("Input pose action:")
-            env.step(action_command)
+            x, y = input("Close Object! Enter the object x and y coord on 2D image separated by space:").split()
+            env.step("CloseObject", objectImageCoordsX=int(x),  objectImageCoordsY=int(y))
         elif action == "z":
             break
+        elif action == 'p':
+            env.print_step_output()
+            print("- " * 10)
         else:
             print("Invalid Action")
 
