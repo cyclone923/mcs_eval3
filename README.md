@@ -22,7 +22,7 @@ pip show ai2thor
 
 ### Unity Application
 
-The latest release of the MCS Unity app is `0.3.0`
+The latest release of the MCS Unity app is `0.3.1`
 
 1. Ensure that both the Unity App and the TAR are in the same directory called "unity_app".
 
@@ -33,36 +33,36 @@ cd unity_app
 
 2. If you have a Linux system
 
-[Download the Latest MCS Unity App](https://github.com/NextCenturyCorporation/MCS/releases/download/0.3.0/MCS-AI2-THOR-Unity-App-v0.3.0.x86_64)
+[Download the Latest MCS Unity App](https://github.com/NextCenturyCorporation/MCS/releases/download/0.3.1/MCS-AI2-THOR-Unity-App-v0.3.1.x86_64)
 
 ```
-wget https://github.com/NextCenturyCorporation/MCS/releases/download/0.3.0/MCS-AI2-THOR-Unity-App-v0.3.0.x86_64
+wget https://github.com/NextCenturyCorporation/MCS/releases/download/0.3.1/MCS-AI2-THOR-Unity-App-v0.3.1.x86_64
 ```
 
-[Download the Latest MCS Unity Data Directory TAR](https://github.com/NextCenturyCorporation/MCS/releases/download/0.3.0/MCS-AI2-THOR-Unity-App-v0.3.0_Data.tar.gz)
+[Download the Latest MCS Unity Data Directory TAR](https://github.com/NextCenturyCorporation/MCS/releases/download/0.3.1/MCS-AI2-THOR-Unity-App-v0.3.1_Data.tar.gz)
 
 ```
-wget https://github.com/NextCenturyCorporation/MCS/releases/download/0.3.0/MCS-AI2-THOR-Unity-App-v0.3.0_Data.tar.gz
+wget https://github.com/NextCenturyCorporation/MCS/releases/download/0.3.1/MCS-AI2-THOR-Unity-App-v0.3.1_Data.tar.gz
 ```
 
 Untar the Data Directory:
 
 ```
-tar -xzvf MCS-AI2-THOR-Unity-App-v0.3.0_Data.tar.gz
+tar -xzvf MCS-AI2-THOR-Unity-App-v0.3.1_Data.tar.gz
 ```
 
 Mark the Unity App as executable:
 
 ```
-chmod a+x MCS-AI2-THOR-Unity-App-v0.3.0.x86_64
+chmod a+x MCS-AI2-THOR-Unity-App-v0.3.1.x86_64
 ```
 
 3. If you have a Mac system
 
-[Download the Latest MCS Unity App](https://github.com/NextCenturyCorporation/MCS/releases/download/0.3.0/MCS-AI2-THOR-Unity-App-v0.3.0-mac.zip)
+[Download the Latest MCS Unity App](https://github.com/NextCenturyCorporation/MCS/releases/download/0.3.1/MCS-AI2-THOR-Unity-App-v0.3.0-mac.zip)
 
 ```
-wget https://github.com/NextCenturyCorporation/MCS/releases/download/0.3.0/MCS-AI2-THOR-Unity-App-v0.3.0-mac.zip
+wget https://github.com/NextCenturyCorporation/MCS/releases/download/0.3.1/MCS-AI2-THOR-Unity-App-v0.3.1-mac.zip
 ```
 Unzip the app:
 

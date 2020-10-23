@@ -8,7 +8,6 @@ np.set_printoptions(threshold=sys.maxsize, linewidth=sys.maxsize)
 class McsHumanControlEnv(McsEnv):
     def __init__(self,  **args):
         super().__init__(**args)
-        self.hand_object = None
 
     def step(self, action_str, **args):
         print("Action you entered: {} {}".format(action_str, args))
@@ -62,13 +61,12 @@ class McsHumanControlEnv(McsEnv):
         if self.step_output.position is not None:
             p = self.step_output.position
         print(
-            "Agent at: ({}, {}, {}), HeadTilt: {:.2f}, Rotation: {}, HandObject: {}".format(
+            "Agent at: ({}, {}, {}), HeadTilt: {:.2f}, Rotation: {}".format(
                 p['x'],
                 p['y'],
                 p['z'],
                 self.step_output.head_tilt,
-                self.step_output.rotation,
-                self.hand_object
+                self.step_output.rotation
             )
         )
         print("Camera Field of view {}".format(self.step_output.camera_field_of_view))
@@ -160,15 +158,3 @@ if __name__ == '__main__':
             print("- " * 10)
         else:
             print("Invalid Action")
-
-
-
-
-
-
-
-
-
-
-
-
