@@ -107,9 +107,15 @@ python int_phy_explain.py
 | Key | Action | Comment | 
 | ------------ | ------------- | ------- |
 | w | MoveAhead |  |
-| ------------ | ------------- | ------- |
 | s | MoveBack |  |
-
+| a | MoveLeft |  |
+| d | MoveRight |  |
+| q | RotateLeft |  |
+| e | RotateRight |  |
+| r | LookUp |  |
+| f | LookDown |  |
+| U | PickUpObject | (x,y) coord of pixel of image will be asked to enter |
+| N | OpenObject | (x,y) coord of pixel of image will be asked to enter |
 ```
 python human_control.py
 ```
