@@ -101,3 +101,16 @@ python simple_task.py
 python int_phy_explain.py
 ```
 ![alt-text](https://github.com/cyclone923/mcs_eval2_submission/blob/master/demo_2.gif)
+
+## Run with Human Control Task
+
+| Key | Action | Comment | 
+| ------------ | ------------- | ------- |
+| w | MoveAhead |  |
+| ------------ | ------------- | ------- |
+| s | MoveBack |  |
+
+```
+python human_control.py
+```
+![alt-text](https://github.com/cyclone923/mcs_eval2_submission/blob/master/demo_3.gif)
