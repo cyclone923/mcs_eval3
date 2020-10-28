@@ -67,7 +67,7 @@ wget https://github.com/NextCenturyCorporation/MCS/releases/download/0.3.1/MCS-A
 Unzip the unity app:
 
 ```
-unzip MCS-AI2-THOR-Unity-App-v0.0.10-mac.zip
+unzip MCS-AI2-THOR-Unity-App-v0.3.1-mac.zip
 ```
 
 4. Interaction tasks need a Metric-ff planer to run. This repo contains both a Mac and a Linux version. You can refer to the linked website for the source code and compile it for your own system.
@@ -87,20 +87,6 @@ bash get_dataset.sh
 export PYTHONPATH=$PWD
 ```
 
-
-## Run with Interaction Task
-
-```
-python simple_task.py
-```
-![alt-text](https://github.com/cyclone923/mcs_eval3/blob/master/demo_1.gif)
-
-## Run with Intuitive Physics Task
-
-```
-python int_phy_explain.py
-```
-![alt-text](https://github.com/cyclone923/mcs_eval3/blob/master/demo_2.gif)
 
 ## Run with Human Control Task
 
