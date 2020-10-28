@@ -36,8 +36,24 @@ class McsFaceWrapper(McsWrapper):
         elif action == "MoveRight":
             super().step(action="MoveRight", amount=self.ABS_MOVE)
 
-    def set_look_dir(self, rotation_in_all, horizon_in_all):
-        super().step(action="RotateLook", horizon=horizon_in_all, rotaion=rotation_in_all)
+    def set_look_dir(self, rotation_in_all=0, horizon_in_all=0):
+        n = int(abs(rotation_in_all) // 10)
+        m = int(abs(horizon_in_all) // 10)
+        if rotation_in_all > 0:
+            for _ in range(n):
+                super().step(action="RotateRight")
+        else:
+            for _ in range(n):
+                super().step(action="RotateLeft")
+
+        if horizon_in_all > 0:
+            for _ in range(m):
+                super().step(action="LookDown")
+        else:
+            for _ in range(m):
+                super().step(action="LookUp")
+
+
 
 
 

@@ -11,12 +11,13 @@ class Frame_collector:
         os.makedirs(self.scene_dir, exist_ok=True)
 
     def save_frame(self, step_output):
-        # print("Save Image!")
+        assert len(step_output.image_list) <= 1
+        assert len(step_output.image_list) <= 1
+        assert len(step_output.image_list) <= 1
 
-        for j in range(len(step_output.image_list)):
-            step_output.image_list[j].save(f'{self.scene_dir}/original_{self.scene_number}-{self.step}-{j}.jpg')
-            # step_output.object_mask_list[j].save(f'{self.scene_dir}/mask_{self.scene_number}-{self.step}-{j}.jpg')
-            # step_output.depth_mask_list[j].save(f'{self.scene_dir}/depth_{self.scene_number}-{self.step}-{j}.jpg') #PIL image
+        step_output.image_list[0].save(f'{self.scene_dir}/original_{self.scene_number}-{self.step}.jpg')
+        step_output.object_mask_list[0].save(f'{self.scene_dir}/mask_{self.scene_number}-{self.step}.jpg')
+        step_output.depth_mask_list[0].save(f'{self.scene_dir}/depth_{self.scene_number}-{self.step}.jpg')
         self.step += 1
 
         # for i in step_output.object_list:

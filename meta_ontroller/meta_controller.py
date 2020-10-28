@@ -12,6 +12,8 @@ from tasks.bonding_box_navigation_mcs.bonding_box_navigator import BoundingBoxNa
 import matplotlib.pyplot as plt
 from MCS_exploration import sequence_generator,main #import SequenceGenerator
 
+MAX_REACH_DISTANCE = 1
+
 def get_goal(goal_string):
     goal = goal_string.split("|")
     _, goal_x, goal_y, goal_z = goal
@@ -70,7 +72,7 @@ class MetaController:
             current_object_loc = self.plannerState.object_loc_info[current_object_id]
             if len(current_object_loc) == 3 :
                 final_goal = goal[:]
-                success_distance = machine_common_sense.mcs_controller_ai2thor.MAX_REACH_DISTANCE - 0.4
+                success_distance = MAX_REACH_DISTANCE - 0.4
             else :
                 final_goal = (float(current_object_loc[3]), float(current_object_loc[4]), float(current_object_loc[5]))
                 print("Made a new goal {}".format(final_goal))
@@ -151,7 +153,6 @@ class MetaController:
                 return False
         elif action_dict['action'] == "DropObjectNextTo":
             FaceTurnerResNet.look_to_front(self.face_env)
-            self.env.step(action="RotateLook", horizon=9.536743e-06)
             self.obj_env.step("DropObject", object_id=action_dict['objectId'])
             if self.env.step_output.return_status == "SUCCESSFUL":
                 self.plannerState.knowledge.objectNextTo[action_dict['objectId']] = action_dict['goal_objectId']
@@ -199,9 +200,7 @@ class MetaController:
         while True:
             # print("Meta-Stage: {}".format(meta_stage))
             result_plan = self.plan_on_current_state()
-            for plan in result_plan:
-                print(plan)
-                break
+            # print(result_plan[0])
             success = self.step(result_plan[0])
             if not success:
                 break
@@ -209,5 +208,5 @@ class MetaController:
                 break
             meta_stage += 1
         # time.sleep(2)
-        # print("Task Reward: {}\n".format(self.env.step_output.reward))
+        print("Task Reward: {}\n".format(self.env.step_output.reward))
         return True

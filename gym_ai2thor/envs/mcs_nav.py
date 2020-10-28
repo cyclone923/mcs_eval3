@@ -24,8 +24,16 @@ class McsNavWrapper(McsWrapper):
             assert action == 'Stop'
             # raise AttributeError('Navigator Should End Before Stop')
 
-
         return self.step_output
+
+    def set_look_dir(self, rotation_in_all=0):
+        n = int(abs(rotation_in_all) // 10)
+        if rotation_in_all > 0:
+            for _ in range(n):
+                super().step(action="RotateRight")
+        else:
+            for _ in range(n):
+                super().step(action="RotateLeft")
 
     def micro_move(self, env, goal):
         current_x, current_z = env.step_output.position['x'], env.step_output.position['z']

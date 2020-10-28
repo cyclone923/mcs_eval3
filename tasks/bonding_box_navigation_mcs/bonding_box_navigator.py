@@ -4,11 +4,9 @@ from MCS_exploration.navigation.fov import FieldOfView
 import random
 import math
 import matplotlib.pyplot as plt
-from shapely.geometry import Point, Polygon
-import shapely.geometry as sp
-from descartes import PolygonPatch
+from shapely.geometry import Point
+import numpy as np
 
-import pickle
 
 SHOW_ANIMATION = False
 random.seed(1)
@@ -59,7 +57,7 @@ class BoundingBoxNavigator:
 
 	def add_obstacle_from_step_output(self, step_output):
 		for obj in step_output.object_list:
-			if len(obj.dimensions) > 0 and obj.uuid not in self.scene_obstacles_dict:
+			if len(obj.dimensions) > 0 and obj.uuid not in self.scene_obstacles_dict and obj.visible:
 				x_list = []
 				y_list = []
 				for i in range(4, 8):
@@ -71,7 +69,7 @@ class BoundingBoxNavigator:
 				del self.scene_obstacles_dict[obj.uuid]
 
 		for obj in step_output.structural_object_list:
-			if len(obj.dimensions) > 0 and obj.uuid not in self.scene_obstacles_dict:
+			if len(obj.dimensions) > 0 and obj.uuid not in self.scene_obstacles_dict and obj.visible:
 				if obj.uuid == "ceiling" or obj.uuid == "floor":
 					continue
 				x_list = []
@@ -81,6 +79,10 @@ class BoundingBoxNavigator:
 					y_list.append(obj.dimensions[i]['z'])
 				self.scene_obstacles_dict[obj.uuid] = ObstaclePolygon(x_list, y_list)
 				self.scene_obstacles_dict_roadmap[obj.uuid] = 0
+
+
+	def can_add_obstacle(self, obstacle, goal):
+		return not obstacle.contains_goal(goal) and obstacle.distance(Point(goal[0], goal[1])) > 0.5
 
 	def go_to_goal(self, nav_env, goal, success_distance, frame_collector=None):
 		self.agentX = nav_env.step_output.position['x']
@@ -97,7 +99,7 @@ class BoundingBoxNavigator:
 			self.scene_obstacles_dict_roadmap[obstacle_key] = 0
 
 		for obstacle_key, obstacle in self.scene_obstacles_dict.items():
-			if not obstacle.contains_goal((gx, gy)):
+			if self.can_add_obstacle(obstacle, (gx, gy)):
 				self.scene_obstacles_dict_roadmap[obstacle_key] = 1
 				roadmap.addObstacle(obstacle)
 
@@ -105,7 +107,7 @@ class BoundingBoxNavigator:
 			for obstacle_key, obstacle in self.scene_obstacles_dict.items():
 				if self.scene_obstacles_dict_roadmap[obstacle_key] == 0:
 					# print("not added obstacle", self.current_nav_steps)
-					if not obstacle.contains_goal((gx, gy)):
+					if self.can_add_obstacle(obstacle, (gx, gy)):
 						# print("adding new obstacles ", self.current_nav_steps)
 						self.scene_obstacles_dict_roadmap[obstacle_key] = 1
 						roadmap.addObstacle(obstacle)
@@ -148,7 +150,7 @@ class BoundingBoxNavigator:
 					obstacle.plot("green")
 
 				plt.axis("equal")
-				plt.pause(0.1)
+				plt.pause(0.0001)
 
 			stepSize, heading = self.get_one_step_move([gx, gy], roadmap)
 
@@ -159,15 +161,22 @@ class BoundingBoxNavigator:
 			# needs to be replaced with turning the agent to the appropriate heading in the simulator, then stepping.
 			# the resulting agent position / heading should be used to set plan.agent* values.
 
-			rotation_degree = heading / (2 * math.pi) * 360 - nav_env.step_output.rotation
-			nav_env.env.step(action="RotateLook", rotation=rotation_degree)
+			heading = heading / (2 * math.pi) * 360
+			rotation_degree = heading - nav_env.step_output.rotation
+			if np.abs(rotation_degree) > 360:
+				rotation_degree = np.sign(rotation_degree) * (np.abs(rotation_degree) - 360)
+			if rotation_degree > 180:
+				rotation_degree -= 360
+			if rotation_degree < -180:
+				rotation_degree += 360
+			nav_env.set_look_dir(rotation_in_all=rotation_degree)
 			self.agentX = nav_env.step_output.position['x']
 			self.agentY = nav_env.step_output.position['z']
 			self.agentH = nav_env.step_output.rotation / 360 * (2 * math.pi)
 			self.current_nav_steps += 1
 
-			if abs(rotation_degree) > 1e-2:
-				if 360 - abs(rotation_degree) > 1e-2:
+			if abs(rotation_degree) > 10:
+				if 360 - abs(rotation_degree) > 10:
 					continue
 
 			nav_env.env.step(action="MoveAhead", amount=0.5)

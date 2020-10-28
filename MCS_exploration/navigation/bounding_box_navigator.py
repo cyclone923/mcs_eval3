@@ -7,6 +7,7 @@ from MCS_exploration.navigation.fov import FieldOfView
 import cover_floor
 import time
 from shapely.geometry import Point, Polygon
+import numpy as np
 
 SHOW_ANIMATION = False
 random.seed(1)
@@ -87,6 +88,8 @@ class BoundingBoxNavigator:
 				self.scene_obstacles_dict_roadmap[obj.uuid] = 0
 
 	#def go_to_goal(self, nav_env, goal, success_distance, epsd_collector=None, frame_collector=None):
+	def can_add_obstacle(self, obstacle, goal):
+		return not obstacle.contains_goal(goal) and obstacle.distance(Point(goal[0], goal[1])) > 0.5
 
 	def go_to_goal(self, goal_pose, agent, success_distance):
 
@@ -103,18 +106,17 @@ class BoundingBoxNavigator:
 			self.scene_obstacles_dict_roadmap[obstacle_key] = 0
 
 		for obstacle_key, obstacle in self.scene_obstacles_dict.items():
-			if not obstacle.contains_goal((gx, gy)):
+			if self.can_add_obstacle(obstacle, (gx, gy)):
 				self.scene_obstacles_dict_roadmap[obstacle_key] = 1
 				roadmap.addObstacle(obstacle)
 
 		while self.current_nav_steps < 150:
 			start_time = time.time()
-			dis_to_goal = math.sqrt((self.agentX-gx)**2 + (self.agentY-gy)**2)
 
 			for obstacle_key, obstacle in self.scene_obstacles_dict.items():
 				if self.scene_obstacles_dict_roadmap[obstacle_key] == 0:
 					#print ("not added obstacle", self.current_nav_steps)
-					if not obstacle.contains_goal((gx, gy)) :
+					if self.can_add_obstacle(obstacle, (gx, gy)):
 						#print ("adding new obstacles ", self.current_nav_steps)
 						self.scene_obstacles_dict_roadmap[obstacle_key] =1
 						roadmap.addObstacle(obstacle)
@@ -167,7 +169,7 @@ class BoundingBoxNavigator:
 					obstacle.plot("green")
 
 				plt.axis("equal")
-				plt.pause(0.1)
+				plt.pause(0.001)
 
 			start_time = time.time()
 			stepSize, heading = self.get_one_step_move([gx, gy], roadmap)
@@ -185,11 +187,21 @@ class BoundingBoxNavigator:
 			start_time = time.time()
 
 			rotation_degree = heading / (2 * math.pi) * 360 - agent.game_state.event.rotation
-			action={'action':"RotateLook",'rotation':rotation_degree}
-			agent.game_state.step(action)
-			end_time = time.time()
-			action_time_taken = end_time-start_time
-			#print ("action time taken", action_time_taken)
+
+			if np.abs(rotation_degree) > 360:
+				rotation_degree = np.sign(rotation_degree) * (np.abs(rotation_degree) - 360)
+			if rotation_degree > 180:
+				rotation_degree -= 360
+			if rotation_degree < -180:
+				rotation_degree += 360
+
+			n = int(abs(rotation_degree) // 10)
+			if rotation_degree > 0:
+				for _ in range(n):
+					agent.game_state.step({'action': 'RotateLeft'})
+			else:
+				for _ in range(n):
+					agent.game_state.step({'action': 'RotateRight'})
 
 			start_time = time.time()
 

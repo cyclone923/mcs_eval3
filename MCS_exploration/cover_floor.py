@@ -125,17 +125,6 @@ class graph_2d():
             self.graph.nodes[elem]['seen']= True
         #pass
 
-    def explore_point(self,x,y,agent, camera_field_of_view,obstacles):
-
-        directions = 8
-        event = agent.game_state.event
-        action = {'action':'RotateLook', 'rotation':45}
-        for direction in range (0,directions):
-            agent.game_state.step(action)
-            self.update_seen(x , y ,direction*45 , 100, camera_field_of_view, obstacles )
-
-    #def get_point_coverage(self):
-
 
     def get_visible_points(self,x,y,rotation,camera_field_of_view,radius,scene_obstacles_dict):#,visibility_graph):
         step_size = constants.AGENT_STEP_SIZE
@@ -216,6 +205,7 @@ class graph_2d():
         return visible_points
 
         #poly.plot()
+
 
 def ray_tracing_numpy(x,y,poly):
     n = len(poly)
@@ -352,20 +342,24 @@ def explore_initial_point(x,y, agent,obstacles):
     explore_point(x,y,agent,obstacles)
     if agent.game_state.goals_found == True:
         return
-    action = {'action':'RotateLook', 'horizon':30}
-    agent.game_state.step(action)
+    directions = 30 // 10
+    action = {'action': 'LookDown'}
+    for _ in range(directions):
+        agent.game_state.step(action)
     explore_point(x,y,agent,obstacles)
-    action = {'action':'RotateLook', 'horizon':-30}
-    agent.game_state.step(action)
+    action = {'action': 'LookUp'}
+    for _ in range(directions):
+        agent.game_state.step(action)
 
-def explore_point(x,y, agent,obstacles):
-    directions = 8
+
+def explore_point(x, y, agent, obstacles):
+    directions = 360 // 10
     event = agent.game_state.event
     camera_field_of_view = agent.game_state.event.camera_field_of_view
     #action = {'action':'RotateLook', 'horizon':1}
     #agent.game_state.step(action)
-    action = {'action':'RotateLook', 'rotation':45}
-    for direction in range (0,directions):
+    action = {'action':'RotateLeft'}
+    for _ in range (directions):
         agent.game_state.step(action)
         rotation = agent.game_state.event.rotation
         update_seen(x , y ,agent.game_state,rotation,camera_field_of_view, agent.nav.scene_obstacles_dict.values() )

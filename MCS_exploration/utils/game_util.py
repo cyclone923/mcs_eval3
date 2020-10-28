@@ -4,7 +4,7 @@ import numpy as np
 import cv2
 from ai2thor import controller
 #from utils import bb_util
-from machine_common_sense import MCS
+import machine_common_sense as mcs
 import machine_common_sense
 import math
 import json
@@ -88,7 +88,7 @@ def create_env(x_display=constants.X_DISPLAY,
             )
         '''
         #env = machine_common_sense.MCS_Controller_AI2THOR(
-        env = machine_common_sense.MCS_Controller_AI2THOR(unity_app_file_path)
+        env = mcs.MCS_Controller_AI2THOR(unity_app_file_path)
         
         #                 "/Users/rajesh/Rajesh/Subjects/Research/aiThor/mcs_playroom_old/algorithms/a3c/gym_ai2thor/MCSai2thor.app/Contents/MacOS/MCSai2thor")
     #env.start(x_display=x_display)

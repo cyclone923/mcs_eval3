@@ -289,8 +289,16 @@ class SequenceGenerator(object):
                 all_explored = True
                 break
             self.explore_object(min_distance_obj_id)
-            action = {'action':'RotateLook', 'horizon':-(self.agent.game_state.event.head_tilt)}
-            self.agent.step(action)
+            omega = -self.agent.game_state.event.head_tilt
+            m = int(omega // 10)
+
+            if omega > 0:
+                for _ in range(m):
+                    self.agent.step({"action": "LookDown"})
+            else:
+                for _ in range(m):
+                    self.agent.step({"action": "LookUp"})
+
             if self.agent.game_state.goals_found :
                 return
             if self.agent.game_state.number_actions > constants.MAX_STEPS :
@@ -406,10 +414,30 @@ class SequenceGenerator(object):
                 continue
 
 
-            theta = NavigatorResNet.get_polar_direction(goal_object_centre, self.agent.game_state.event)
+            theta = - NavigatorResNet.get_polar_direction(goal_object_centre, self.agent.game_state.event) * 180/math.pi
             omega = FaceTurnerResNet.get_head_tilt(goal_object_centre, self.agent.game_state.event) - self.agent.game_state.event.head_tilt
-            action = {'action':'RotateLook', 'rotation':-theta*180/math.pi, 'horizon':omega}
-            self.agent.step(action)
+
+            n = int(abs(theta) // 10)
+            m = int(abs(omega) // 10)
+            if theta > 0:
+                action = {'action': 'RotateRight'}
+                for _ in range(n):
+                    self.agent.game_state.step(action)
+            else:
+                action = {'action': 'RotateLeft'}
+                for _ in range(n):
+                    self.agent.game_state.step(action)
+
+            if omega > 0:
+                action = {'action': 'LookDown'}
+                for _ in range(m):
+                    self.agent.game_state.step(action)
+            else:
+                action = {'action': 'LookUp'}
+                for _ in range(m):
+                    self.agent.game_state.step(action)
+
+
 
             if current_object['openable'] == True:
                 if i == 2 :
@@ -435,13 +463,13 @@ class SequenceGenerator(object):
                     if self.agent.game_state.new_object_found == True:
                         self.update_object_data(uuid)
                         return
-                    action = {"action": "RotateLook", "rotation": 30}
-                    self.agent.step(action)
+                    for _ in range(3):
+                        self.agent.step({"action": "RotateRight"})
                     if self.agent.game_state.new_object_found == True :
                         self.update_object_data(uuid)
                         return
-                    action = {"action": "RotateLook", "rotation": -45}
-                    self.agent.step(action)
+                    for _ in range(3):
+                        self.agent.step({"action": "RotateLeft"})
                     if self.agent.game_state.new_object_found == True :
                         self.update_object_data(uuid)
                         return

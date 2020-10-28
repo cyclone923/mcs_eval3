@@ -5,9 +5,9 @@ import numpy as np
 from utils import game_util
 from utils import action_util
 #from darknet_object_detection import detector
-from machine_common_sense import MCS_Step_Output
-from machine_common_sense import MCS_Object
-from machine_common_sense import MCS_Util
+from machine_common_sense import StepMetadata
+from machine_common_sense import ObjectMetadata
+from machine_common_sense import Util
 from cover_floor import *
 import shapely.geometry.polygon as sp
 
@@ -17,7 +17,7 @@ assert(constants.SCENE_PADDING == 5)
 
 def wrap_output( scene_event):
 
-    step_output = MCS_Step_Output(
+    step_output = StepMetadata(
         object_list=retrieve_object_list(scene_event),
     )
 
@@ -33,7 +33,7 @@ def retrieve_object_list( scene_event):
                 if object_metadata['visible'] or object_metadata['isPickedUp']], key=lambda x: x.uuid)
 
 def retrieve_object_output( object_metadata, object_id_to_color):
-    material_list = list(filter(MCS_Util.verify_material_enum_string, [material.upper() for material in \
+    material_list = list(filter(Util.verify_material_enum_string, [material.upper() for material in \
             object_metadata['salientMaterials']])) if object_metadata['salientMaterials'] is not None else []
 
     rgb = object_id_to_color[object_metadata['objectId']] if object_metadata['objectId'] in object_id_to_color \
@@ -42,7 +42,7 @@ def retrieve_object_output( object_metadata, object_id_to_color):
     bounds = object_metadata['objectBounds'] if 'objectBounds' in object_metadata and \
         object_metadata['objectBounds'] is not None else {}
 
-    return MCS_Object(
+    return ObjectMetadata(
         uuid=object_metadata['objectId'],
         color={
             'r': rgb[0],
@@ -145,7 +145,7 @@ class GameState(object):
                     self.goals.append(self.event.goal.metadata[key]["id"])
 
             for obj in self.event.object_list:
-                if obj.uuid not in self.discovered_explored:
+                if obj.uuid not in self.discovered_explored and obj.visible:
                     # print("uuid : ", obj.uuid)
                     self.discovered_explored[obj.uuid] = {0: obj.position}
                     self.discovered_objects.append(obj.__dict__)
@@ -176,20 +176,17 @@ class GameState(object):
         # The object nearest the center of the screen is open/closed if none is provided.
 
         if action['action'] == 'RotateRight':
-            action = "RotateLook, rotation=90" 
+            action = "RotateLeft"
         elif action['action'] == 'RotateLeft':
-            action = "RotateLook, rotation=-90" 
+            action = "RotateRight"
+        elif action['action'] == 'LookDown':
+            action = "LookDown"
+        elif action['action'] == 'LookUp':
+            action = "LookUp"
         elif action['action'] == 'MoveAhead':
             action =  'MoveAhead, amount=%d' % action['amount']
             #action =  'MoveAhead, amount=0.5'
             #action =  'MoveAhead, amount=0.2'
-        elif action['action'] == 'RotateLook':
-            if 'rotation' in action and 'horizon' in action :
-                action = "RotateLook, rotation=%d, horizon=%d" % (action['rotation'],action['horizon'])
-            elif 'rotation' in action :
-                action = "RotateLook, rotation=%d" % action['rotation']
-            elif 'horizon' in action:
-                action = "RotateLook, horizon=%d" % action['horizon']
         elif action['action'] == 'OpenObject':
             action = "OpenObject,objectId="+ str(action["objectId"])
             #print ("constructed action for open object", action)
@@ -212,7 +209,7 @@ class GameState(object):
         # lastActionSuccess = self.event.return_status
 
         for obj in self.event.object_list :
-            if obj.uuid not in self.discovered_explored :
+            if obj.uuid not in self.discovered_explored and obj.visible:
                 # print ("uuid : ", obj.uuid)
                 self.discovered_explored[obj.uuid] = {0:obj.position}
                 self.discovered_objects.append(obj.__dict__)

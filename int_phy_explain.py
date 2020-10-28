@@ -12,8 +12,6 @@ env = McsEnv(task="intphys_scenes", scene_type=scene_name, start_scene_number=st
 appearance_checker = ApearanceModel()
 locomotion_checker = LocomotionModel()
 
-
-
 for scene in range(len(env.all_scenes) - start_scene_number):
     env.reset(random_init=False)
     scene_state = SceneState(env.step_output, plot=False)
@@ -36,8 +34,9 @@ for scene in range(len(env.all_scenes) - start_scene_number):
         choice = "implausible"
         confidence = 1 - final_score
     env.controller.end_scene(choice, confidence)
+    collector.reset()
     print(choice)
-    exit(0)
+
 
 
 
