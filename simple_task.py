@@ -6,11 +6,11 @@ from frame_collector import Frame_collector
 
 
 if __name__ == "__main__":
-    start_scene_number = 0
+    start_scene_number = 20
     collector = Frame_collector(scene_dir="simple_task_img", start_scene_number=start_scene_number)
     env = McsEnv(
         task="interaction_scenes", scene_type="transferral", seed=50,
-        start_scene_number=start_scene_number, frame_collector=collector, set_trophy=True
+        start_scene_number=start_scene_number, frame_collector=collector, set_trophy=False
     )
     metaController = MetaController(env)
 
