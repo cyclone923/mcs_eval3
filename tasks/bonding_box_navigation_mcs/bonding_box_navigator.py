@@ -9,12 +9,11 @@ import numpy as np
 
 
 SHOW_ANIMATION = False
-random.seed(1)
 
 class BoundingBoxNavigator:
 
 	# pose is a triplet x,y,theta (heading)
-	def __init__(self, robot_radius=0.1, maxStep=0.25):
+	def __init__(self, robot_radius=0.22, maxStep=0.25):
 		self.agentX = None
 		self.agentY = None
 		self.agentH = None
@@ -84,7 +83,7 @@ class BoundingBoxNavigator:
 	def can_add_obstacle(self, obstacle, goal):
 		return not obstacle.contains_goal(goal) and obstacle.distance(Point(goal[0], goal[1])) > 0.5
 
-	def go_to_goal(self, nav_env, goal, success_distance, frame_collector=None):
+	def go_to_goal(self, nav_env, goal, success_distance):
 		self.agentX = nav_env.step_output.position['x']
 		self.agentY = nav_env.step_output.position['z']
 		self.agentH = nav_env.step_output.rotation / 360 * (2 * math.pi)
@@ -125,13 +124,11 @@ class BoundingBoxNavigator:
 			if dis_to_goal < self.epsilon:
 				break
 
-
 			fov = FieldOfView([sx, sy, 0], 42.5 / 180.0 * math.pi, self.scene_obstacles_dict.values())
 			fov.agentX = self.agentX
 			fov.agentY = self.agentY
 			fov.agentH = self.agentH
 			poly = fov.getFoVPolygon(15)
-
 
 			if SHOW_ANIMATION:
 				plt.cla()
@@ -150,10 +147,9 @@ class BoundingBoxNavigator:
 					obstacle.plot("green")
 
 				plt.axis("equal")
-				plt.pause(0.0001)
+				plt.pause(0.01)
 
 			stepSize, heading = self.get_one_step_move([gx, gy], roadmap)
-
 
 			if stepSize == None and heading == None:
 				return False
@@ -179,7 +175,7 @@ class BoundingBoxNavigator:
 				if 360 - abs(rotation_degree) > 10:
 					continue
 
-			nav_env.env.step(action="MoveAhead", amount=0.5)
+			nav_env.env.step(action="MoveAhead")
 			self.agentX = nav_env.step_output.position['x']
 			self.agentY = nav_env.step_output.position['z']
 			self.agentH = nav_env.step_output.rotation / 360 * (2 * math.pi)
@@ -289,12 +285,6 @@ def main():
 				
 				plt.axis("equal")
 				plt.pause(0.1)
-
-    
-    #if SHOW_ANIMATION:  # pragma: no cover
-    #    plt.plot(rx, ry, "-r")
-    #    plt.pause(0.1)
-    #    plt.show()
 
 
 if __name__ == '__main__':

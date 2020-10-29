@@ -11,19 +11,11 @@ class McsNavWrapper(McsWrapper):
 
     def __init__(self, env):
         super().__init__(env)
-        self.action_names = ["Stop", "MoveAhead", "RotateLeft", "RotateRight"]# order matters
+        self.action_names = ["MoveAhead", "RotateLeft", "RotateRight"]# order matters
 
     def step(self, action, epsd_collector=None, frame_colletor=None):
         assert action in self.action_names
-        if action.startswith('Rotate'):
-            rotation = -self.ABS_ROTATION if action == 'RotateLeft' else self.ABS_ROTATION
-            super().step(action='RotateLook', rotation=rotation)
-        elif action == 'MoveAhead':
-            super().step(action=action, amount=self.ABS_MOVE)
-        else:
-            assert action == 'Stop'
-            # raise AttributeError('Navigator Should End Before Stop')
-
+        super().step(action=action)
         return self.step_output
 
     def set_look_dir(self, rotation_in_all=0):

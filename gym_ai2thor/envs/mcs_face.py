@@ -6,10 +6,6 @@ CAMERA_HIGHT = 2
 
 class McsFaceWrapper(McsWrapper):
 
-    ABS_HEADTILT = 10
-    ABS_ROTATION = 10 # same as settings in habitat, right is positive
-    ABS_MOVE = 0.1
-
     def __init__(self, env):
         super().__init__(env)
 
@@ -20,21 +16,21 @@ class McsFaceWrapper(McsWrapper):
     def step(self, action):
         assert action in self.action_names
         if action == "LookUp":
-            super().step(action="RotateLook", horizon=-self.ABS_HEADTILT)
+            super().step(action="LookUp")
         elif action == "LookDown":
-            super().step(action="RotateLook", horizon=self.ABS_HEADTILT)
+            super().step(action="LookDown")
         elif action == "RotateLeft":
-            super().step(action="RotateLook", rotation=-self.ABS_ROTATION)
+            super().step(action="RotateLeft")
         elif action == "RotateRight":
-            super().step(action="RotateLook", rotation=self.ABS_ROTATION)
+            super().step(action="RotateRight")
         elif action == "MoveAhead":
-            super().step(action="MoveAhead", amount=self.ABS_MOVE)
+            super().step(action="MoveAhead")
         elif action == "MoveBack":
-            super().step(action="MoveBack", amount=self.ABS_MOVE)
+            super().step(action="MoveBack")
         elif action == "MoveLeft":
-            super().step(action="MoveLeft", amount=self.ABS_MOVE)
+            super().step(action="MoveLeft")
         elif action == "MoveRight":
-            super().step(action="MoveRight", amount=self.ABS_MOVE)
+            super().step(action="MoveRight")
 
     def set_look_dir(self, rotation_in_all=0, horizon_in_all=0):
         n = int(abs(rotation_in_all) // 10)

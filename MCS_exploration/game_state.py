@@ -184,7 +184,7 @@ class GameState(object):
         elif action['action'] == 'LookUp':
             action = "LookUp"
         elif action['action'] == 'MoveAhead':
-            action =  'MoveAhead, amount=%d' % action['amount']
+            action =  'MoveAhead'
             #action =  'MoveAhead, amount=0.5'
             #action =  'MoveAhead, amount=0.2'
         elif action['action'] == 'OpenObject':

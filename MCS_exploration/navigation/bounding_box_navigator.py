@@ -10,12 +10,11 @@ from shapely.geometry import Point, Polygon
 import numpy as np
 
 SHOW_ANIMATION = False
-random.seed(1)
 
 class BoundingBoxNavigator:
 
 	# pose is a triplet x,y,theta (heading)
-	def __init__(self, robot_radius=0.1, maxStep=0.25):
+	def __init__(self, robot_radius=0.22, maxStep=0.25):
 		self.agentX = None
 		self.agentY = None
 		self.agentH = None
@@ -64,7 +63,7 @@ class BoundingBoxNavigator:
 
 	def add_obstacle_from_step_output(self, step_output):
 		for obj in step_output.object_list:
-			if len(obj.dimensions) > 0 and obj.uuid not in self.scene_obstacles_dict:
+			if len(obj.dimensions) > 0 and obj.uuid not in self.scene_obstacles_dict and obj.visible:
 				x_list = []
 				y_list = []
 				for i in range(4, 8):
@@ -76,7 +75,7 @@ class BoundingBoxNavigator:
 				del self.scene_obstacles_dict[obj.uuid]
 
 		for obj in step_output.structural_object_list:
-			if len(obj.dimensions) > 0 and obj.uuid not in self.scene_obstacles_dict:
+			if len(obj.dimensions) > 0 and obj.uuid not in self.scene_obstacles_dict and obj.visible:
 				if obj.uuid == "ceiling" or obj.uuid == "floor":
 					continue
 				x_list = []
@@ -222,7 +221,7 @@ class BoundingBoxNavigator:
 			#		continue
 
 			#agent.game_state.step(action="MoveAhead", amount=0.5)
-			action={'action':"MoveAhead", 'amount':stepSize}
+			action={'action':"MoveAhead"}
 			agent.step(action)
 			rotation = agent.game_state.event.rotation
 			self.agentX = agent.game_state.event.position['x']
