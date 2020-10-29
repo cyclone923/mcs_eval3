@@ -2,7 +2,7 @@
 
 ## Download
 
-Here are the instructions for downloading and setting up environment for MCS evaluation 2.
+Here are the instructions for downloading and setting up environment for MCS evaluation 3.
 
 ### Python Library
 

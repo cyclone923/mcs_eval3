@@ -12,12 +12,15 @@ class Frame_collector:
 
     def save_frame(self, step_output):
         assert len(step_output.image_list) <= 1
-        assert len(step_output.image_list) <= 1
-        assert len(step_output.image_list) <= 1
+        assert len(step_output.object_mask_list) <= 1
+        assert len(step_output.depth_mask_list) <= 1
 
-        step_output.image_list[0].save(f'{self.scene_dir}/original_{self.scene_number}-{self.step}.jpg')
-        step_output.object_mask_list[0].save(f'{self.scene_dir}/mask_{self.scene_number}-{self.step}.jpg')
-        step_output.depth_mask_list[0].save(f'{self.scene_dir}/depth_{self.scene_number}-{self.step}.jpg')
+        if len(step_output.image_list) == 1:
+            step_output.image_list[0].save(f'{self.scene_dir}/original_{self.scene_number}-{self.step}.jpg')
+        if len(step_output.object_mask_list) == 1:
+            step_output.object_mask_list[0].save(f'{self.scene_dir}/mask_{self.scene_number}-{self.step}.jpg')
+        if len(step_output.depth_mask_list) == 1:
+            step_output.depth_mask_list[0].save(f'{self.scene_dir}/depth_{self.scene_number}-{self.step}.jpg')
         self.step += 1
 
         # for i in step_output.object_list:
