@@ -1,6 +1,6 @@
 import os
 import numpy as np
-
+from PIL import Image
 
 class Frame_collector:
 
@@ -20,7 +20,9 @@ class Frame_collector:
         if len(step_output.object_mask_list) == 1:
             step_output.object_mask_list[0].save(f'{self.scene_dir}/mask_{self.scene_number}-{self.step}.jpg')
         if len(step_output.depth_mask_list) == 1:
-            step_output.depth_mask_list[0].save(f'{self.scene_dir}/depth_{self.scene_number}-{self.step}.jpg')
+            depth_normalized = step_output.depth_mask_list[0] / step_output.camera_clipping_planes[1]
+            depth_normalized = Image.fromarray(np.uint8(depth_normalized*255))
+            depth_normalized.save(f'{self.scene_dir}/depth_{self.scene_number}-{self.step}.jpg')
         self.step += 1
 
         # for i in step_output.object_list:
