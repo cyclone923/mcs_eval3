@@ -86,6 +86,12 @@ bash get_dataset.sh
 ```
 export PYTHONPATH=$PWD
 ```
+## Run with Agent Task
+
+```
+python agent_task.py
+```
+![alt-text](https://github.com/cyclone923/mcs_eval3/blob/master/demo_0.gif)
 
 ## Run with Interaction Task
 
