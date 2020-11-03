@@ -16,7 +16,7 @@ class SceneState:
         self.object_state_dict = {}
         self.occluder_state_dict = {}
 
-        self.depth_frame = step_output.depth_mask_list[-1]
+        self.depth_frame = step_output.depth_map_list[-1]
         self.object_frame = step_output.object_mask_list[-1]
         self.frame_size = self.object_frame.size
         self.agent_position = step_output.position
@@ -61,7 +61,7 @@ class SceneState:
 
     def update(self, new_step_output, appearance_checker, locomotion_checker):
         # print('-'*40)
-        new_depth_frame = new_step_output.depth_mask_list[-1]
+        new_depth_frame = new_step_output.depth_map_list[-1]
         new_object_frame = new_step_output.object_mask_list[-1]
 
         new_object_state_dict = self.get_new_object_state_dict(

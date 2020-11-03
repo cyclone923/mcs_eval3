@@ -93,7 +93,7 @@ class McsEnv:
             assert len(all_scenes) == 1
             self.trophy_config, _ = mcs.load_config_json_file(all_scenes[0])
 
-        os.environ['MCS_CONFIG_FILE_PATH'] = os.path.join(os.getcwd(), "mcs_config.yaml.yaml")
+        os.environ['MCS_CONFIG_FILE_PATH'] = os.path.join(os.getcwd(), "mcs_config.yaml")
 
         self.controller = mcs.create_controller(
             os.path.join(app)

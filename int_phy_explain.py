@@ -7,7 +7,7 @@ from frame_collector import Frame_collector
 scene_name = "object_permanence"
 start_scene_number = 0
 collector = Frame_collector(scene_dir="intphy_task_img", start_scene_number=start_scene_number)
-env = McsEnv(task="intphys_scenes", scene_type=scene_name, start_scene_number=start_scene_number, frame_collector=collector)
+env = McsEnv(task="evaluation3Training", scene_type=scene_name, start_scene_number=start_scene_number, frame_collector=collector)
 
 appearance_checker = ApearanceModel()
 locomotion_checker = LocomotionModel()
@@ -16,7 +16,7 @@ for scene in range(len(env.all_scenes) - start_scene_number):
     env.reset(random_init=False)
     scene_state = SceneState(env.step_output, plot=False)
     print("\n")
-    print(scene + start_scene_number, env.scene_config['answer']['choice'])
+    # print(scene + start_scene_number, env.scene_config['answer']['choice'])
     for i, x in enumerate(env.scene_config['goal']['action_list']):
         env.step(action=x[0])
         if env.step_output is None:
