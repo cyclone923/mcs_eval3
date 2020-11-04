@@ -65,8 +65,8 @@ def pre_process_objects(objects, all_obstacles):
     box4 = TrophyWithBox(objects[6], objects[3])
 
     all_objs = [single_trophy, box1, box2, box3, box4]
-    # random_pick = random.choice(all_objs)
-    random_pick = all_objs[4]
+    random_pick = random.choice(all_objs)
+    # random_pick = all_objs[4]
     trophy_radious = random_pick.get_bonding_box_radius()
     while True:
         x, z = random.random() * 10 - 5, random.random() * 10 - 5
