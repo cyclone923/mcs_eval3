@@ -52,8 +52,7 @@ class McsHumanControlEnv(McsEnv):
 
     def print_step_output(self):
         print("- " * 20)
-        depth_img = np.array(self.step_output.depth_mask_list[0])
-        print(depth_img)
+        depth_img = np.array(self.step_output.depth_map_list[0])
         print("Previous Action Status: {}".format(self.step_output.return_status))
         if hasattr(self.step_output, "reward"):
             print("Previous Reward: {}".format(self.step_output.reward))
@@ -72,20 +71,20 @@ class McsHumanControlEnv(McsEnv):
         print("Camera Field of view {}".format(self.step_output.camera_field_of_view))
         print("Visible Objects:")
         for obj in self.step_output.object_list:
-            print("Distance {:.3f} to {} {} ({:.3f},{:.3f},{:.3f}) with {} bdbox points".format(
-                obj.distance_in_world, obj.shape, obj.uuid,
+            print("Distance {:.3f} to {} {} {} ({:.3f},{:.3f},{:.3f}) with {} bdbox points".format(
+                obj.distance_in_world, obj.visible, obj.shape, obj.uuid,
                 obj.position['x'], obj.position['y'], obj.position['z'], len(obj.dimensions))
             )
 
         for obj in self.step_output.structural_object_list:
             if "wall" not in obj.uuid:
                 continue
-            print("Distance {:.3f} to {} {} ({:.3f},{:.3f},{:.3f}) with {} bdbox points".format(
-                obj.distance_in_world, obj.shape, obj.uuid,
+            print("Distance {:.3f} to {} {} {} ({:.3f},{:.3f},{:.3f}) with {} bdbox points".format(
+                obj.distance_in_world, obj.visible, obj.shape, obj.uuid,
                 obj.position['x'], obj.position['y'], obj.position['z'], len(obj.dimensions))
             )
 
-        print("{} depth images returned".format(len(self.step_output.depth_mask_list)))
+        print("{} depth images returned".format(len(self.step_output.depth_map_list)))
         print("{} object images returned".format(len(self.step_output.object_mask_list)))
         print("{} scene images returned".format(len(self.step_output.image_list)))
         print("{} objects' properties".format(len(self.step_output.object_list)))
@@ -100,13 +99,13 @@ if __name__ == '__main__':
     while True:
         action = input("Enter Action: ")
         if action == "w":
-            env.step("MoveAhead", amount=0.5)
+            env.step("MoveAhead")
         elif action == "s":
-            env.step("MoveBack", amount=0.5)
+            env.step("MoveBack")
         elif action == "a":
-            env.step("MoveLeft", amount=0.5)
+            env.step("MoveLeft")
         elif action == "d":
-            env.step("MoveRight", amount=0.5)
+            env.step("MoveRight")
         elif action == "q":
             # rt = input("RotateLeft! Enter the rotation: ")
             rt = 10

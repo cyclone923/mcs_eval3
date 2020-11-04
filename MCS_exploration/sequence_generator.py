@@ -199,7 +199,6 @@ class SequenceGenerator(object):
         #print (outer_poly_new.area)
 
         overall_area = abs(x_max-x_min) * abs (y_max-y_min)
-        print (self.agent.game_state.world_poly.area)
 
         while overall_area * 0.65 >  self.agent.game_state.world_poly.area or len(self.agent.game_state.discovered_objects) == 0 :
             points_checked = 0
@@ -299,7 +298,7 @@ class SequenceGenerator(object):
                 for _ in range(m):
                     self.agent.step({"action": "LookUp"})
 
-            if self.agent.game_state.goals_found :
+            if self.agent.game_state.goals_found:
                 return
             if self.agent.game_state.number_actions > constants.MAX_STEPS :
                 # print ("Too many actions performed")
@@ -348,7 +347,7 @@ class SequenceGenerator(object):
         else:
             dimension_object = current_object
 
-        for i in range (4,4+number_vertices):
+        for i in range(4,4+number_vertices):
             #goal = [current_object['dimensions'][i]['x'],current_object['dimensions'][i]['y'],current_object['dimensions'][i]['z']]
             goal = [dimension_object['dimensions'][i]['x'],dimension_object['dimensions'][i]['y'],dimension_object['dimensions'][i]['z']]
 
@@ -384,6 +383,7 @@ class SequenceGenerator(object):
                     goal_pose = goal_poses_not_visited[j]
                     min_distance_vertex= distance_to_point
             #'''
+
             goal_pose_loc = goal_pose[0]
             goal_poses_not_visited.remove(goal_pose)
             goal_pose_x_z =(goal_pose_loc[0],goal_pose_loc[2])
@@ -400,6 +400,7 @@ class SequenceGenerator(object):
                 continue
 
 
+
             if len(current_object['dimensions']) == 0 :
                 if goal_object_centre[1] > self.agent.game_state.event.position['y']:
                     return
@@ -409,7 +410,6 @@ class SequenceGenerator(object):
                     return
 
             nav_success = self.agent.nav.go_to_goal(goal_pose_x_z, self.agent, success_distance)
-
             if nav_success == False:
                 continue
 
@@ -449,7 +449,7 @@ class SequenceGenerator(object):
 
             object_visible = False
             for elem in self.agent.game_state.event.object_list :
-                if uuid == elem.uuid:
+                if uuid == elem.uuid and elem.visible:
                     object_visible = True
                     break
             if object_visible == True :

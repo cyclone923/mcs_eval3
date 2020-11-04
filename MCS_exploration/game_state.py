@@ -209,6 +209,12 @@ class GameState(object):
         # lastActionSuccess = self.event.return_status
 
         for obj in self.event.object_list :
+            if obj.uuid == "trophy":
+                if not obj.visible:
+                    print("trophy not visible {}, {}".format(self.event.position, self.event.rotation))
+                else:
+                    print("trophy is visible {} {}".format(self.event.position, self.event.rotation))
+                    exit(0)
             if obj.uuid not in self.discovered_explored and obj.visible:
                 # print ("uuid : ", obj.uuid)
                 self.discovered_explored[obj.uuid] = {0:obj.position}

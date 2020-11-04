@@ -149,7 +149,7 @@ class MetaController:
             if self.env.step_output.return_status == "SUCCESSFUL":
                 self.plannerState.object_open_close_info[action_dict['objectId']] = True
             else:
-                print("Open {} fail".format(action_dict['objectId']))
+                print("Open {} fail, {}".format(action_dict['objectId'], self.env.step_output.return_status))
                 return False
         elif action_dict['action'] == "DropObjectNextTo":
             FaceTurnerResNet.look_to_front(self.face_env)

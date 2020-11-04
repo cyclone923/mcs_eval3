@@ -7,69 +7,7 @@ import os
 import platform
 import random
 import machine_common_sense as mcs
-from MCS_exploration.navigation.visibility_road_map import ObstaclePolygon
-from shapely.geometry import MultiPolygon
-from descartes import PolygonPatch
-import matplotlib.pyplot as plt
-import numpy as np
-
-def set_goal_with_trophy(scene_config, trophy_config, plot=False):
-    obstacles = []
-
-    for obj in scene_config['objects']:
-        x_list = []
-        y_list = []
-        for i in range(4):
-            x_list.append(obj['shows'][0]['bounding_box'][i]['x'])
-            y_list.append(obj['shows'][0]['bounding_box'][i]['z'])
-        obstacles.append(ObstaclePolygon(x_list, y_list))
-
-    x_list = np.array([5.5, 5.5, -5.5, -5.5])
-    y_list = np.array([5.5, 5, 5, 5.5])
-    for i in [1, -1]:
-        obstacles.append(ObstaclePolygon(x_list*i, y_list*i))
-        obstacles.append(ObstaclePolygon(y_list*i, x_list*i))
-
-    x, z = scene_config['performerStart']['position']['x'], scene_config['performerStart']['position']['z']
-    agent_radious = 0.22
-    trophy_radious = 0.1
-
-    x_list = [x+agent_radious, x+agent_radious, x-agent_radious, x-agent_radious]
-    y_list = [z+agent_radious, z-agent_radious, z-agent_radious, z+agent_radious]
-    obstacles.append(ObstaclePolygon(x_list, y_list))
-    all_obstacles = MultiPolygon(obstacles)
-
-    while True:
-        x, z = random.random() * 10 - 5, random.random() * 10 - 5
-        x_list = [x+trophy_radious, x+trophy_radious, x-trophy_radious, x-trophy_radious]
-        y_list = [z+trophy_radious, z-trophy_radious, z-trophy_radious, z+trophy_radious]
-        trophy = ObstaclePolygon(x_list, y_list)
-        if not all_obstacles.intersection(trophy):
-            trophy_x, trophy_z = x, z
-            break
-
-    if plot:
-        plt.cla()
-        plt.xlim((-7, 7))
-        plt.ylim((-7, 7))
-        plt.gca().set_xlim((-7, 7))
-        plt.gca().set_ylim((-7, 7))
-
-        patch1 = PolygonPatch(all_obstacles, fc="green", ec="black", alpha=0.2, zorder=1)
-        plt.gca().add_patch(patch1)
-        trophy.plot('blue')
-        plt.pause(0.1)
-
-    assert len(trophy_config['objects']) == 1
-    trophy_obj = trophy_config['objects'][0].copy()
-    trophy_obj['shows'][0]['position']['x'] = trophy_x
-    trophy_obj['shows'][0]['position']['z'] = trophy_z
-
-    new_scene_config = scene_config.copy()
-    new_scene_config['objects'].append(trophy_obj)
-    new_scene_config['goal'] = trophy_config['goal'].copy()
-
-    return new_scene_config
+from gym_ai2thor.envs.trophy import set_goal_with_trophy
 
 
 class McsEnv:
@@ -117,6 +55,18 @@ class McsEnv:
 
     def step(self, **kwargs):
         self.step_output = self.controller.step(**kwargs)
+        # check_list = ["trophy", "gift_box", "sturdy_box", "suitcase"]
+        # for o in self.step_output.object_list:
+        #     for i in check_list:
+        #         if o.uuid == i:
+        #             print(i)
+        #             print(abs(o.dimensions[0]['x'] - o.dimensions[1]['x']))
+        #             print(abs(o.dimensions[1]['x'] - o.dimensions[2]['x']))
+        #             print("-------------------")
+        #             print(abs(o.dimensions[0]['z'] - o.dimensions[1]['z']))
+        #             print(abs(o.dimensions[1]['z'] - o.dimensions[2]['z']))
+        # exit(0)
+
         if self.add_obstacle_func:
             self.add_obstacle_func(self.step_output)
         # print(self.step_output.return_status)

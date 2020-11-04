@@ -92,6 +92,8 @@ class BoundingBoxNavigator:
 
 	def go_to_goal(self, goal_pose, agent, success_distance):
 
+
+
 		self.current_nav_steps = 0
 		self.agentX = agent.game_state.event.position['x']
 		self.agentY = agent.game_state.event.position['z']
@@ -212,6 +214,7 @@ class BoundingBoxNavigator:
 			cover_floor.update_seen(self.agentX, self.agentY, agent.game_state, rotation, 42.5,
 									self.scene_obstacles_dict.values())
 
+
 			end_time = time.time()
 			action_processing_time_taken = end_time-start_time
 			#print ("action processing taken", action_processing_time_taken)
@@ -227,8 +230,10 @@ class BoundingBoxNavigator:
 			self.agentX = agent.game_state.event.position['x']
 			self.agentY = agent.game_state.event.position['z']
 			self.agentH = rotation / 360 * (2 * math.pi)
+
 			cover_floor.update_seen(self.agentX, self.agentY, agent.game_state, rotation, 42.5,
 									self.scene_obstacles_dict.values())
+
 
 			self.current_nav_steps += 1
 
