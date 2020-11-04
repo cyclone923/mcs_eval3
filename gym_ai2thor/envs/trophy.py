@@ -54,7 +54,7 @@ def set_goal_with_trophy(scene_config, box_config, plot=True):
 
 
 def pre_process_objects(objects, all_obstacles):
-    object_ids = ['gift_box', 'sturdy_box', 'suitcase', 'trophy_1', 'trophy_2', 'trophy_3', 'trophy_4']
+    object_ids = ['gift_box', 'sturdy_box', 'suitcase', 'treasure_chest', 'trophy_1', 'trophy_2', 'trophy_3', 'trophy_4']
     for i, x in enumerate(objects):
         assert x['id'] == object_ids[i]
 
@@ -62,10 +62,11 @@ def pre_process_objects(objects, all_obstacles):
     box1 = TrophyWithBox(objects[3] ,objects[0])
     box2 = TrophyWithBox(objects[4], objects[1])
     box3 = TrophyWithBox(objects[5], objects[2])
+    box4 = TrophyWithBox(objects[6], objects[3])
 
-    all_objs = [single_trophy, box1, box2, box3]
+    all_objs = [single_trophy, box1, box2, box3, box4]
     # random_pick = random.choice(all_objs)
-    random_pick = all_objs[2]
+    random_pick = all_objs[4]
     trophy_radious = random_pick.get_bonding_box_radius()
     while True:
         x, z = random.random() * 10 - 5, random.random() * 10 - 5
