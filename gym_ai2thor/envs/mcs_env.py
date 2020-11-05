@@ -8,6 +8,7 @@ import platform
 import random
 import machine_common_sense as mcs
 from gym_ai2thor.envs.trophy import set_goal_with_trophy
+import math
 
 
 class McsEnv:
@@ -55,16 +56,23 @@ class McsEnv:
 
     def step(self, **kwargs):
         self.step_output = self.controller.step(**kwargs)
-        # check_list = ["trophy", "gift_box", "sturdy_box", "suitcase"]
+        # check_list = ["trophy", "gift_box", "sturdy_box", "suitcase", "treasure_chest"]
         # for o in self.step_output.object_list:
         #     for i in check_list:
         #         if o.uuid == i:
         #             print(i)
-        #             print(abs(o.dimensions[0]['x'] - o.dimensions[1]['x']))
-        #             print(abs(o.dimensions[1]['x'] - o.dimensions[2]['x']))
-        #             print("-------------------")
-        #             print(abs(o.dimensions[0]['z'] - o.dimensions[1]['z']))
-        #             print(abs(o.dimensions[1]['z'] - o.dimensions[2]['z']))
+        #             max_x, min_x, max_y, min_y, max_z, min_z,  = - math.inf, math.inf, - math.inf, math.inf, - math.inf, math.inf
+        #             for p in o.dimensions:
+        #                 max_x = max(max_x, p['x'])
+        #                 min_x = min(min_x, p['x'])
+        #                 max_y = max(max_y, p['y'])
+        #                 min_y = min(min_y, p['y'])
+        #                 max_z = max(max_z, p['z'])
+        #                 min_z = min(min_z, p['z'])
+        #             print(max_x - min_x)
+        #             print(max_y - min_y)
+        #             print(max_z - min_z)
+        #             print(max(max_x - min_x, max_y - min_y, max_z - min_z))
         # exit(0)
 
         if self.add_obstacle_func:

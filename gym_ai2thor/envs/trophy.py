@@ -5,6 +5,8 @@ import matplotlib.pyplot as plt
 import numpy as np
 import random
 from copy import deepcopy
+import matplotlib
+matplotlib.use('TkAgg')
 
 def set_goal_with_trophy(scene_config, box_config, plot=True):
     box_config = deepcopy(box_config)
@@ -58,15 +60,15 @@ def pre_process_objects(objects, all_obstacles):
     for i, x in enumerate(objects):
         assert x['id'] == object_ids[i]
 
-    single_trophy = TrophyWithBox(objects[6], None)
-    box1 = TrophyWithBox(objects[3] ,objects[0])
-    box2 = TrophyWithBox(objects[4], objects[1])
-    box3 = TrophyWithBox(objects[5], objects[2])
-    box4 = TrophyWithBox(objects[6], objects[3])
+    single_trophy = TrophyWithBox(objects[7], None)
+    box1 = TrophyWithBox(objects[4] ,objects[0])
+    box2 = TrophyWithBox(objects[5], objects[1])
+    box3 = TrophyWithBox(objects[6], objects[2])
+    box4 = TrophyWithBox(objects[7], objects[3])
 
     all_objs = [single_trophy, box1, box2, box3, box4]
     random_pick = random.choice(all_objs)
-    # random_pick = all_objs[4]
+    #random_pick = all_objs[4]
     trophy_radious = random_pick.get_bonding_box_radius()
     while True:
         x, z = random.random() * 10 - 5, random.random() * 10 - 5
@@ -103,9 +105,18 @@ class TrophyWithBox:
 
     def get_bonding_box_radius(self):
         if self.box:
-            r = 1
+            if self.box['id'] == "gift_box":
+                r = 0.2
+            elif self.box['id'] == "sturdy_box":
+                r = 0.21
+            elif self.box['id'] == "suitcase":
+                r = 0.45
+            elif self.box['id'] == "treasure_chest":
+                r = 0.27
+            else:
+                r = 0.45
         else:
-            r = 0.22
+            r = 0.16
         return r
 
     def get_objects(self):
