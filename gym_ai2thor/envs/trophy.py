@@ -8,7 +8,7 @@ from copy import deepcopy
 import matplotlib
 matplotlib.use('TkAgg')
 
-def set_goal_with_trophy(scene_config, box_config, plot=True):
+def set_goal_with_trophy(scene_config, box_config):
     box_config = deepcopy(box_config)
     obstacles = []
 
@@ -35,19 +35,6 @@ def set_goal_with_trophy(scene_config, box_config, plot=True):
 
     random_target = pre_process_objects(box_config['objects'], all_obstacles)
 
-    if plot:
-        plt.cla()
-        plt.xlim((-7, 7))
-        plt.ylim((-7, 7))
-        plt.gca().set_xlim((-7, 7))
-        plt.gca().set_ylim((-7, 7))
-
-        patch1 = PolygonPatch(all_obstacles, fc="green", ec="black", alpha=0.2, zorder=1)
-        plt.gca().add_patch(patch1)
-        random_target.bdbox.plot('blue')
-        plt.pause(0.1)
-
-
     new_scene_config = scene_config.copy()
     new_scene_config['objects'].extend(random_target.get_objects().copy())
     new_scene_config['goal'] = box_config['goal'].copy()
@@ -55,7 +42,7 @@ def set_goal_with_trophy(scene_config, box_config, plot=True):
     return new_scene_config
 
 
-def pre_process_objects(objects, all_obstacles):
+def pre_process_objects(objects, all_obstacles, plot=True):
     object_ids = ['gift_box', 'sturdy_box', 'suitcase', 'treasure_chest', 'trophy_1', 'trophy_2', 'trophy_3', 'trophy_4']
     for i, x in enumerate(objects):
         assert x['id'] == object_ids[i]
@@ -75,10 +62,26 @@ def pre_process_objects(objects, all_obstacles):
         x_list = [x+trophy_radious, x+trophy_radious, x-trophy_radious, x-trophy_radious]
         y_list = [z+trophy_radious, z-trophy_radious, z-trophy_radious, z+trophy_radious]
         bdbox = ObstaclePolygon(x_list, y_list)
-        if not all_obstacles.intersection(bdbox):
-            trophy_box_x, trophy_box_z = x, z
-            random_pick.bdbox = bdbox
-            break
+
+        if plot:
+            plt.cla()
+            plt.xlim((-7, 7))
+            plt.ylim((-7, 7))
+            plt.gca().set_xlim((-7, 7))
+            plt.gca().set_ylim((-7, 7))
+
+            patch1 = PolygonPatch(all_obstacles, fc="green", ec="black", alpha=0.2, zorder=1)
+            plt.gca().add_patch(patch1)
+            bdbox.plot('blue')
+            plt.pause(0.01)
+
+        try:
+            if not all_obstacles.intersection(bdbox):
+                trophy_box_x, trophy_box_z = x, z
+                random_pick.bdbox = bdbox
+                break
+        except:
+            pass
 
     trophy_x, trophy_z = TrophyWithBox.get_location(random_pick.trophy)
 

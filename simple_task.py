@@ -6,7 +6,7 @@ import sys
 
 
 if __name__ == "__main__":
-    start_scene_number = 1
+    start_scene_number = 0
     collector = Frame_collector(scene_dir="simple_task_img", start_scene_number=start_scene_number)
     env = McsEnv(
         task="interaction_scenes", scene_type="transferral", seed=50,
@@ -16,7 +16,6 @@ if __name__ == "__main__":
 
     while env.current_scene < len(env.all_scenes) - 1:
         env.reset()
-        continue
         result = metaController.excecute()
         sys.stdout.flush()
         collector.reset()
