@@ -131,13 +131,13 @@ class TrophyWithBox:
 
     @staticmethod
     def get_location(obj):
-        return obj['shows'][0]['position']['x'], obj['shows'][0]['position']['x']
+        return obj['shows'][0]['position']['x'], obj['shows'][0]['position']['z']
 
 
     @staticmethod
     def set_location(obj, x, z):
         obj['shows'][0]['position']['x'] = x
-        obj['shows'][0]['position']['x'] = z
+        obj['shows'][0]['position']['z'] = z
 
 
 

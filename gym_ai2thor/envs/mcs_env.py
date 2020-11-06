@@ -101,7 +101,7 @@ class McsEnv:
         if self.trophy_config:
             self.scene_config = set_goal_with_trophy(self.scene_config, self.trophy_config)
 
-        # self.step_output = self.controller.start_scene(self.scene_config)
+        self.step_output = self.controller.start_scene(self.scene_config)
         # self.step_output = self.controller.step(action="Pass")
 
 
