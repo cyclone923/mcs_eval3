@@ -8,9 +8,12 @@ from copy import deepcopy
 import matplotlib
 matplotlib.use('TkAgg')
 
-def set_goal_with_trophy(scene_config, box_config):
+def set_goal_with_trophy(scene_config, box_config, only_trophy=False):
     box_config = deepcopy(box_config)
     obstacles = []
+
+    if only_trophy:
+        scene_config['objects'] = []
 
     for obj in scene_config['objects']:
         x_list = []
@@ -33,7 +36,7 @@ def set_goal_with_trophy(scene_config, box_config):
     obstacles.append(ObstaclePolygon(x_list, y_list))
     all_obstacles = MultiPolygon(obstacles)
 
-    random_target = pre_process_objects(box_config['objects'], all_obstacles)
+    random_target = pre_process_objects(box_config['objects'], all_obstacles, only_trophy)
 
     new_scene_config = scene_config.copy()
     new_scene_config['objects'].extend(random_target.get_objects().copy())
@@ -42,7 +45,7 @@ def set_goal_with_trophy(scene_config, box_config):
     return new_scene_config
 
 
-def pre_process_objects(objects, all_obstacles, plot=True):
+def pre_process_objects(objects, all_obstacles, only_trophy=False, plot=True):
     object_ids = ['gift_box', 'sturdy_box', 'suitcase', 'treasure_chest', 'trophy_1', 'trophy_2', 'trophy_3', 'trophy_4']
     for i, x in enumerate(objects):
         assert x['id'] == object_ids[i]
@@ -54,8 +57,11 @@ def pre_process_objects(objects, all_obstacles, plot=True):
     box4 = TrophyWithBox(objects[7], objects[3])
 
     all_objs = [single_trophy, box1, box2, box3, box4]
-    random_pick = random.choice(all_objs)
-    #random_pick = all_objs[4]
+    if only_trophy:
+        random_pick = all_objs[0]
+    else:
+        random_pick = random.choice(all_objs)
+
     trophy_radious = random_pick.get_bonding_box_radius()
     while True:
         x, z = random.random() * 10 - 5, random.random() * 10 - 5
