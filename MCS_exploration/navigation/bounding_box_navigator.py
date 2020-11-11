@@ -10,11 +10,12 @@ from shapely.geometry import Point, Polygon
 import numpy as np
 
 SHOW_ANIMATION = False
+LIMIT_STEPS = 150
 
 class BoundingBoxNavigator:
 
 	# pose is a triplet x,y,theta (heading)
-	def __init__(self, robot_radius=0.22, maxStep=0.25):
+	def __init__(self, robot_radius=0.4, maxStep=0.25):
 		self.agentX = None
 		self.agentY = None
 		self.agentH = None
@@ -92,8 +93,6 @@ class BoundingBoxNavigator:
 
 	def go_to_goal(self, goal_pose, agent, success_distance):
 
-
-
 		self.current_nav_steps = 0
 		self.agentX = agent.game_state.event.position['x']
 		self.agentY = agent.game_state.event.position['z']
@@ -111,7 +110,7 @@ class BoundingBoxNavigator:
 				self.scene_obstacles_dict_roadmap[obstacle_key] = 1
 				roadmap.addObstacle(obstacle)
 
-		while self.current_nav_steps < 150:
+		while True:
 			start_time = time.time()
 
 			for obstacle_key, obstacle in self.scene_obstacles_dict.items():
@@ -129,8 +128,10 @@ class BoundingBoxNavigator:
 					break
 			if not goal_obj_bonding_box:
 				dis_to_goal = math.sqrt((self.agentX-gx)**2 + (self.agentY-gy)**2)
+				# print("Dis to goal point {:.3f}, Suc dis: {:.3f}".format(dis_to_goal, success_distance))
 			else:
 				dis_to_goal = goal_obj_bonding_box.distance(Point(self.agentX, self.agentY))
+				# print("Dis to goal bonding box {:.3f}, Suc dis: {:.3f}".format(dis_to_goal, success_distance))
 
 			if dis_to_goal < self.epsilon:
 				break
@@ -180,6 +181,7 @@ class BoundingBoxNavigator:
 			#print ("get_one_step_move_time taken", get_one_step_move_time)
 
 			if stepSize == None and heading == None:
+				print("Planning Fail")
 				return  False
 
 			# needs to be replaced with turning the agent to the appropriate heading in the simulator, then stepping.
@@ -242,6 +244,10 @@ class BoundingBoxNavigator:
 
 			if agent.game_state.goals_found == True:
 				return
+
+			if self.current_nav_steps == LIMIT_STEPS:
+				print("Reach LIMIT STEPS")
+				return False
 
 		return True
 

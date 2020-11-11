@@ -162,7 +162,6 @@ class SequenceGenerator(object):
 
     def explore_scene_view(self, event, config_filename=None, frame_collector=None):
         number_actions = 0
-        success_distance = 0.3
         self.scene_name = 'transferral_data'
         # print('New episode. Scene %s' % self.scene_name)
         self.agent.reset(self.scene_name, config_filename=config_filename, event=event)
@@ -245,7 +244,7 @@ class SequenceGenerator(object):
             new_end_point[2] = pose[2]
 
             #print("New goal selected : ", new_end_point)
-
+            success_distance = 0.6
             nav_success = self.agent.nav.go_to_goal(new_end_point, self.agent, success_distance)
             exploration_routine.remove(max_visible_position[-1])
 
@@ -409,6 +408,7 @@ class SequenceGenerator(object):
                 if i == 2:
                     return
 
+            success_distance = 0.6
             nav_success = self.agent.nav.go_to_goal(goal_pose_x_z, self.agent, success_distance)
             if nav_success == False:
                 continue

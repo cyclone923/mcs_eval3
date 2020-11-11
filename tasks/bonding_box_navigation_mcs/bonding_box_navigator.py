@@ -9,11 +9,12 @@ import numpy as np
 
 
 SHOW_ANIMATION = False
+LIMIT_STEPS = 2000
 
 class BoundingBoxNavigator:
 
 	# pose is a triplet x,y,theta (heading)
-	def __init__(self, robot_radius=0.22, maxStep=0.25):
+	def __init__(self, robot_radius=0.4, maxStep=0.25):
 		self.agentX = None
 		self.agentY = None
 		self.agentH = None
@@ -102,7 +103,7 @@ class BoundingBoxNavigator:
 				self.scene_obstacles_dict_roadmap[obstacle_key] = 1
 				roadmap.addObstacle(obstacle)
 
-		while self.current_nav_steps < 150:
+		while True:
 			for obstacle_key, obstacle in self.scene_obstacles_dict.items():
 				if self.scene_obstacles_dict_roadmap[obstacle_key] == 0:
 					# print("not added obstacle", self.current_nav_steps)
@@ -118,8 +119,10 @@ class BoundingBoxNavigator:
 					break
 			if not goal_obj_bonding_box:
 				dis_to_goal = math.sqrt((self.agentX-gx)**2 + (self.agentY-gy)**2)
+				# print("Dis to goal point {:.3f}, Suc dis: {:.3f}".format(dis_to_goal, success_distance))
 			else:
 				dis_to_goal = goal_obj_bonding_box.distance(Point(self.agentX, self.agentY))
+				# print("Dis to goal bonding box {:.3f}, Suc dis: {:.3f}".format(dis_to_goal, success_distance))
 
 			if dis_to_goal < self.epsilon:
 				break
@@ -152,6 +155,7 @@ class BoundingBoxNavigator:
 			stepSize, heading = self.get_one_step_move([gx, gy], roadmap)
 
 			if stepSize == None and heading == None:
+				print("Planning Fail")
 				return False
 
 			# needs to be replaced with turning the agent to the appropriate heading in the simulator, then stepping.
@@ -180,6 +184,9 @@ class BoundingBoxNavigator:
 			self.agentY = nav_env.step_output.position['z']
 			self.agentH = nav_env.step_output.rotation / 360 * (2 * math.pi)
 			self.current_nav_steps += 1
+			if self.current_nav_steps == LIMIT_STEPS:
+				print("Reach LIMIT STEPS")
+				return False
 
 		return True
 
