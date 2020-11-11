@@ -1,10 +1,10 @@
 1. Install simulator
 
-As described in the parent repository
+As described in the parent repository. The THOR executable and data folder should be placed in some folder `SIM_PATH`.
 
 2. Download scene descriptions
 
-Download & unzip `https://evaluation-training-scenes.s3.amazonaws.com/eval3/training-passive-physics.zip`
+Download & unzip `https://evaluation-training-scenes.s3.amazonaws.com/eval3/training-passive-physics.zip`.
 
 3. Generate data
 
@@ -12,7 +12,7 @@ Download & unzip `https://evaluation-training-scenes.s3.amazonaws.com/eval3/trai
 python -m masks.data_gen --sim SIM_PATH --scenes SCENES_PATH
 ```
 
-This runs the simulator, translating each scene description in `SCENES_PATH` into a scene history file.
+This runs the simulator, translating each scene description `.json` file in `SCENES_PATH` into a scene history file.
 
 The scenes are processed in a random order, so multiple instances of the above command can be run in parallel to speed up the processing.
 
