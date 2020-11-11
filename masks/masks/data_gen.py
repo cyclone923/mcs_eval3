@@ -118,7 +118,7 @@ def main(sim_path, data_path, filter):
     print(f'Found {len(scenes)} scenes')
     random.shuffle(scenes)
     # Work around stupid sim bug
-    Path('SCENE_HISTORY/evaluation3Training').mkdir(parents=True)
+    Path('SCENE_HISTORY/evaluation3Training').mkdir(parents=True, exist_ok=True)
     convert_scenes(env, scenes)
 
 

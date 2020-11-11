@@ -27,8 +27,7 @@ def process_scene(data):
 def split_obj_masks(mask, num_objs):
     obj_masks = []
     for obj_idx in range(num_objs):
-        mask = (mask == obj_idx)
-        obj_masks.append(mask)
+        obj_masks.append(mask == obj_idx)
     return obj_masks
 
 
