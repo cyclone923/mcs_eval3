@@ -37,6 +37,12 @@ def set_goal_with_trophy(scene_config, box_config, only_trophy=False):
 
     if only_trophy:
         scene_config['objects'] = []
+    else:
+        remove_walls = []
+        for obj in scene_config['objects']:
+            if "wall" not in obj['id']:
+                remove_walls.append(obj)
+        scene_config['objects'] = remove_walls
 
     for obj in scene_config['objects']:
         x_list = []
