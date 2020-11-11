@@ -63,6 +63,8 @@ class BoundingBoxNavigator:
 		self.agentH = None
 
 	def add_obstacle_from_step_output(self, step_output):
+		if step_output is None:
+			return
 		for obj in step_output.object_list:
 			if len(obj.dimensions) > 0 and obj.uuid not in self.scene_obstacles_dict and obj.visible:
 				x_list = []
