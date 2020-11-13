@@ -8,8 +8,8 @@ from shapely.geometry import Point
 import numpy as np
 
 
-SHOW_ANIMATION = True
-LIMIT_STEPS = 100
+SHOW_ANIMATION = False
+LIMIT_STEPS = 350
 
 class BoundingBoxNavigator:
 
