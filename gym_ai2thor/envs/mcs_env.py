@@ -8,6 +8,8 @@ import platform
 import random
 import machine_common_sense as mcs
 from gym_ai2thor.envs.trophy import set_goal_with_trophy
+import shutil
+import json
 
 
 class McsEnv:
@@ -30,6 +32,12 @@ class McsEnv:
             all_scenes = [os.path.join(goal_dir, one_scene) for one_scene in all_scenes]
             assert len(all_scenes) == 1
             self.trophy_config, _ = mcs.load_config_json_file(all_scenes[0])
+            self.debug_dir = os.path.join(task, "debug")
+            try:
+                shutil.rmtree(self.debug_dir)
+            except:
+                pass
+            os.makedirs(self.debug_dir, exist_ok=True)
 
         os.environ['MCS_CONFIG_FILE_PATH'] = os.path.join(os.getcwd(), "mcs_config.yaml")
 
@@ -81,6 +89,8 @@ class McsEnv:
 
         if self.trophy_config:
             self.scene_config = set_goal_with_trophy(self.scene_config, self.trophy_config, only_trophy=False)
+            with open(os.path.join(self.debug_dir, 'box_trophy_{0:0=4d}.json'.format(self.current_scene)), 'w') as fp:
+                json.dump(self.scene_config, fp, indent=4)
 
         self.step_output = self.controller.start_scene(self.scene_config)
         # self.step_output = self.controller.step(action="Pass")
