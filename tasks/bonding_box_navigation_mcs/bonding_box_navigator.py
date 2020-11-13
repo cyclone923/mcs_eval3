@@ -189,7 +189,6 @@ class BoundingBoxNavigator:
 			if self.current_nav_steps >= LIMIT_STEPS:
 				print("Reach LIMIT STEPS")
 				return False
-			print(self.current_nav_steps)
 
 		return True
 
