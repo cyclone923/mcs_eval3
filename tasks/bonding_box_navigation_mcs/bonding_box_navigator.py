@@ -8,8 +8,8 @@ from shapely.geometry import Point
 import numpy as np
 
 
-SHOW_ANIMATION = False
-LIMIT_STEPS = 2000
+SHOW_ANIMATION = True
+LIMIT_STEPS = 100
 
 class BoundingBoxNavigator:
 
@@ -56,8 +56,8 @@ class BoundingBoxNavigator:
 		self.scene_obstacles_dict = {}
 
 	def add_obstacle_from_step_output(self, step_output):
-		if step_output is None:
-			return
+		# if step_output is None:
+		# 	return
 		for obj in step_output.object_list:
 			if len(obj.dimensions) > 0 and obj.uuid not in self.scene_obstacles_dict and obj.visible:
 				x_list = []
@@ -186,9 +186,10 @@ class BoundingBoxNavigator:
 			self.agentY = nav_env.step_output.position['z']
 			self.agentH = nav_env.step_output.rotation / 360 * (2 * math.pi)
 			self.current_nav_steps += 1
-			if self.current_nav_steps == LIMIT_STEPS:
+			if self.current_nav_steps >= LIMIT_STEPS:
 				print("Reach LIMIT STEPS")
 				return False
+			print(self.current_nav_steps)
 
 		return True
 
