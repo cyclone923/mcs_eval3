@@ -17,6 +17,7 @@ from descartes import PolygonPatch
 
 import shapely.geometry as sp
 from MCS_exploration.navigation.dijkstra_search import DijkstraSearch
+from shapely.prepared import prep
 
 show_animation = True
 
@@ -32,6 +33,7 @@ class IncrementalVisibilityRoadMap:
     
     def addObstacle(self, obstacle):
         # add obstacle
+        #self.obstacles = self.obstacles.union(sp.polygon.orient(sp.Polygon(obstacle),sign=1))
         self.obstacles = self.obstacles.union(sp.polygon.orient(sp.Polygon(obstacle),sign=1))
 
         # add nodes for each vertex
@@ -75,7 +77,7 @@ class IncrementalVisibilityRoadMap:
         return not radiusPolygon.intersects(self.obstacles)
 
 
-    def getValidNodeEdges(self, src_node):
+    def getValidNodeEdgesV1(self, src_node):
         #draw a point to each other point and check valid
         node_adj = []
         for node_id, node in enumerate(self.obs_nodes):
@@ -84,6 +86,8 @@ class IncrementalVisibilityRoadMap:
 
         return node_adj
         
+    def getValidNodeEdges(self, src_node):
+        return [ node_id for node_id, node in enumerate(self.obs_nodes) if self.validEdge(src_node, node)]
 
     def planning(self, start_x, start_y, goal_x, goal_y):
 

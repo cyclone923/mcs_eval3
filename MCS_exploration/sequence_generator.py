@@ -5,7 +5,8 @@ from qa_agents import graph_agent
 #import graph_agent
 
 import constants
-from utils import game_util
+#from utils import game_util
+from MCS_exploration.utils import game_util
 #import game_util
 #from mcs import cover_floor
 import cover_floor
@@ -15,10 +16,12 @@ import time
 from shapely.geometry import Point, Polygon
 from tasks.point_goal_navigation.navigator import NavigatorResNet
 from tasks.search_object_in_receptacle.face_turner import FaceTurnerResNet
-
+from MCS_exploration.frame_processing import *
+from MCS_exploration.navigation.visibility_road_map import ObstaclePolygon,IncrementalVisibilityRoadMap
 
 class SequenceGenerator(object):
     def __init__(self,sess, env):
+        #print ("seq generator init")
         self.agent = graph_agent.GraphAgent(env, reuse=True)
         self.game_state = self.agent.game_state
         self.action_util = self.game_state.action_util
@@ -162,21 +165,37 @@ class SequenceGenerator(object):
 
     def explore_scene_view(self, event, config_filename=None, frame_collector=None):
         number_actions = 0
+        success_distance = 0.3
         self.scene_name = 'transferral_data'
         # print('New episode. Scene %s' % self.scene_name)
         self.agent.reset(self.scene_name, config_filename=config_filename, event=event)
 
         self.event = self.agent.game_state.event
+        print ("beginning of explore scene view")
 
         #rotation = self.agent.game_state.event.rotation / 180 * math.pi
         cover_floor.update_seen(self.event.position['x'],self.event.position['z'],self.agent.game_state,self.event.rotation,self.event.camera_field_of_view,self.agent.nav.scene_obstacles_dict.values())
 
         cover_floor.explore_initial_point(self.event.position['x'],self.event.position['z'],self.agent,self.agent.nav.scene_obstacles_dict.values())
         exploration_routine = cover_floor.flood_fill(0,0, cover_floor.check_validity)
+        pose = game_util.get_pose(self.game_state.event)[:3]
+
+        print ("done exploring point and now going to random points")
+        print ("current pose ", pose)
 
         if self.agent.game_state.goals_found:
+            #print ("Object found returning to main ")
+            self.go_to_goal_and_pick()
             return
-        pose = game_util.get_pose(self.game_state.event)[:3]
+    
+        new_end_point = [0]*3
+        new_end_point[0] = 3.3 #self.agent.game_state.goal_object_nearest_point[0]
+        new_end_point[1] = 3.4#self.agent.game_state.goal_object_nearest_point[1]
+        new_end_point[2] = pose[2]
+        success_distance = 0.2 
+        nav_success = self.agent.nav.go_to_goal(new_end_point, self.agent, success_distance) 
+
+        print ("beginning of explore scene view 2")
 
         x_list, y_list = [],[]
 
@@ -198,8 +217,10 @@ class SequenceGenerator(object):
         #print (outer_poly_new.area)
 
         overall_area = abs(x_max-x_min) * abs (y_max-y_min)
+        print ("beginning of explore scene view 3")
 
         while overall_area * 0.65 >  self.agent.game_state.world_poly.area or len(self.agent.game_state.discovered_objects) == 0 :
+            print ("In the main for loop of executtion")
             points_checked = 0
             #z+=1
             max_visible_position = []
@@ -244,7 +265,7 @@ class SequenceGenerator(object):
             new_end_point[2] = pose[2]
 
             #print("New goal selected : ", new_end_point)
-            success_distance = 0.6
+
             nav_success = self.agent.nav.go_to_goal(new_end_point, self.agent, success_distance)
             exploration_routine.remove(max_visible_position[-1])
 
@@ -253,15 +274,18 @@ class SequenceGenerator(object):
 
             self.event = self.agent.game_state.event
             if self.agent.game_state.goals_found:
+                self.go_to_goal_and_pick()
                 return
             cover_floor.explore_point(self.event.position['x'], self.event.position['z'], self.agent,
                                       self.agent.nav.scene_obstacles_dict.values())
             if self.agent.game_state.goals_found :
+                self.go_to_goal_and_pick()
                 return
             if self.agent.game_state.number_actions > constants.MAX_STEPS :
                 print ("Too many actions performed")
                 return
             if len(exploration_routine) == 0:
+                self.go_to_goal_and_pick()
                 print ("explored a lot of points but objects not found")
                 return
 
@@ -304,6 +328,94 @@ class SequenceGenerator(object):
                 return
 
         #self.explore_object(self.agent.game_state.discovered_objects[0])
+
+    def go_to_goal_and_pick(self):
+        
+        displacement = 5.5
+        agent_pos = self.agent.game_state.event.position
+        pose = game_util.get_pose(self.game_state.event)[:3]
+        goal_points = self.agent.game_state.goal_calculated_points
+        obj_occ_map = get_occupancy_from_points( goal_points,self.agent.game_state.occupancy_map.shape)   
+        self.goal_object = polygon_simplify(occupancy_to_polygons( obj_occ_map,self.agent.game_state.grid_size,displacement ))
+        exterior_coords = self.goal_object.exterior.coords.xy
+        #print ("exterior coords" ,exterior_coords)
+        #print ("exterior coords" ,exterior_coords[0])
+        #print ("exterior coords" ,exterior_coords[0][0])
+        
+        self.goal_object = ObstaclePolygon(exterior_coords[0], exterior_coords[1])
+        self.goal_centre_x = np.mean(np.array(self.goal_object.x_list,dtype=object))
+        self.goal_centre_z = np.mean(np.array(self.goal_object.y_list,dtype=object))
+        dist_nearest_points = 1000
+        #x_list = self.goal_object.exterior.coords.xy[0]
+        #y_list = self.goal_object.exterior.coords.xy[1]
+        x_list = self.goal_object.x_list
+        y_list = self.goal_object.y_list
+        #print (x_list)
+        #print (y_list)
+        for x in x_list:
+            for y in y_list:
+                if math.sqrt( (x-agent_pos['x'])**2 + (y-agent_pos['z'])**2 ) < dist_nearest_points :
+                     
+                    self.goal_object_nearest_point = (x,y)
+                    dist_nearest_points = math.sqrt( (x-agent_pos['x'])**2 + (y-agent_pos['z'])**2 )
+
+        new_end_point = [0]*3
+        new_end_point[0] = self.goal_object_nearest_point[0]
+        new_end_point[1] = self.goal_object_nearest_point[1]
+        new_end_point[2] = pose[2]
+        success_distance = 0.4 
+        nav_success = self.agent.nav.go_to_goal(new_end_point, self.agent, success_distance) 
+        
+        print ("Returned to going and picking goal function")
+
+        goal_object_centre = [0]*3
+        goal_object_centre[0] = self.goal_centre_x
+        goal_object_centre[1] = 0.2
+        goal_object_centre[2] = self.goal_centre_z
+        theta = - NavigatorResNet.get_polar_direction(goal_object_centre, self.agent.game_state.event) * 180/math.pi
+        omega = FaceTurnerResNet.get_head_tilt(goal_object_centre, self.agent.game_state.event) - self.agent.game_state.event.head_tilt
+
+        n = int(abs(theta) // 10)
+        m = int(abs(omega) // 10)
+        if theta > 0:
+            action = {'action': 'RotateRight'}
+            for _ in range(n):
+                self.agent.game_state.step(action)
+        else:
+            action = {'action': 'RotateLeft'}
+            for _ in range(n):
+                self.agent.game_state.step(action)
+
+        if omega > 0:
+            action = {'action': 'LookDown'}
+            for _ in range(m):
+                self.agent.game_state.step(action)
+        else:
+            action = {'action': 'LookUp'}
+            for _ in range(m):
+                self.agent.game_state.step(action)
+        #goal_pixel_coords = np.where(self.agent.game_state.object_mask==self.agent.game_state.goal_id )
+
+        #goal_pixel_coords = []
+        arr_mask = np.array(self.agent.game_state.event.object_mask_list[-1])
+        #for x in range(arr_mask.shape[0]):
+        #    for y in range(arr_mask.shape[1]):
+        reshaped_obj_masks = self.agent.game_state.object_mask.reshape(arr_mask.shape[:2])
+        goal_pixel_coords = np.where(reshaped_obj_masks==self.agent.game_state.goal_id )
+        print (len(goal_pixel_coords[0]))  
+        
+        print ("xmax,xmin", np.amax(goal_pixel_coords[0]), np.amin(goal_pixel_coords[0]))
+        print ("ymax,ymin", np.amax(goal_pixel_coords[1]), np.amin(goal_pixel_coords[1]))
+        x = ((np.amax(goal_pixel_coords[0]) - np.amin(goal_pixel_coords[0]))/2) + np.amin(goal_pixel_coords[0])
+        y = ((np.amax(goal_pixel_coords[1]) - np.amin(goal_pixel_coords[1]))/2) + np.amin(goal_pixel_coords[1])
+
+        print (x,y)
+                
+        action = {'action':"PickupObject", 'x': x, 'y':y}
+        self.agent.game_state.step(action)
+
+        print ("Done executing ")
+
 
     def explore_object(self, object_id_to_search):
         uuid = object_id_to_search
@@ -408,7 +520,6 @@ class SequenceGenerator(object):
                 if i == 2:
                     return
 
-            success_distance = 0.6
             nav_success = self.agent.nav.go_to_goal(goal_pose_x_z, self.agent, success_distance)
             if nav_success == False:
                 continue

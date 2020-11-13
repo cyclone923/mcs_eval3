@@ -11,9 +11,14 @@ class GraphAgent(object):
     def __init__(self, env, reuse=True, num_unrolls=1, game_state=None, net_scope=None):
         self.nav_radius = 0.1
         self.nav = bounding_box_navigator.BoundingBoxNavigator(self.nav_radius)
+        self.nav_eval3 = bounding_box_navigator.BoundingBoxNavigator(self.nav_radius)
         if game_state is None:
+            #print ("graph agent init and game state is none")
             self.game_state = GameState(env=env)
-            self.game_state.add_obstacle_func = self.nav.add_obstacle_from_step_output
+            #self.game_state.add_obstacle_func = self.nav.add_obstacle_from_step_output
+            self.game_state.add_obstacle_func = self.nav.add_obstacle_from_bounding_boxes
+            self.game_state.get_obstacles = self.nav.get_obstacles
+            self.game_state.add_obstacle_func_eval3 = self.nav_eval3.add_obstacle_from_bounding_boxes
             #self.game_state = GameState(sess=sess,env=env)
         else:
             self.game_state = game_state

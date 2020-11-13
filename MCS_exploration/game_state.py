@@ -2,14 +2,19 @@ import time
 import random
 import numpy as np
 
-from utils import game_util
-from utils import action_util
+#from utils import game_util
+#from utils import action_util
+from MCS_exploration.utils import game_util
+from MCS_exploration.utils import action_util
 #from darknet_object_detection import detector
 from machine_common_sense import StepMetadata
 from machine_common_sense import ObjectMetadata
 from machine_common_sense import Util
 from cover_floor import *
 import shapely.geometry.polygon as sp
+from MCS_exploration.navigation.visibility_road_map import ObstaclePolygon,IncrementalVisibilityRoadMap
+from MCS_exploration.frame_processing import *
+
 
 import constants
 
@@ -66,6 +71,7 @@ class GameState(object):
             self.env = game_util.create_env()
         else :
             self.env = env
+        #print ("game state init")
         self.action_util = action_util.ActionUtil()
         self.local_random = random.Random()
         self.im_count = 0
@@ -74,6 +80,7 @@ class GameState(object):
         self.discovered_objects = []
         self.number_actions = 0
         self.add_obstacle_func = None
+        self.add_obstacle_func_eval3 = None
         self.goals_found = False
         self.goals = []
         self.world_poly = None
@@ -81,6 +88,28 @@ class GameState(object):
         self.new_object_found = False
         self.goal_in_hand = False
         self.id_goal_in_hand = None
+        self.get_obstacles = None
+        self.goal_object = None
+        self.goal_bounding_box = None
+        self.goal_calculated_points = None
+        self.grid_size = 0.1 
+        #self.grid_size = 1 
+        self.map_width = 12
+        self.map_length = 12                                                                          
+        self.occupancy_map = self.occupancy_map_init() #* unexplored
+        self.object_mask = None
+        self.goal_id = None
+        self.pose_estimate = np.zeros((3,1),dtype = np.float64)
+
+    def occupancy_map_init(self):
+        #rows = int(self.map_width//self.grid_size)
+        #cols = int(self.map_length//self.grid_size)
+        rows = int(self.map_width//self.grid_size)
+        cols = int(self.map_length//self.grid_size)
+                                                                           
+        unexplored = 0 
+        occupancy_map = np.zeros((rows,cols)) 
+        return occupancy_map
 
     def process_frame(self, run_object_detection=False):
         self.im_count += 1
@@ -153,9 +182,35 @@ class GameState(object):
                     self.discovered_objects[-1]['explored'] = 0
                     self.discovered_objects[-1]['openable'] = None
                     #self.discovered_objects[-1]['agent_position'] = None
-            self.add_obstacle_func(self.event)
+
+            for elem in self.event.object_list:
+                if self.event.goal.metadata['target']['id'] == elem.uuid :
+                    self.goal_object = elem
+            
+            #print (self.goal_object)
+            x_list = []
+            z_list = []
+            for i in range(4,8):    
+                x_list.append(self.goal_object.dimensions[i]['x'])
+                z_list.append(self.goal_object.dimensions[i]['z'])
+            self.goal_bounding_box = ObstaclePolygon(x_list,z_list)
+            
+            position = self.event.position
+            current_angle = math.radians(self.event.rotation)
+            self.pose_estimate = np.array([float(position['x']),float(position['z']),current_angle]).reshape(3, 1)
+            agent_pos = {'x': self.pose_estimate[0][0], 'y': 0.465, 'z':self.pose_estimate[1][0]}
+            rotation = math.degrees(self.pose_estimate[2][0])
+            self.step_output = self.event
+            #if self.number_actions %3 == 0 :
+            bounding_boxes =convert_observation(self,self.number_actions,agent_pos, rotation)
+            #self.add_obstacle_func(self.event)
+            self.add_obstacle_func(bounding_boxes)
+            #self.add_obstacle_func_eval3(bounding_boxes)
+            #self.add_obstale_func_eval3()#(self.event)
             #print ("type of event 2 : ", type(self.event))
             lastActionSuccess = self.event.return_status
+            #print (self.pose_estimate)
+            #print (self.step_output.position, math.radians(self.step_output.rotation))
             #break
 
 
@@ -174,22 +229,31 @@ class GameState(object):
 
         #print (action)
         # The object nearest the center of the screen is open/closed if none is provided.
+        vel = 0
+        ang_rate = 0
 
         if action['action'] == 'RotateRight':
             action = "RotateLeft"
+            ang_rate = math.radians(float(-10.0))
         elif action['action'] == 'RotateLeft':
             action = "RotateRight"
+            ang_rate = math.radians(float(10.0))
         elif action['action'] == 'LookDown':
             action = "LookDown"
         elif action['action'] == 'LookUp':
             action = "LookUp"
         elif action['action'] == 'MoveAhead':
+            vel = 0.1
             action =  'MoveAhead'
             #action =  'MoveAhead, amount=0.5'
             #action =  'MoveAhead, amount=0.2'
         elif action['action'] == 'OpenObject':
             action = "OpenObject,objectId="+ str(action["objectId"])
             #print ("constructed action for open object", action)
+        
+        elif action['action'] == 'PickupObject':
+            #action = "PickupObject,objectId=" + str(action['objectId'])
+            action = "PickupObject,objectImageCoordsX="+str(int(action['x']))+",objectImageCoordsY="+str(int(action['y']))
         elif action['action'] == 'PickupObject':
             action = "PickupObject,objectId=" + str(action['objectId'])
 
@@ -225,25 +289,88 @@ class GameState(object):
                 self.discovered_objects[-1]['locationParent'] = None
                 self.discovered_objects[-1]['openable'] = None
 
-        self.add_obstacle_func(self.event)
+        #print ("self event goal", self.event.goal.__dict__)
+        #print ("self objects" , self.event.object_list[0])
+        #exit()
+        agent_movement = np.array([vel, ang_rate],dtype=np.float64).reshape(2, 1)
+        self.pose_estimate = self.motion_model(self.pose_estimate,agent_movement) 
+        #agent_pos = self.event.position
+        #rotation = self.event.rotation
+        agent_pos = {'x': self.pose_estimate[0][0], 'y': 0.465, 'z':self.pose_estimate[1][0]}
+        rotation = math.degrees(self.pose_estimate[2][0])
+        self.step_output = self.event
+        bounding_boxes = convert_observation(self,self.number_actions,agent_pos, rotation)# ,self.occupancy_map) 
+        #self.add_obstacle_func(self.event)
+        self.add_obstacle_func(bounding_boxes)
+        #self.add_obstacle_func_eval3(bounding_boxes)
         self.number_actions += 1
+        #print (self.pose_estimate)
+        #print (self.step_output.position, math.radians(self.step_output.rotation))
 
-        self.times[2, 0] += time.time() - t_start
-        self.times[2, 1] += 1
+        #self.times[2, 0] += time.time() - t_start
+        #self.times[2, 1] += 1
         # if self.times[2, 1] % 100 == 0:
         #     print('env step time %.3f' % (self.times[2, 0] / self.times[2, 1]))
 
+        #print ("return status from step " , self.event.return_status)
         #if self.event.metadata['lastActionSuccess']:
         if self.event.return_status :
             self.process_frame()
         else :
             print ("Failed status : ",self.event.return_status )
 
-        for elem in self.discovered_explored:
-            if elem in self.goals:
-                #total_goal_objects_found[scene_type] += 1
-                self.goals.remove(elem)
+    
+        #goal_occupancy_map = 
 
-        if len(self.goals) == 0 :
+        '''
+        #print (self.event.object_mask_list)
+        min_obstacle_area = 100000
+        for obstacle_id,obstacle_polygon in self.get_obstacles().items():
+            print ("obstcle poly area",obstacle_polygon.area)
+            if obstacle_polygon.area < min_obstacle_area :
+                min_area_obstacle = obstacle_id
+                min_obstacle_area = obstacle_polygon.area
+
+        epsilon = 1.1* grid_size * grid_size
+        if  (min_obstacle_area) < epsilon:
+            print ("small area")
+            #self.goal_centre_y = 
+            #print (self.goal_centre_x)
+            #print (self.goal_centre_z)
+            #print (agent_pos)  
+            #print (self.goal_object_nearest_point)
             self.goals_found = True
+        '''
+        #for elem in self.discovered_explored:
+        #    if elem in self.goals:
+        #        #total_goal_objects_found[scene_type] += 1
+        #        self.goals.remove(elem)
 
+        #if len(self.goals) == 0 :
+        #    self.goals_found = True
+
+
+    def motion_model(self, x, u):
+        DT = 1.0
+        #u = np.array([vel, ang_rate]).reshape(2, 1)
+        F = np.array([[1.0, 0.0, 0.0],
+                      [0.0, 1.0, 0.0],
+                      [0.0, 0.0, 1.0]])
+
+        B = np.array([[DT * math.sin(x[2, 0] ), 0.0],
+                      [DT * math.cos(x[2, 0] ), 0.0],
+                      [0.0, DT]])
+
+        x = F @ x + B @ u
+
+        #print ('x',x)
+        #print ('B @ u', B @ u)
+
+        #print ('x after update ',x, "\n")
+        x[2, 0] = self.pi_2_pi(x[2, 0])
+
+        return x
+
+    def pi_2_pi(self, angle):
+        #return ((angle + math.pi) % (2 * math.pi)) - math.pi
+        return (angle) % (2 * math.pi)
