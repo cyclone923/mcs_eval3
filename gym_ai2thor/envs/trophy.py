@@ -76,7 +76,7 @@ def set_goal_with_trophy(scene_config, box_config, only_trophy=False):
 
 def pre_process_objects(objects, all_obstacles):
 
-    if random.random() > 0.5:
+    if random.random() > 0:
         # args = TROPHY_OPTION['single_trophy'](objects)
         valid_keys = random.choice(list(TROPHY_OPTION.keys()))
         args = TROPHY_OPTION[valid_keys](objects)
