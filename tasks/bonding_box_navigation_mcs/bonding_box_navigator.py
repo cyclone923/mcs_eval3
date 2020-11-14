@@ -10,13 +10,13 @@ from shapely.geometry import Point
 import numpy as np
 
 
-SHOW_ANIMATION = False
+SHOW_ANIMATION = True
 LIMIT_STEPS = 350
 
 class BoundingBoxNavigator:
 
 	# pose is a triplet x,y,theta (heading)
-	def __init__(self, robot_radius=0.4, maxStep=0.25):
+	def __init__(self, robot_radius=0.3, maxStep=0.1):
 		self.agentX = None
 		self.agentY = None
 		self.agentH = None
@@ -161,6 +161,7 @@ class BoundingBoxNavigator:
 				plt.pause(0.01)
 
 			stepSize, heading = self.get_one_step_move([gx, gy], roadmap)
+			print(stepSize, heading)
 
 			if stepSize == None and heading == None:
 				print("Planning Fail")

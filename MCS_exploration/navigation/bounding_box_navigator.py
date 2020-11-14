@@ -10,13 +10,13 @@ import time
 from shapely.geometry import Point, Polygon
 import numpy as np
 
-SHOW_ANIMATION = False
+SHOW_ANIMATION = True
 LIMIT_STEPS = 350
 
 class BoundingBoxNavigator:
 
 	# pose is a triplet x,y,theta (heading)
-	def __init__(self, robot_radius=0.4, maxStep=0.25):
+	def __init__(self, robot_radius=0.3, maxStep=0.1):
 		self.agentX = None
 		self.agentY = None
 		self.agentH = None
