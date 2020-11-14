@@ -31,7 +31,7 @@ class MetaController:
         self.obj_env = McsObjWrapper(env)
 
         # self.nav = NavigatorResNet(get_action_space_from_names(self.nav_env.action_names))
-        self.nav = BoundingBoxNavigator()
+        self.nav = BoundingBoxNavigator(robot_radius=0.25)
         if isinstance(self.nav, BoundingBoxNavigator):
             self.env.add_obstacle_func = self.nav.add_obstacle_from_step_output
         self.face = FaceTurnerResNet(get_action_space_from_names(self.face_env.action_names))

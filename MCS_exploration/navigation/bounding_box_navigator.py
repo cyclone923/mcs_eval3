@@ -16,7 +16,7 @@ LIMIT_STEPS = 350
 class BoundingBoxNavigator:
 
 	# pose is a triplet x,y,theta (heading)
-	def __init__(self, robot_radius=0.3, maxStep=0.1):
+	def __init__(self, robot_radius, maxStep=0.1):
 		self.agentX = None
 		self.agentY = None
 		self.agentH = None
@@ -64,8 +64,6 @@ class BoundingBoxNavigator:
 		self.agentH = None
 
 	def add_obstacle_from_step_output(self, step_output):
-		# if step_output is None:
-		# 	return
 		for obj in step_output.object_list:
 			if len(obj.dimensions) > 0 and obj.uuid not in self.scene_obstacles_dict and obj.visible:
 				x_list = []
@@ -143,23 +141,11 @@ class BoundingBoxNavigator:
 			if dis_to_goal < self.epsilon:
 				break
 
-			end_time = time.time()
-			roadmap_creatiion_time = end_time-start_time
-			#print("roadmap creation time", roadmap_creatiion_time)
-
-			start_time = time.time()
-
 			fov = FieldOfView([sx, sy, 0], 42.5 / 180.0 * math.pi, self.scene_obstacles_dict.values())
 			fov.agentX = self.agentX
 			fov.agentY = self.agentY
 			fov.agentH = self.agentH
 			poly = fov.getFoVPolygon(15)
-			end_time = time.time()
-
-			time_taken_part_1 = end_time-start_time
-
-			#print ("time taken till creating FOV after roadmap",time_taken_part_1)
-
 
 			if SHOW_ANIMATION:
 				plt.cla()
@@ -168,7 +154,6 @@ class BoundingBoxNavigator:
 				plt.gca().set_xlim((-7, 7))
 				plt.gca().set_ylim((-7, 7))
 
-				# plt.plot(self.agentX, self.agentY, "or")
 				circle = plt.Circle((self.agentX, self.agentY), radius=self.radius, color='r')
 				plt.gca().add_artist(circle)
 				plt.plot(gx, gy, "x")
@@ -184,9 +169,6 @@ class BoundingBoxNavigator:
 			stepSize, heading = self.get_one_step_move([gx, gy], roadmap)
 			end_time = time.time()
 
-			get_one_step_move_time = end_time-start_time
-			#print ("get_one_step_move_time taken", get_one_step_move_time)
-
 			if stepSize == None and heading == None:
 				print("Planning Fail")
 				return  False
@@ -194,7 +176,6 @@ class BoundingBoxNavigator:
 			# needs to be replaced with turning the agent to the appropriate heading in the simulator, then stepping.
 			# the resulting agent position / heading should be used to set plan.agent* values.
 
-			start_time = time.time()
 
 			rotation_degree = heading / (2 * math.pi) * 360 - agent.game_state.event.rotation
 
@@ -213,8 +194,6 @@ class BoundingBoxNavigator:
 				for _ in range(n):
 					agent.game_state.step({'action': 'RotateRight'})
 
-			start_time = time.time()
-
 			rotation = agent.game_state.event.rotation
 			self.agentX = agent.game_state.event.position['x']
 			self.agentY = agent.game_state.event.position['z']
@@ -224,15 +203,6 @@ class BoundingBoxNavigator:
 									self.scene_obstacles_dict.values())
 
 
-			end_time = time.time()
-			action_processing_time_taken = end_time-start_time
-			#print ("action processing taken", action_processing_time_taken)
-
-			#if abs(rotation_degree) > 1e-2:
-			#	if 360 - abs(rotation_degree) > 1e-2:
-			#		continue
-
-			#agent.game_state.step(action="MoveAhead", amount=0.5)
 			action={'action':"MoveAhead"}
 			agent.step(action)
 			rotation = agent.game_state.event.rotation
@@ -242,7 +212,6 @@ class BoundingBoxNavigator:
 
 			cover_floor.update_seen(self.agentX, self.agentY, agent.game_state, rotation, 42.5,
 									self.scene_obstacles_dict.values())
-
 
 			self.current_nav_steps += 1
 

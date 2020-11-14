@@ -16,7 +16,7 @@ LIMIT_STEPS = 350
 class BoundingBoxNavigator:
 
 	# pose is a triplet x,y,theta (heading)
-	def __init__(self, robot_radius=0.3, maxStep=0.1):
+	def __init__(self, robot_radius, maxStep=0.1):
 		self.agentX = None
 		self.agentY = None
 		self.agentH = None
@@ -37,7 +37,6 @@ class BoundingBoxNavigator:
 		except ValueError:
 			return None, None
 
-		# print(i)
 		# execute a small step along that plan by
 		# turning to face the first waypoint
 		if len(pathX) == 1 and len(pathY) == 1:
@@ -58,8 +57,6 @@ class BoundingBoxNavigator:
 		self.scene_obstacles_dict = {}
 
 	def add_obstacle_from_step_output(self, step_output):
-		# if step_output is None:
-		# 	return
 		for obj in step_output.object_list:
 			if len(obj.dimensions) > 0 and obj.uuid not in self.scene_obstacles_dict and obj.visible:
 				x_list = []
@@ -161,7 +158,7 @@ class BoundingBoxNavigator:
 				plt.pause(0.01)
 
 			stepSize, heading = self.get_one_step_move([gx, gy], roadmap)
-			print(stepSize, heading)
+			# print(stepSize, heading)
 
 			if stepSize == None and heading == None:
 				print("Planning Fail")
