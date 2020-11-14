@@ -32,10 +32,10 @@ class BoundingBoxNavigator:
 
 	def get_one_step_move(self, goal, roadmap):
 
-		#try:
-		pathX, pathY = roadmap.planning(self.agentX, self.agentY, goal[0], goal[1])
-		#except ValueError:
-		#	return None, None
+		try:
+			pathX, pathY = roadmap.planning(self.agentX, self.agentY, goal[0], goal[1])
+		except ValueError:
+			return None, None
 
 		# print(i)
 		# execute a small step along that plan by

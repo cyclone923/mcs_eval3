@@ -47,7 +47,7 @@ class Node(object):
         self.y = y
         self.h = h
         self.g = g
-        self.f = h+g
+        self.f = 5*h+g
         self.prev = prev
 
     def __hash__(self):
@@ -61,7 +61,7 @@ class Node(object):
         return not self.__eq__(other)
 
     def __lt__(self, other):
-        return self.h < other.h
+        return self.f < other.f
 
     def __str__(self):
         return "Node({:.3f}, {:.3f}, {:.3f}, {:.3f}, {:.3f})".format(self.x, self.y, self.h, self.g, self.f)
