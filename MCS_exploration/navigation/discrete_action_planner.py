@@ -69,7 +69,7 @@ class Node(object):
 class DiscreteActionPlanner:
 
     def __init__(self, robot_radius, obstacles, eps=0.2, do_plot=False):
-        self.robot_radius = robot_radius*1.05
+        self.robot_radius = robot_radius*1.1
         self.obstacles = (unary_union(obstacles))
         self.eps = eps
         self.step = 0.1
@@ -119,10 +119,16 @@ class DiscreteActionPlanner:
 
         i = 0
 
+        nearest = Node(0,0,np.Inf,0,None)
+
         while openList and openList[0].h > self.eps and i < max_exp :
             curr = heappop(openList)
             openSet.remove(curr)
             closedSet.add(curr)
+
+            if curr.h < nearest.h:
+                nearest = curr
+
             i += 1
             #print("Exp # {:d} -- |Open| = {:d} -- |Closed| = {:d}".format(i, len(openList), len(closedSet)))
             # add any successors that arent already in the open/closed set
@@ -141,16 +147,19 @@ class DiscreteActionPlanner:
 
         if openList and openList[0].h <= self.eps:
             path = [openList[0]]
-            while path[-1].prev:
-                path.append(path[-1].prev)
-            path.reverse()
-            self.existing_plan = [ (n.x, n.y) for n in path ]
+        else:
+            path = [nearest]
 
-            return [p.x for p in path], [p.y for p in path]
+        while path[-1].prev:
+            path.append(path[-1].prev)
+        path.reverse()
+        self.existing_plan = [ (n.x, n.y) for n in path ]
+
+        return [p.x for p in path], [p.y for p in path]
 
         # what do do when we find no path? well... this often happens when the final step forward to the goal radius would result in a collision. We arent modelling that so just tell it to step forward anyway?
-        return [goal_x], [goal_y]
-        raise ValueError("Planner failed to find a path")
+        #return [goal_x], [goal_y]
+        #raise ValueError("Planner failed to find a path")
         
     def validSuccessors(self, loc, goal, poly):
         return [ Node(loc.x+x, loc.y+y, self.heurstic(loc.x+x, loc.y+y, goal.x, goal.y), loc.g+self.step, loc) for x,y in self.offsets if validEdge( (loc.x, loc.y), (loc.x+x, loc.y+y), poly, self.robot_radius) ]
