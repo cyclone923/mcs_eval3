@@ -1,5 +1,7 @@
 from MCS_exploration.navigation.visibility_road_map import IncrementalVisibilityRoadMap,ObstaclePolygon
+from MCS_exploration.navigation.discrete_action_planner import DiscreteActionPlanner
 from MCS_exploration.navigation.fov import FieldOfView
+
 
 import random
 import math
@@ -30,10 +32,10 @@ class BoundingBoxNavigator:
 
 	def get_one_step_move(self, goal, roadmap):
 
-		try:
-			pathX, pathY = roadmap.planning(self.agentX, self.agentY, goal[0], goal[1])
-		except ValueError:
-			return None, None
+		#try:
+		pathX, pathY = roadmap.planning(self.agentX, self.agentY, goal[0], goal[1])
+		#except ValueError:
+		#	return None, None
 
 		# print(i)
 		# execute a small step along that plan by
@@ -96,14 +98,18 @@ class BoundingBoxNavigator:
 		gx, gy = goal[0], goal[2]
 		sx, sy = self.agentX, self.agentY
 
-		roadmap = IncrementalVisibilityRoadMap(self.radius, do_plot=False)
+		#roadmap = IncrementalVisibilityRoadMap(self.radius, do_plot=False)
 		for obstacle_key, obstacle in self.scene_obstacles_dict.items():
 			self.scene_obstacles_dict_roadmap[obstacle_key] = 0
 
+		obs = []
 		for obstacle_key, obstacle in self.scene_obstacles_dict.items():
 			if self.can_add_obstacle(obstacle, (gx, gy)):
 				self.scene_obstacles_dict_roadmap[obstacle_key] = 1
-				roadmap.addObstacle(obstacle)
+				#roadmap.addObstacle(obstacle)
+				obs.append(obstacle)
+
+		roadmap = DiscreteActionPlanner(self.radius, obs)
 
 		while True:
 			for obstacle_key, obstacle in self.scene_obstacles_dict.items():

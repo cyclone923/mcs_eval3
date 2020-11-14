@@ -1,5 +1,6 @@
 #from tasks.bonding_box_navigation_mcs.visibility_road_map import ObstaclePolygon,IncrementalVisibilityRoadMap
 from MCS_exploration.navigation.visibility_road_map import ObstaclePolygon,IncrementalVisibilityRoadMap
+from MCS_exploration.navigation.discrete_action_planner import DiscreteActionPlanner
 import random
 import math
 import matplotlib.pyplot as plt
@@ -103,14 +104,18 @@ class BoundingBoxNavigator:
 
 		gx, gy = goal_pose[0], goal_pose[1]
 		sx, sy = self.agentX, self.agentY
-		roadmap = IncrementalVisibilityRoadMap(self.radius, do_plot=False)
+		#roadmap = IncrementalVisibilityRoadMap(self.radius, do_plot=False)
 		for obstacle_key, obstacle in self.scene_obstacles_dict.items():
 			self.scene_obstacles_dict_roadmap[obstacle_key] = 0
 
+		obs = []
 		for obstacle_key, obstacle in self.scene_obstacles_dict.items():
 			if self.can_add_obstacle(obstacle, (gx, gy)):
 				self.scene_obstacles_dict_roadmap[obstacle_key] = 1
-				roadmap.addObstacle(obstacle)
+				obs.append(obstacle)
+				#roadmap.addObstacle(obstacle)
+
+		roadmap = DiscreteActionPlanner(self.radius, obs)
 
 		while True:
 			start_time = time.time()
