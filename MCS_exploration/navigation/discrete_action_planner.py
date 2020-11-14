@@ -47,16 +47,16 @@ class Node(object):
         self.y = y
         self.h = h
         self.g = g
-        self.f = 5*h+g
+        self.f = 10*h+g
         self.prev = prev
 
     def __hash__(self):
-        return hash( (self.x, self.y) )
+        #hash up to 4 digits
+        return hash( ((self.x*1000)//1000, (self.y*1000)//1000 ) )
 
     def __eq__(self, other):
         return self.x==other.x and self.y==other.y
-        #3return math.sqrt((self.x - other.x)**2 + (self.y - other.y)**2) < 0.01
-
+        
     def __ne__(self, other):
         return not self.__eq__(other)
 
@@ -68,19 +68,14 @@ class Node(object):
 
 class DiscreteActionPlanner:
 
-    def __init__(self, robot_radius, obstacles, eps=0.1, do_plot=False):
-        self.robot_radius = robot_radius*1.1
+    def __init__(self, robot_radius, obstacles, eps=0.2, do_plot=False):
+        self.robot_radius = robot_radius*1.05
         self.obstacles = (unary_union(obstacles))
         self.eps = eps
         self.step = 0.1
         self.turn = 10
         self.offsets = [ (math.sin(a)*self.step, math.cos(a)*self.step) for a in [self.turn*x/180*np.pi for x in range(1,360//self.turn)]]
-
         self.existing_plan = None
-
-        # if not ray.is_initialized():
-        #     num_cpus = psutil.cpu_count(logical=False)
-        #     ray.init(num_cpus=num_cpus,ignore_reinit_error=True)
         
 
     def addObstacle(self, obstacle):
@@ -93,7 +88,7 @@ class DiscreteActionPlanner:
         else:
             self.obstacles = MultiPolygon()
 
-    def planning(self, start_x, start_y, goal_x, goal_y):
+    def planning(self, start_x, start_y, goal_x, goal_y, max_exp = 1000):
 
         poly = prep(self.obstacles)
 
@@ -113,22 +108,28 @@ class DiscreteActionPlanner:
         #pr = cProfile.Profile()
         #pr.enable()
         
-        openSet = [  Node(start_x, start_y, self.heurstic(start_x, start_y, goal_x, goal_y), 0, None) ]
+        #use a max heap for the open set ordered by heuristic
+        openList = [  Node(start_x, start_y, self.heurstic(start_x, start_y, goal_x, goal_y), 0, None) ]
+
+        #use hash-based set operations to detect duplication in O(1)
+        openSet = set(openList)
         closedSet = set()
+
         goal = Node(goal_x, goal_y, 0, 0, None)
 
-        while openSet and openSet[0].h > self.eps :
-            curr = heappop(openSet)
-            closedSet.add(curr)
+        i = 0
 
-            # ATTENTION: THIS SHOULD REALLY BE DONE BUT IT IS VERY SLOW
+        while openList and openList[0].h > self.eps and i < max_exp :
+            curr = heappop(openList)
+            openSet.remove(curr)
+            closedSet.add(curr)
+            i += 1
+            #print("Exp # {:d} -- |Open| = {:d} -- |Closed| = {:d}".format(i, len(openList), len(closedSet)))
             # add any successors that arent already in the open/closed set
             for s in filter(lambda x: x not in openSet and x not in closedSet, self.validSuccessors(curr, goal, poly)):
-                heappush(openSet, s)
+                heappush(openList, s)
+                openSet.add(s)
             
-            # THIS IS BAD
-            #for s in self.validSuccessors(curr, goal, poly):
-            #    heappush(openSet, s)
              
 
         #pr.disable()
@@ -138,8 +139,8 @@ class DiscreteActionPlanner:
         #ps.print_stats()
         #print(s.getvalue())
 
-        if openSet and openSet[0].h <= self.eps:
-            path = [openSet[0]]
+        if openList and openList[0].h <= self.eps:
+            path = [openList[0]]
             while path[-1].prev:
                 path.append(path[-1].prev)
             path.reverse()
@@ -147,6 +148,8 @@ class DiscreteActionPlanner:
 
             return [p.x for p in path], [p.y for p in path]
 
+        # what do do when we find no path? well... this often happens when the final step forward to the goal radius would result in a collision. We arent modelling that so just tell it to step forward anyway?
+        return [goal_x], [goal_y]
         raise ValueError("Planner failed to find a path")
         
     def validSuccessors(self, loc, goal, poly):
