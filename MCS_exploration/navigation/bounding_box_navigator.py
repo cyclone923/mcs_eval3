@@ -9,12 +9,7 @@ import cover_floor
 import time
 from shapely.geometry import Point, Polygon
 import numpy as np
-import matplotlib.patches as patches
-import pylab
 
-SHOW_ANIMATION = True
-SHOW_ANIMATION = False
-LIMIT_STEPS = 350
 SHOW_ANIMATION = True
 LIMIT_STEPS = 350
 
@@ -133,7 +128,6 @@ class BoundingBoxNavigator:
 			obj_id += 1
 		#print("obj_id = ", obj_id)
         
-
 	#def go_to_goal(self, nav_env, goal, success_distance, epsd_collector=None, frame_collector=None):
 	def can_add_obstacle(self, obstacle, goal):
 		return not obstacle.contains_goal(goal) and obstacle.distance(Point(goal[0], goal[1])) > 0.5
@@ -142,8 +136,6 @@ class BoundingBoxNavigator:
 
 	def go_to_goal(self, goal_pose, agent, success_distance):
 
-		global SHOW_ANIMATION
-		#print("in go to goal", goal_pose)
 		self.current_nav_steps = 0
 		self.agentX = agent.game_state.event.position['x']
 		self.agentY = agent.game_state.event.position['z']
@@ -155,30 +147,6 @@ class BoundingBoxNavigator:
 		#roadmap = IncrementalVisibilityRoadMap(self.radius, do_plot=False)
 		for obstacle_key, obstacle in self.scene_obstacles_dict.items():
 			self.scene_obstacles_dict_roadmap[obstacle_key] = 0
-		fov = FieldOfView([sx, sy, 0], 42.5 / 180.0 * math.pi, self.scene_obstacles_dict.values())
-		fov.agentX = self.agentX
-		fov.agentY = self.agentY
-		fov.agentH = self.agentH
-		poly = fov.getFoVPolygon(15)
-		SHOW_ANIMATION = False
-		if SHOW_ANIMATION:
-			plt.cla()
-			plt.xlim((-7, 7))
-			plt.ylim((-7, 7))
-			plt.gca().set_xlim((-7, 7))
-			plt.gca().set_ylim((-7, 7))
-			# plt.plot(self.agentX, self.agentY, "or")
-			circle = plt.Circle((self.agentX, self.agentY), radius=self.radius, color='r')
-			plt.gca().add_artist(circle)
-			plt.plot(gx, gy, "x")
-			poly.plot("red")
-			for obstacle in self.scene_obstacles_dict.values():
-				obstacle.plot("green")
-			plt.axis("equal")
-			#print ("in show animation and trying to save fig")
-			#plt.savefig("shapely_output.png")
-			plt.close()
-		#SHOW_ANIMATION = True
 
 		obs = []
 		start_time = time.time()
@@ -188,13 +156,12 @@ class BoundingBoxNavigator:
 				obs.append(obstacle)
 				#roadmap.addObstacle(obstacle)
 
-		3print ("initial roadmap creation time" , time.time()-start_time)
 		roadmap = DiscreteActionPlanner(self.radius, obs)
+		print ("initial roadmap creation time" , time.time()-start_time)
 
 		while True:
 			start_time = time.time()
 
-			roadmap = IncrementalVisibilityRoadMap(self.radius, do_plot=False)
 			for obstacle_key, obstacle in self.scene_obstacles_dict.items():
 				if self.scene_obstacles_dict_roadmap[obstacle_key] == 0:
 					#print ("not added obstacle", self.current_nav_steps)
@@ -202,9 +169,8 @@ class BoundingBoxNavigator:
 						#print ("adding new obstacles ", self.current_nav_steps)
 						self.scene_obstacles_dict_roadmap[obstacle_key] =1
 						roadmap.addObstacle(obstacle)
-			#print("every step roadmap creation time", time.time()-start_time)
+			print("every step roadmap creation time", time.time()-start_time)
 
-			'''
 			goal_obj_bonding_box = None
 			for id, box in self.scene_obstacles_dict.items():
 				if box.contains_goal((gx,gy)):
@@ -212,20 +178,13 @@ class BoundingBoxNavigator:
 					break
 			if not goal_obj_bonding_box:
 				dis_to_goal = math.sqrt((self.agentX-gx)**2 + (self.agentY-gy)**2)
+				# print("Dis to goal point {:.3f}, Suc dis: {:.3f}".format(dis_to_goal, success_distance))
 			else:
 				dis_to_goal = goal_obj_bonding_box.distance(Point(self.agentX, self.agentY))
-			'''
+				# print("Dis to goal bonding box {:.3f}, Suc dis: {:.3f}".format(dis_to_goal, success_distance))
 
-			dis_to_goal = math.sqrt((self.agentX-gx)**2 + (self.agentY-gy)**2)
-			#print (" taking steps in nav b4 some break with distance to goal", dis_to_goal)
 			if dis_to_goal < self.epsilon:
 				break
-
-			end_time = time.time()
-			roadmap_creatiion_time = end_time-start_time
-			#print("roadmap creation time", roadmap_creatiion_time)
-
-			start_time = time.time()
 
 			fov = FieldOfView([sx, sy, 0], 42.5 / 180.0 * math.pi, self.scene_obstacles_dict.values())
 			fov.agentX = self.agentX
@@ -256,6 +215,7 @@ class BoundingBoxNavigator:
 			end_time = time.time()
 
 			if stepSize == None and heading == None:
+				print("Planning Fail")
 				return  False
 
 			# needs to be replaced with turning the agent to the appropriate heading in the simulator, then stepping.
@@ -305,6 +265,10 @@ class BoundingBoxNavigator:
 
 			#if agent.game_state.goals_found == True:
 			#	return
+
+			if self.current_nav_steps >= LIMIT_STEPS:
+				print("Reach LIMIT STEPS")
+				return False
 
 		return True
 

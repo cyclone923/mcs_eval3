@@ -12,3 +12,6 @@ interaction_scenes/debug/
 
 #ignore all saved files 
 simple_task_img/
+
+#ignore SCENE History
+SCENE_HISTORY/
