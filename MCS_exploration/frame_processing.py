@@ -120,17 +120,16 @@ def convert_scenes(env, paths):
         #plot_all(frame_idx+1)
 
 def convert_observation(env,frame_idx, agent_pos=None, rotation=None):
-    
-    if agent_pos == None and rotatoin == None :
+    start_time = time.time()
+    if agent_pos == None and rotation == None :
         all_points, obj_masks = convert_output(env)
     else :
         all_points, obj_masks = convert_output_dead_reckoning(env,agent_pos, rotation)
-    #occ_map_copy = env.occupancy_map[:]
-    #bounding_boxes = plot_scene(1, frame_idx, all_points, obj_mask,env.occupancy_map)
-    polygons,object_occupancy_grids = point_cloud_to_polygon(all_points,env.occupancy_map,env.grid_size,obj_masks)
-    #process_obj_mask(env.step_output.object_mask_list[-1])
-    #return bounding_boxes
+    #print ("time taken for getting point cloud", time.time()-start_time)
+    env.occupancy_map, polygons,object_occupancy_grids = point_cloud_to_polygon(all_points,env.occupancy_map,env.grid_size,env.step_output.object_mask_list[-1])#obj_masks)
+    start_time = time.time()
     goal_id = find_goal_id(object_occupancy_grids, env.goal_bounding_box, env.occupancy_map.shape, env.grid_size, displacement)
+    #print ("time taken for finidnig goal id", time.time()-start_time)
     if goal_id == -1 :
         pass
         #print ("Goal not seen in this frame")
@@ -151,12 +150,9 @@ def convert_output(env):
             print ("ceiling/floor dim ", obj.dimensions)
             continue
     '''
-    #objs = o.object_list
-    #structs = o.structural_object_list
     img = o.image_list[-1]
-    #obj_mask = convert_obj_mask(o.object_mask_list[-1], objs).flatten()
-    obj_mask = process_obj_mask(o.object_mask_list[-1]).flatten()
-    #depth_mask = np.array(o.depth_mask_list[-1])
+    #obj_mask = process_obj_mask(o.object_mask_list[-1]).flatten()
+    obj_mask = None
     depth_mask = np.array(o.depth_map_list[-1])
     camera_desc = [o.camera_clipping_planes, o.camera_field_of_view,
                    o.position, o.rotation, o.head_tilt]
@@ -165,19 +161,19 @@ def convert_output(env):
 
 def convert_output_dead_reckoning(env,agent_pos, rotation ):
     o = env.step_output
-    #objs = o.object_list
     structs = o.structural_object_list
     img = o.image_list[-1]
-    #obj_mask = convert_obj_mask(o.object_mask_list[-1], objs).flatten()
-    obj_mask = process_obj_mask(o.object_mask_list[-1]).flatten()
+    
+    #start_time = time.time()
+    ##obj_mask = process_obj_mask(o.object_mask_list[-1]).flatten()
+    #print ("time taken for processing frame ", time.time()-start_time)
+    obj_mask = None
     depth_mask = np.array(o.depth_map_list[-1])
-    #agent_pos_d = {}
-    #agent_pos_d['x'] = agent_pos[0]
-    #agent_pos_d['y'] = agent_pos[1]
-    #agent_pos_d['z'] = agent_pos[2]
     camera_desc = [o.camera_clipping_planes, o.camera_field_of_view,
                    agent_pos, rotation, o.head_tilt]
+    start_time = time.time()
     pts = depth_to_points(depth_mask, *camera_desc)
+    print ("time taken for getting point cloud from depth img", time.time()-start_time)
     return pts, obj_mask
 
 def convert_obj_mask(mask, objs):
@@ -192,9 +188,19 @@ def convert_obj_mask(mask, objs):
     return out_mask
 
 def process_obj_mask(mask):
-    #arr_mask = np.array(self.event.object_mask_list[-1])
-    arr_mask = np.array(mask)
-    #print (arr_mask.shape)
+    
+    start_time = time.time()
+    arr_mask = np.array(mask)#.reshape(-1, arr_mask.shape[-1])
+    arr_mask = arr_mask.reshape(-1, arr_mask.shape[-1])
+    print ("time taken for reshape", time.time()-start_time)
+
+    
+    start_time = time.time()
+    all_values = np.unique(arr_mask,axis=0)
+   
+    print ("time taken for unique", time.time()-start_time)
+    print ("reshaped arr mask ", arr_mask.shape)
+    print ("all vals", all_values.shape)
     color_dict = {}
     out_mask = -np.ones(arr_mask.shape[0:2], dtype=np.int8)
     color_id = 0
@@ -323,15 +329,21 @@ def occupancy_map_update (x,y,z,occupancy_map):
     return occupancy_map
 
 def merge_occupancy_map(occupancy_map, new_occupancy_map):
-    #return np.where(occupancy_map!=0 or new_occupancy_map != 0 , 1 ,0)
-    #temp_occupancy_map = np.zeros(occupancy_map.shape)
+    return  np.where(occupancy_map == 0 , np.where(new_occupancy_map == 0,0,1),1)
+    '''
+    start_time = time.time()
     for i in range(0,occupancy_map.shape[0]):
         for j in range(0,occupancy_map.shape[1]):
             if occupancy_map[i][j] != 0 or new_occupancy_map[i][j] !=0 :
                 occupancy_map[i][j] = 1
+    print ("loop time", time.time()-start_time)
+    
+    #if np.array_equal( occupancy_map, np_where_map):
+    #    print ("correct result")
             
     #return temp_occupancy_map
     return occupancy_map
+    '''
 
 
 def find_goal_id(object_occupancy_grids,goal_bounding_box, size, scale,displacement):
@@ -390,18 +402,29 @@ def occupancy_to_polygons(occupancy, scale, displacement):
 
 def point_cloud_to_polygon(points,occupancy_map,grid_size,obj_masks = None):
     
+    displacement = 5.5
     start_time = time.time()
+    arr_mask = np.array(obj_masks)#.reshape(-1, arr_mask.shape[-1])
+    obj_masks = arr_mask.reshape(-1, arr_mask.shape[-1])
     sample = 2
     points = points[::sample]
     obj_masks = obj_masks[::sample]
     new_occupancy_map = np.zeros(occupancy_map.shape)
+    np_occ_map = np.zeros(occupancy_map.shape)
     object_occupancy_grids = {}
+    #print ("array mask shape",arr_mask.shape)
+    
+    number_of_correct_z = 0
+
+    #print ("obj mask shape", obj_masks.shape)
     #for i,pt in enumerate( points ):
     for pt,object_id in zip( points,obj_masks ):
+        object_id = tuple(object_id)
         if pt[1] > 0.05  and pt[1] <= 3: 
             occupancy_x = int((pt[0] + 5.5)/grid_size)
             occupancy_z = int((pt[2] + 5.5)/grid_size)
             new_occupancy_map[occupancy_x][occupancy_z] += 1    
+            number_of_correct_z += 1
             #object_id = obj_masks[i]
             if object_id in object_occupancy_grids:
                 if (occupancy_x,occupancy_z) not in object_occupancy_grids[object_id] :
@@ -410,12 +433,44 @@ def point_cloud_to_polygon(points,occupancy_map,grid_size,obj_masks = None):
                 object_occupancy_grids[object_id] = [(occupancy_x,occupancy_z)]
                     
 
-    new_occupancy_map = np.where(new_occupancy_map>=3, 1, 0)
+    new_occupancy_map = np.where(new_occupancy_map>=1, 1, 0)
     occupancy_map = merge_occupancy_map(occupancy_map, new_occupancy_map)
     #print ("[new] time taken to project into 2d occupancy map : " , time.time()-start_time)
 
-    #print (len(object_occupancy_grids))
+    
+    '''
     start_time = time.time()
+    new_points = np.where((points[:,1] > 0.05) & (points[:,1] <= 3),1,0).reshape(points.shape[0],1)
+    points = np.append(points,new_points, 1)
+    np_occ_map[np.int_((points[:,0]+displacement)/grid_size),np.int_(points[:,2]+displacement/grid_size)] = points[:,3]
+    print ("max of array", np.amax(np.int_((points[:,0]+displacement)/grid_size)))
+    print ("min of array", np.amin(np.int_((points[:,0]+displacement)/grid_size)))
+
+    print ("max of array", np.amax(np.int_((points[:,2]+displacement)/grid_size)))
+    print ("min of array", np.amin(np.int_((points[:,2]+displacement)/grid_size)))
+
+    print ("number of 1s from np where" , np.sum(new_points))
+    print ("number of 1s from loop" , number_of_correct_z)
+
+    print ("4th col len", len(points[:,3]))
+
+
+    print ("np occ map", np_occ_map)
+    print ("\n new occ map ", new_occupancy_map)
+    
+
+    #print ("len of array", len(np.int_((points[:,2]-displacement)/grid_size)))
+    print ("time taken for where and occ map creation: " , time.time()-start_time)
+
+    if np.array_equal(new_occupancy_map, np_occ_map) :
+        print ("correct result")
+
+    exit()
+    '''
+    #occu_map[int((points[:,0]+displacement) / scale) , int(points[:,2]+displacement / scale)] = points[:,3]
+
+    #print (len(object_occupancy_grids))
+    #start_time = time.time()
     all_polygons = occupancy_to_polygons(occupancy_map, grid_size, displacement  )
     #print ("[new] time taken to update polygons : " , time.time()-start_time)
     #time.sleep(1)
@@ -430,7 +485,8 @@ def point_cloud_to_polygon(points,occupancy_map,grid_size,obj_masks = None):
         plt.gca().add_patch(patch1)
         plt.axis("equal")
         plt.pause(0.01)
-    return simplified_polygon,object_occupancy_grids
+    #print ("time taken for point cloud to polygon part", time.time()-start_time)
+    return occupancy_map, simplified_polygon,object_occupancy_grids
 
 
         

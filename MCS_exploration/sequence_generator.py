@@ -398,9 +398,7 @@ class SequenceGenerator(object):
 
         #goal_pixel_coords = []
         arr_mask = np.array(self.agent.game_state.event.object_mask_list[-1])
-        #for x in range(arr_mask.shape[0]):
-        #    for y in range(arr_mask.shape[1]):
-        reshaped_obj_masks = self.agent.game_state.object_mask.reshape(arr_mask.shape[:2])
+        reshaped_obj_masks = arr_mask.reshape(arr_mask.shape)
         goal_pixel_coords = np.where(reshaped_obj_masks==self.agent.game_state.goal_id )
         print (len(goal_pixel_coords[0]))  
         

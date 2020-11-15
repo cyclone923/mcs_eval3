@@ -299,7 +299,10 @@ class GameState(object):
         agent_pos = {'x': self.pose_estimate[0][0], 'y': 0.465, 'z':self.pose_estimate[1][0]}
         rotation = math.degrees(self.pose_estimate[2][0])
         self.step_output = self.event
-        bounding_boxes = convert_observation(self,self.number_actions,agent_pos, rotation)# ,self.occupancy_map) 
+        start_time = time.time()
+        #bounding_boxes = convert_observation(self,self.number_actions,agent_pos, rotation)# ,self.occupancy_map) 
+        bounding_boxes = convert_observation(self,self.number_actions)#,agent_pos, rotation)# ,self.occupancy_map) 
+        #print ("Frame processing time" , time.time()- start_time)
         #self.add_obstacle_func(self.event)
         self.add_obstacle_func(bounding_boxes)
         #self.add_obstacle_func_eval3(bounding_boxes)

@@ -18,3 +18,6 @@ SCENE_HISTORY/
 
 #Ignore all swap files 
 **/*.swp
+
+#Ignoer all files starting with old
+**/old*.*
