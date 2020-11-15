@@ -1,5 +1,7 @@
 from MCS_exploration.navigation.visibility_road_map import IncrementalVisibilityRoadMap,ObstaclePolygon
+from MCS_exploration.navigation.discrete_action_planner import DiscreteActionPlanner
 from MCS_exploration.navigation.fov import FieldOfView
+
 
 import random
 import math
@@ -8,13 +10,13 @@ from shapely.geometry import Point
 import numpy as np
 
 
-SHOW_ANIMATION = False
+SHOW_ANIMATION = True
 LIMIT_STEPS = 350
 
 class BoundingBoxNavigator:
 
 	# pose is a triplet x,y,theta (heading)
-	def __init__(self, robot_radius=0.4, maxStep=0.25):
+	def __init__(self, robot_radius, maxStep=0.1):
 		self.agentX = None
 		self.agentY = None
 		self.agentH = None
@@ -35,7 +37,6 @@ class BoundingBoxNavigator:
 		except ValueError:
 			return None, None
 
-		# print(i)
 		# execute a small step along that plan by
 		# turning to face the first waypoint
 		if len(pathX) == 1 and len(pathY) == 1:
@@ -56,8 +57,6 @@ class BoundingBoxNavigator:
 		self.scene_obstacles_dict = {}
 
 	def add_obstacle_from_step_output(self, step_output):
-		# if step_output is None:
-		# 	return
 		for obj in step_output.object_list:
 			if len(obj.dimensions) > 0 and obj.uuid not in self.scene_obstacles_dict and obj.visible:
 				x_list = []
@@ -96,14 +95,18 @@ class BoundingBoxNavigator:
 		gx, gy = goal[0], goal[2]
 		sx, sy = self.agentX, self.agentY
 
-		roadmap = IncrementalVisibilityRoadMap(self.radius, do_plot=False)
+		#roadmap = IncrementalVisibilityRoadMap(self.radius, do_plot=False)
 		for obstacle_key, obstacle in self.scene_obstacles_dict.items():
 			self.scene_obstacles_dict_roadmap[obstacle_key] = 0
 
+		obs = []
 		for obstacle_key, obstacle in self.scene_obstacles_dict.items():
 			if self.can_add_obstacle(obstacle, (gx, gy)):
 				self.scene_obstacles_dict_roadmap[obstacle_key] = 1
-				roadmap.addObstacle(obstacle)
+				#roadmap.addObstacle(obstacle)
+				obs.append(obstacle)
+
+		roadmap = DiscreteActionPlanner(self.radius, obs)
 
 		while True:
 			for obstacle_key, obstacle in self.scene_obstacles_dict.items():
@@ -155,6 +158,7 @@ class BoundingBoxNavigator:
 				plt.pause(0.01)
 
 			stepSize, heading = self.get_one_step_move([gx, gy], roadmap)
+			# print(stepSize, heading)
 
 			if stepSize == None and heading == None:
 				print("Planning Fail")

@@ -3,5 +3,6 @@ numpy-quaternion==2020.5.19.15.27.24
 torch==1.4.0
 scikit-image==0.17.2
 descartes
+ray==1.0.1
 opencv-python==4.1.2.30
 git+https://github.com/NextCenturyCorporation/MCS@latest#egg=machine_common_sense

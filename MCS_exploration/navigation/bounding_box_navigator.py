@@ -1,5 +1,6 @@
 #from tasks.bonding_box_navigation_mcs.visibility_road_map import ObstaclePolygon,IncrementalVisibilityRoadMap
 from MCS_exploration.navigation.visibility_road_map import ObstaclePolygon,IncrementalVisibilityRoadMap
+from MCS_exploration.navigation.discrete_action_planner import DiscreteActionPlanner
 import random
 import math
 import matplotlib.pyplot as plt
@@ -12,11 +13,15 @@ import matplotlib.patches as patches
 import pylab
 
 SHOW_ANIMATION = True
+SHOW_ANIMATION = False
+LIMIT_STEPS = 350
+SHOW_ANIMATION = True
+LIMIT_STEPS = 350
 
 class BoundingBoxNavigator:
 
 	# pose is a triplet x,y,theta (heading)
-	def __init__(self, robot_radius=0.22, maxStep=0.25):
+	def __init__(self, robot_radius, maxStep=0.1):
 		self.agentX = None
 		self.agentY = None
 		self.agentH = None
@@ -147,7 +152,7 @@ class BoundingBoxNavigator:
 
 		gx, gy = goal_pose[0], goal_pose[1]
 		sx, sy = self.agentX, self.agentY
-		roadmap = IncrementalVisibilityRoadMap(self.radius, do_plot=False)
+		#roadmap = IncrementalVisibilityRoadMap(self.radius, do_plot=False)
 		for obstacle_key, obstacle in self.scene_obstacles_dict.items():
 			self.scene_obstacles_dict_roadmap[obstacle_key] = 0
 		fov = FieldOfView([sx, sy, 0], 42.5 / 180.0 * math.pi, self.scene_obstacles_dict.values())
@@ -175,18 +180,18 @@ class BoundingBoxNavigator:
 			plt.close()
 		#SHOW_ANIMATION = True
 
+		obs = []
+		start_time = time.time()
 		for obstacle_key, obstacle in self.scene_obstacles_dict.items():
 			if self.can_add_obstacle(obstacle, (gx, gy)):
 				self.scene_obstacles_dict_roadmap[obstacle_key] = 1
-				#print ("obstacle ext coords", obstacle.exterior.coords.xy)
-				#obstacle = obstacle.simplify(10)
-				#obstacle = obstacle.buffer(0)
-				#print ("obstacle ext coords", obstacle.exterior.coords.xy)
-				#print ("obstacle y list",obstacle.y_list)
-				roadmap.addObstacle(obstacle)
+				obs.append(obstacle)
+				#roadmap.addObstacle(obstacle)
 
-		while self.current_nav_steps < 150:
-			#print (" taking steps in nav while my code")
+		3print ("initial roadmap creation time" , time.time()-start_time)
+		roadmap = DiscreteActionPlanner(self.radius, obs)
+
+		while True:
 			start_time = time.time()
 
 			roadmap = IncrementalVisibilityRoadMap(self.radius, do_plot=False)
@@ -197,6 +202,7 @@ class BoundingBoxNavigator:
 						#print ("adding new obstacles ", self.current_nav_steps)
 						self.scene_obstacles_dict_roadmap[obstacle_key] =1
 						roadmap.addObstacle(obstacle)
+			#print("every step roadmap creation time", time.time()-start_time)
 
 			'''
 			goal_obj_bonding_box = None
@@ -214,11 +220,10 @@ class BoundingBoxNavigator:
 			#print (" taking steps in nav b4 some break with distance to goal", dis_to_goal)
 			if dis_to_goal < self.epsilon:
 				break
-			#print (" taking steps in nav after some break")
 
 			end_time = time.time()
 			roadmap_creatiion_time = end_time-start_time
-			print("roadmap creation time", roadmap_creatiion_time)
+			#print("roadmap creation time", roadmap_creatiion_time)
 
 			start_time = time.time()
 
@@ -227,14 +232,6 @@ class BoundingBoxNavigator:
 			fov.agentY = self.agentY
 			fov.agentH = self.agentH
 			poly = fov.getFoVPolygon(15)
-			end_time = time.time()
-
-			time_taken_part_1 = end_time-start_time
-
-			#print ("time taken till creating FOV after roadmap",time_taken_part_1)
-
-			SHOW_ANIMATION = False
-			#plt.close()
 
 			if SHOW_ANIMATION:
 				plt.cla()
@@ -243,7 +240,6 @@ class BoundingBoxNavigator:
 				plt.gca().set_xlim((-7, 7))
 				plt.gca().set_ylim((-7, 7))
 
-				# plt.plot(self.agentX, self.agentY, "or")
 				circle = plt.Circle((self.agentX, self.agentY), radius=self.radius, color='r')
 				plt.gca().add_artist(circle)
 				plt.plot(gx, gy, "x")
@@ -253,17 +249,11 @@ class BoundingBoxNavigator:
 					obstacle.plot("green")
 
 				plt.axis("equal")
-				#print ("in show animation and trying to save fig")
-				#plt.savefig("shapely_output.png")
-				plt.pause(0.1)
-				#plt.close()
+				plt.pause(0.001)
 
 			start_time = time.time()
 			stepSize, heading = self.get_one_step_move([gx, gy], roadmap)
 			end_time = time.time()
-
-			get_one_step_move_time = end_time-start_time
-			print ("get_one_step_move_time taken", get_one_step_move_time)
 
 			if stepSize == None and heading == None:
 				return  False
@@ -271,7 +261,6 @@ class BoundingBoxNavigator:
 			# needs to be replaced with turning the agent to the appropriate heading in the simulator, then stepping.
 			# the resulting agent position / heading should be used to set plan.agent* values.
 
-			start_time = time.time()
 
 			rotation_degree = heading / (2 * math.pi) * 360 - agent.game_state.event.rotation
 
@@ -290,8 +279,6 @@ class BoundingBoxNavigator:
 				for _ in range(n):
 					agent.game_state.step({'action': 'RotateRight'})
 
-			start_time = time.time()
-
 			rotation = agent.game_state.event.rotation
 			self.agentX = agent.game_state.event.position['x']
 			self.agentY = agent.game_state.event.position['z']
@@ -301,15 +288,6 @@ class BoundingBoxNavigator:
 									self.scene_obstacles_dict.values())
 
 
-			end_time = time.time()
-			action_processing_time_taken = end_time-start_time
-			print ("action processing taken", action_processing_time_taken)
-
-			#if abs(rotation_degree) > 1e-2:
-			#	if 360 - abs(rotation_degree) > 1e-2:
-			#		continue
-
-			#agent.game_state.step(action="MoveAhead", amount=0.5)
 			action={'action':"MoveAhead"}
 			agent.step(action)
 			rotation = agent.game_state.event.rotation
@@ -319,7 +297,6 @@ class BoundingBoxNavigator:
 
 			cover_floor.update_seen(self.agentX, self.agentY, agent.game_state, rotation, 42.5,
 									self.scene_obstacles_dict.values())
-
 
 			self.current_nav_steps += 1
 

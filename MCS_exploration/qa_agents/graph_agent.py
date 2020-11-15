@@ -9,7 +9,7 @@ import constants
 
 class GraphAgent(object):
     def __init__(self, env, reuse=True, num_unrolls=1, game_state=None, net_scope=None):
-        self.nav_radius = 0.1
+        self.nav_radius = 0.25
         self.nav = bounding_box_navigator.BoundingBoxNavigator(self.nav_radius)
         self.nav_eval3 = bounding_box_navigator.BoundingBoxNavigator(self.nav_radius)
         if game_state is None:

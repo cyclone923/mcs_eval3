@@ -5,7 +5,7 @@ from gym_ai2thor.envs.mcs_face import McsFaceWrapper
 from gym_ai2thor.envs.mcs_obj import McsObjWrapper
 import os
 from planner.ff_planner_handler import PlanParser
-from meta_ontroller.planner_state import GameState
+from meta_controller.planner_state import GameState
 import machine_common_sense
 from tasks.bonding_box_navigation_mcs.bonding_box_navigator import BoundingBoxNavigator, SHOW_ANIMATION
 #from tasks.bonding_box_navigation_mcs.visibility_road_map import ObstaclePolygon
@@ -31,7 +31,7 @@ class MetaController:
         self.obj_env = McsObjWrapper(env)
 
         # self.nav = NavigatorResNet(get_action_space_from_names(self.nav_env.action_names))
-        self.nav = BoundingBoxNavigator()
+        self.nav = BoundingBoxNavigator(robot_radius=0.25)
         if isinstance(self.nav, BoundingBoxNavigator):
             self.env.add_obstacle_func = self.nav.add_obstacle_from_step_output
         self.face = FaceTurnerResNet(get_action_space_from_names(self.face_env.action_names))

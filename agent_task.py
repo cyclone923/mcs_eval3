@@ -1,5 +1,5 @@
 from gym_ai2thor.envs.mcs_env import McsEnv
-from meta_ontroller.meta_controller import MetaController
+from meta_controller.meta_controller import MetaController
 import sys
 from frame_collector import Frame_collector
 
