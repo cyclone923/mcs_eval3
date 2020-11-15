@@ -15,3 +15,6 @@ simple_task_img/
 
 #ignore SCENE History
 SCENE_HISTORY/
+
+#Ignore all swap files 
+**/*.swp
