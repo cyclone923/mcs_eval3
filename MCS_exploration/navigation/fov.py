@@ -25,7 +25,7 @@ class FieldOfView:
 		self.poly = unary_union([o.boundary for o in obs])
 		
 
-	def getFoVPolygon(self, maxLen=15, eps=0.000001):
+	def getFoVPolygon(self, maxLen=15, eps=0.0001):
 		poly_X = []
 		poly_Y = []
 		poly_angle = []
@@ -57,31 +57,17 @@ class FieldOfView:
 					v = Geometry.Point(x,y)
 
 					if self.isLeftOfLine(p1, p2R, v) and not self.isLeftOfLine(p1, p2L, v):
-						#cast at point
-						#plt.plot(v.x,v.y,"or")
-						#theta = np.arctan( (v.x-p1.x) / (v.y-p1.y))
-						#theta = (np.arctan2( v.y-p1.y,  v.x-p1.x))
-						x,y = self.castRayShapely(theta, maxLen)
-						poly_X.append(x)
-						poly_Y.append(y)
-						poly_angle.append(theta)
-
-						#cast with jitter
-						theta = (theta - eps)
-						x,y = self.castRayShapely(theta, maxLen)
-						v = Geometry.Point(x,y)
-						if self.isLeftOfLine(p1, p2R, v) and not self.isLeftOfLine(p1, p2L, v):
-							poly_X.append(x)
-							poly_Y.append(y)
-							poly_angle.append(theta)
-
-						theta = (theta + 2*eps)
-						x,y = self.castRayShapely(theta, maxLen)
-						v = Geometry.Point(x,y)
-						if self.isLeftOfLine(p1, p2R, v) and not self.isLeftOfLine(p1, p2L, v):
-							poly_X.append(x)
-							poly_Y.append(y)
-							poly_angle.append(theta)
+						
+						#cast at point and with jitter around it
+						theta = (np.arctan2( v.y-p1.y,  v.x-p1.x))
+						for e in range(-1, 1):
+							t = (theta + e*eps)
+							x,y = self.castRayShapely(t, maxLen)
+							v = Geometry.Point(x,y)
+							if self.isLeftOfLine(p1, p2R, v) and not self.isLeftOfLine(p1, p2L, v):
+								poly_X.append(x)
+								poly_Y.append(y)
+								poly_angle.append(t)
 
 		#poly_angle = [2*math.pi-x if x < 0 else x for x in poly_angle]
 		# print(poly_angle)
@@ -99,7 +85,7 @@ class FieldOfView:
 		p1 = sp.Point( [ float(self.agentX), float(self.agentY) ] )
 		p2 = sp.Point( [p1.x + maxLen*np.cos(angle), p1.y + maxLen*np.sin(angle) ])
 
-		intersections = self.poly.intersection(sp.LineString([p1,p2]))
+		intersections = sp.LineString([p1,p2]).intersection(self.poly)
 		
 		if intersections.is_empty:
 			return p2.x, p2.y
@@ -113,7 +99,8 @@ class FieldOfView:
 				return x,y
 
 			elif isinstance(intersections, sp.MultiPoint) or isinstance(intersections, sp.GeometryCollection):
-				points = [list(p.coords)[0] for p in list(intersections)]
+				points = []
+				list(map(points.extend, [list(p.coords) for p in list(intersections)]))
 				x,y,d = min(   [ (x,y, math.sqrt( (x-self.agentX)**2 + (y-self.agentY)**2)) for x,y in points], key=lambda a: a[2])
 				return x,y
 
@@ -237,7 +224,7 @@ def main():
 		fov = FieldOfView( [x,y,h], 40/180.0*math.pi, obstacles)
 		poly = fov.getFoVPolygon(100)
 		poly.plot("r")
-		plt.pause(0.001)
+		plt.pause(0.1)
 
 
 
