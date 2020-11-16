@@ -18,6 +18,7 @@ from MCS_exploration.frame_processing import *
 
 import constants
 
+
 assert(constants.SCENE_PADDING == 5)
 
 def wrap_output( scene_event):
