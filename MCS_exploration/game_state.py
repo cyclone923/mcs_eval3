@@ -13,6 +13,7 @@ import shapely.geometry.polygon as sp
 
 import constants
 
+
 assert(constants.SCENE_PADDING == 5)
 
 def wrap_output( scene_event):
