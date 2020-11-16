@@ -25,7 +25,7 @@ class FieldOfView:
 		self.poly = unary_union([o.boundary for o in obs])
 		
 
-	def getFoVPolygon(self, maxLen=15, eps=0.0001):
+	def getFoVPolygon(self, maxLen=15, eps=0.001):
 		poly_X = []
 		poly_Y = []
 		poly_angle = []
@@ -60,7 +60,7 @@ class FieldOfView:
 						
 						#cast at point and with jitter around it
 						theta = (np.arctan2( v.y-p1.y,  v.x-p1.x))
-						for e in range(-1, 1):
+						for e in range(-5, 5):
 							t = (theta + e*eps)
 							x,y = self.castRayShapely(t, maxLen)
 							v = Geometry.Point(x,y)
