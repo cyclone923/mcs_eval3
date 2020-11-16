@@ -6,17 +6,17 @@ from MCS_exploration.navigation.fov import FieldOfView
 import random
 import math
 import matplotlib.pyplot as plt
-from shapely.geometry import Point
+from shapely.geometry import Point, MultiPoint
 import numpy as np
 
 
-SHOW_ANIMATION = False
+SHOW_ANIMATION = True
 LIMIT_STEPS = 350
 
 class BoundingBoxNavigator:
 
 	# pose is a triplet x,y,theta (heading)
-	def __init__(self, robot_radius=0.4, maxStep=0.25):
+	def __init__(self, robot_radius, maxStep=0.1):
 		self.agentX = None
 		self.agentY = None
 		self.agentH = None
@@ -37,7 +37,6 @@ class BoundingBoxNavigator:
 		except ValueError:
 			return None, None
 
-		# print(i)
 		# execute a small step along that plan by
 		# turning to face the first waypoint
 		if len(pathX) == 1 and len(pathY) == 1:
@@ -58,16 +57,21 @@ class BoundingBoxNavigator:
 		self.scene_obstacles_dict = {}
 
 	def add_obstacle_from_step_output(self, step_output):
-		# if step_output is None:
-		# 	return
+		def get_bd_point(dimensions):
+			bd_point = set()
+			for i in range(0, 8):
+				x, z = dimensions[i]['x'], dimensions[i]['z']
+				if (x, z) not in bd_point:
+					bd_point.add((x, z))
+
+			poly = MultiPoint(sorted(bd_point)).convex_hull
+			x_list, z_list = poly.exterior.coords.xy
+			return x_list, z_list
+
 		for obj in step_output.object_list:
 			if len(obj.dimensions) > 0 and obj.uuid not in self.scene_obstacles_dict and obj.visible:
-				x_list = []
-				y_list = []
-				for i in range(4, 8):
-					x_list.append(obj.dimensions[i]['x'])
-					y_list.append(obj.dimensions[i]['z'])
-				self.scene_obstacles_dict[obj.uuid] = ObstaclePolygon(x_list, y_list)
+				x_list, z_list = get_bd_point(obj.dimensions)
+				self.scene_obstacles_dict[obj.uuid] = ObstaclePolygon(x_list, z_list)
 				self.scene_obstacles_dict_roadmap[obj.uuid] = 0
 			if obj.held:
 				del self.scene_obstacles_dict[obj.uuid]
@@ -76,12 +80,8 @@ class BoundingBoxNavigator:
 			if len(obj.dimensions) > 0 and obj.uuid not in self.scene_obstacles_dict and obj.visible:
 				if obj.uuid == "ceiling" or obj.uuid == "floor":
 					continue
-				x_list = []
-				y_list = []
-				for i in range(4, 8):
-					x_list.append(obj.dimensions[i]['x'])
-					y_list.append(obj.dimensions[i]['z'])
-				self.scene_obstacles_dict[obj.uuid] = ObstaclePolygon(x_list, y_list)
+				x_list, z_list = get_bd_point(obj.dimensions)
+				self.scene_obstacles_dict[obj.uuid] = ObstaclePolygon(x_list, z_list)
 				self.scene_obstacles_dict_roadmap[obj.uuid] = 0
 
 
@@ -161,6 +161,7 @@ class BoundingBoxNavigator:
 				plt.pause(0.01)
 
 			stepSize, heading = self.get_one_step_move([gx, gy], roadmap)
+			# print(stepSize, heading)
 
 			if stepSize == None and heading == None:
 				print("Planning Fail")
