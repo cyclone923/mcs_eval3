@@ -17,7 +17,6 @@ class FieldOfView:
 		self.HVoF = hvof
 		self.obstacle = obs
 
-
 	def getFoVPolygon(self, maxLen=15, eps=0.000001):
 		poly_X = []
 		poly_Y = []
@@ -76,7 +75,7 @@ class FieldOfView:
 							poly_Y.append(y)
 							poly_angle.append(theta)
 
-		#poly_angle = [2*math.pi-x if x < 0 else x for x in poly_angle]
+		# poly_angle = [2*math.pi-x if x < 0 else x for x in poly_angle]
 		# print(poly_angle)
 
 		indx = sorted(range(len(poly_angle)), key=lambda x: (poly_angle[x]+self.agentH) % (2*np.pi))
@@ -108,6 +107,11 @@ class FieldOfView:
 						minX = x
 						minY = y
 				except ValueError:
+					# print("-" * 50)
+					# print("p1: ({}, {})".format(p1.x, p1.y))
+					# print("p2: ({}, {})".format(p2.x, p2.y))
+					# print("o1: ({}, {})".format(o1.x, o1.y))
+					# print("o2: ({}, {})".format(o2.x, o2.y))
 					continue
 		#plt.plot([p1.x, p2.x], [p1.y, p2.y], "-r")
 		#plt.plot([p1.x, minX], [p1.y, minY], clr)
@@ -117,8 +121,6 @@ class FieldOfView:
 
 	def isLeftOfLine(self,p1, p2, v):
 		return (p2.x - p1.x)*(v.y - p1.y) > (p2.y - p1.y)*(v.x - p1.x)
-
-
 
 	def intersect(self,a,b,c,d):
 
@@ -130,8 +132,6 @@ class FieldOfView:
 			raise ValueError
 		t = t_num / denom
 		u = - u_num / denom
-
-
 
 		if (-0.0000 <= t <= 1.0000) and (-0.0000 <= u <= 1.0000):
 			x = c.x + u*(d.x-c.x)
