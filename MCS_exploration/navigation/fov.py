@@ -6,7 +6,13 @@ import math
 import numpy as np
 import random
 import matplotlib.pyplot as plt
+import shapely.geometry as sp
+from shapely.prepared import prep
+from shapely.ops import unary_union
 
+from shapely import speedups
+if speedups.available:
+	speedups.enable()
 
 class FieldOfView:
 
@@ -16,8 +22,10 @@ class FieldOfView:
 		self.agentH = pose[2]
 		self.HVoF = hvof
 		self.obstacle = obs
+		self.poly = unary_union([o.boundary for o in obs])
+		
 
-	def getFoVPolygon(self, maxLen=15, eps=0.000001):
+	def getFoVPolygon(self, maxLen=15, eps=0.001):
 		poly_X = []
 		poly_Y = []
 		poly_angle = []
@@ -33,7 +41,7 @@ class FieldOfView:
 			for i in np.arange(0, 1.1, 0.1):
 				v = Geometry.Point(p1.x + maxLen*math.sin(lAngle+i*self.HVoF), p1.y + maxLen*math.cos(lAngle+i*self.HVoF))
 				theta = (np.arctan2( v.y-p1.y,  v.x-p1.x))
-				x,y = self.castRay(theta, maxLen,"-b")
+				x,y = self.castRayShapely(theta, maxLen,"-b")
 				poly_X.append(x)
 				poly_Y.append(y)
 				poly_angle.append(theta)
@@ -49,33 +57,19 @@ class FieldOfView:
 					v = Geometry.Point(x,y)
 
 					if self.isLeftOfLine(p1, p2R, v) and not self.isLeftOfLine(p1, p2L, v):
-						#cast at point
-						#plt.plot(v.x,v.y,"or")
-						#theta = np.arctan( (v.x-p1.x) / (v.y-p1.y))
+						
+						#cast at point and with jitter around it
 						theta = (np.arctan2( v.y-p1.y,  v.x-p1.x))
-						x,y = self.castRay(theta, maxLen)
-						poly_X.append(x)
-						poly_Y.append(y)
-						poly_angle.append(theta)
+						for e in range(-5, 5):
+							t = (theta + e*eps)
+							x,y = self.castRayShapely(t, maxLen)
+							v = Geometry.Point(x,y)
+							if self.isLeftOfLine(p1, p2R, v) and not self.isLeftOfLine(p1, p2L, v):
+								poly_X.append(x)
+								poly_Y.append(y)
+								poly_angle.append(t)
 
-						#cast with jitter
-						theta = (theta - eps)
-						x,y = self.castRay(theta, maxLen)
-						v = Geometry.Point(x,y)
-						if self.isLeftOfLine(p1, p2R, v) and not self.isLeftOfLine(p1, p2L, v):
-							poly_X.append(x)
-							poly_Y.append(y)
-							poly_angle.append(theta)
-
-						theta = (theta + 2*eps)
-						x,y = self.castRay(theta, maxLen)
-						v = Geometry.Point(x,y)
-						if self.isLeftOfLine(p1, p2R, v) and not self.isLeftOfLine(p1, p2L, v):
-							poly_X.append(x)
-							poly_Y.append(y)
-							poly_angle.append(theta)
-
-		# poly_angle = [2*math.pi-x if x < 0 else x for x in poly_angle]
+		#poly_angle = [2*math.pi-x if x < 0 else x for x in poly_angle]
 		# print(poly_angle)
 
 		indx = sorted(range(len(poly_angle)), key=lambda x: (poly_angle[x]+self.agentH) % (2*np.pi))
@@ -84,6 +78,36 @@ class FieldOfView:
 		#print ("polyX", poly_X)
 		#print ("polyY", poly_Y)
 		return ObstaclePolygon(poly_X, poly_Y)
+
+
+	def castRayShapely(self, angle, maxLen, clr="-g"):
+
+		p1 = sp.Point( [ float(self.agentX), float(self.agentY) ] )
+		p2 = sp.Point( [p1.x + maxLen*np.cos(angle), p1.y + maxLen*np.sin(angle) ])
+
+		intersections = sp.LineString([p1,p2]).intersection(self.poly)
+		
+		if intersections.is_empty:
+			return p2.x, p2.y
+		else:
+			if isinstance(intersections, sp.Point):
+				return intersections.coords[0]
+
+			elif isinstance(intersections,sp.LineString):
+				points = list(intersections.coords)
+				x,y,d = min(   [ (x,y, math.sqrt( (x-self.agentX)**2 + (y-self.agentY)**2)) for x,y in points], key=lambda a: a[2])
+				return x,y
+
+			elif isinstance(intersections, sp.MultiPoint) or isinstance(intersections, sp.GeometryCollection):
+				points = []
+				list(map(points.extend, [list(p.coords) for p in list(intersections)]))
+				x,y,d = min(   [ (x,y, math.sqrt( (x-self.agentX)**2 + (y-self.agentY)**2)) for x,y in points], key=lambda a: a[2])
+				return x,y
+
+			else:
+				print(intersections)
+				raise ValueError(type(intersections))
+
 
 
 	def castRay(self, angle, maxLen, clr="-g"):
@@ -107,11 +131,6 @@ class FieldOfView:
 						minX = x
 						minY = y
 				except ValueError:
-					# print("-" * 50)
-					# print("p1: ({}, {})".format(p1.x, p1.y))
-					# print("p2: ({}, {})".format(p2.x, p2.y))
-					# print("o1: ({}, {})".format(o1.x, o1.y))
-					# print("o2: ({}, {})".format(o2.x, o2.y))
 					continue
 		#plt.plot([p1.x, p2.x], [p1.y, p2.y], "-r")
 		#plt.plot([p1.x, minX], [p1.y, minY], clr)
@@ -121,6 +140,8 @@ class FieldOfView:
 
 	def isLeftOfLine(self,p1, p2, v):
 		return (p2.x - p1.x)*(v.y - p1.y) > (p2.y - p1.y)*(v.x - p1.x)
+
+
 
 	def intersect(self,a,b,c,d):
 
@@ -132,6 +153,7 @@ class FieldOfView:
 			raise ValueError
 		t = t_num / denom
 		u = - u_num / denom
+
 
 		if (-0.0000 <= t <= 1.0000) and (-0.0000 <= u <= 1.0000):
 			x = c.x + u*(d.x-c.x)
@@ -176,8 +198,8 @@ def genRandomRectangle():
 
 def main():
 	print(__file__ + " start!!")
-	for i in range(1):
-
+	for i in range(100000):
+		print(i)
 		plt.cla()
 		# start and goal position
 		x, y = random.randrange(-25,25), random.randrange(-25,25)  # [m]
@@ -201,8 +223,8 @@ def main():
 
 		fov = FieldOfView( [x,y,h], 40/180.0*math.pi, obstacles)
 		poly = fov.getFoVPolygon(100)
-		poly.plot("-r")
-		plt.pause(1)
+		poly.plot("r")
+		plt.pause(0.1)
 
 
 

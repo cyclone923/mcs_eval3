@@ -29,6 +29,10 @@ import psutil
 from shapely.ops import unary_union
 from heapq import heappush, heappop
 
+from shapely import speedups
+if speedups.available:
+    speedups.enable()
+
 show_animation = True
 
 
