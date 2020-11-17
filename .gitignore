@@ -21,3 +21,6 @@ SCENE_HISTORY/
 
 #Ignoer all files starting with old
 **/old*.*
+
+#Ignore the results folder
+results/

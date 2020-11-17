@@ -6,7 +6,7 @@ import sys
 
 
 if __name__ == "__main__":
-    start_scene_number = 2
+    start_scene_number = 17
     collector = Frame_collector(scene_dir="simple_task_img", start_scene_number=start_scene_number)
     env = McsEnv(
         task="interaction_scenes", scene_type="retrieval", seed=52,
@@ -23,12 +23,14 @@ if __name__ == "__main__":
     exploration_success = 0
     negative_reward = 0
     number_tasks_success = 0 
-    number_scenes = 3
+    number_scenes = 100
     negative_rewards = 0
     failure_return_status = {}
+    print ("Start scene number = ", start_scene_number)
+    print ("number of scenes to run=" ,number_scenes )
 
     #while env.current_scene < len(env.all_scenes) - 1:
-    while env.current_scene < number_scenes:
+    while env.current_scene < start_scene_number + number_scenes:
         env.reset()
         #env.reset()
         #env.reset()
@@ -45,6 +47,7 @@ if __name__ == "__main__":
         else :
             negative_rewards += env.step_output.reward
             failure_return_status[env.current_scene] = env.step_output.return_status
+            print ("Action status return  :", env.step_output.return_status)
             
         number_tasks_attempted +=1
         game_state = metaController.sequence_generator_object.agent.game_state

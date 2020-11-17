@@ -129,6 +129,9 @@ def convert_observation(env,frame_idx, agent_pos=None, rotation=None):
     #env.occupancy_map, polygons,object_occupancy_grids = point_cloud_to_polygon(all_points,env.occupancy_map,env.grid_size,env.step_output.object_mask_list[-1])#obj_masks)
     env.occupancy_map, polygons,object_occupancy_grids = point_cloud_to_polygon_v2(all_points,env.occupancy_map,env.grid_size,env.displacement,env.step_output.object_mask_list[-1])#obj_masks)
     start_time = time.time()
+    if polygons == None:
+        goal_id = -1 
+        return None
     goal_id = find_goal_id(object_occupancy_grids, env.goal_bounding_box, env.occupancy_map.shape, env.grid_size, displacement)
     #print ("time taken for finidnig goal id", time.time()-start_time)
     if goal_id == -1 :
@@ -346,7 +349,6 @@ def merge_occupancy_map(occupancy_map, new_occupancy_map):
     return occupancy_map
     '''
 
-
 def find_goal_id(object_occupancy_grids,goal_bounding_box, size, scale,displacement):
     start_time = time.time()
     max_intersect_area = 0
@@ -403,6 +405,16 @@ def occupancy_to_polygons(occupancy, scale, displacement):
 
 def point_cloud_to_polygon_v2(points,occupancy_map,grid_size, displacement, obj_masks= None):
     start_time = time.time()
+
+    #print ("max min x", np.amax(points[:,0]), np.amin(points[:,0]))
+    #print ("max min z", np.amax(points[:,2]), np.amin(points[:,2]))
+
+    if (np.max(points[:,0])) > 5.5  or np.amin(points[:,0]) < -5.5 : 
+        return None,None,None
+    
+    if (np.max(points[:,0])) > 5.5  or np.amin(points[:,0]) < -5.5 : 
+        return None, None,None
+
     object_occupancy_grids_row_view = {}
     np_occ_map = np.zeros(occupancy_map.shape)
     arr_mask = np.array(obj_masks)
@@ -432,6 +444,7 @@ def point_cloud_to_polygon_v2(points,occupancy_map,grid_size, displacement, obj_
         #print ("unique_indices shape",unique_indices.shape)
         #print ("points with unique_indices ",obj_points[unique_indices])
         #print ("unique shapw shape",unique_counts.shape)
+        #print (obj_points[unique_indices])
         np_occ_map[obj_points[unique_indices][:,0],obj_points[unique_indices][:,1]] = unique_counts[:]
         np_occ_map = np.where(np_occ_map>=3, 1, 0)
         #print ("\n np occ map", np_occ_map) 

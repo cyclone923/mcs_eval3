@@ -10,7 +10,7 @@ import time
 from shapely.geometry import Point, MultiPoint
 import numpy as np
 
-SHOW_ANIMATION = True
+SHOW_ANIMATION = False
 LIMIT_STEPS = 350
 
 class BoundingBoxNavigator:
@@ -92,12 +92,15 @@ class BoundingBoxNavigator:
 				self.scene_obstacles_dict_roadmap[obj.uuid] = 0
 
 	def add_obstacle_from_bounding_boxes(self, bounding_boxes):
+		if bounding_boxes == None  :
+			return
 		obj_id = int(0)
 		self.scene_obstacles_dict = {}
+		self.scene_obstacles_dict_roadmap = {}
 		#print ("in the new obstacle calculation function")
 		if bounding_boxes.geom_type != "MultiPolygon" :
-			self.scene_obstacles_dict_roadmap = {}
-			self.scene_obstacles_dict[0] = ObstaclePolygon(bounding_boxes.exterior.coords.xy[0], bounding_boxes.exterior.coords.xy[1])
+			self.scene_obstacles_dict[obj_id] = ObstaclePolygon(bounding_boxes.exterior.coords.xy[0], bounding_boxes.exterior.coords.xy[1])
+			self.scene_obstacles_dict_roadmap[obj_id] = 0
 			return
 		for bounding_box in bounding_boxes:
 			#obstacle_polygon = ObstaclePolygon(bounding_box[0],bounding_box[1]).simplify(2)
