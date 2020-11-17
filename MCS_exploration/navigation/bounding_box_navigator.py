@@ -160,7 +160,7 @@ class BoundingBoxNavigator:
 				#roadmap.addObstacle(obstacle)
 
 		roadmap = DiscreteActionPlanner(self.radius, obs)
-		print ("initial roadmap creation time" , time.time()-start_time)
+		#print ("initial roadmap creation time" , time.time()-start_time)
 
 		while True:
 			start_time = time.time()
@@ -172,8 +172,9 @@ class BoundingBoxNavigator:
 						#print ("adding new obstacles ", self.current_nav_steps)
 						self.scene_obstacles_dict_roadmap[obstacle_key] =1
 						roadmap.addObstacle(obstacle)
-			print("every step roadmap creation time", time.time()-start_time)
+			#print("every step roadmap creation time", time.time()-start_time)
 
+			'''
 			goal_obj_bonding_box = None
 			for id, box in self.scene_obstacles_dict.items():
 				if box.contains_goal((gx,gy)):
@@ -185,6 +186,8 @@ class BoundingBoxNavigator:
 			else:
 				dis_to_goal = goal_obj_bonding_box.distance(Point(self.agentX, self.agentY))
 				# print("Dis to goal bonding box {:.3f}, Suc dis: {:.3f}".format(dis_to_goal, success_distance))
+			'''
+			dis_to_goal = math.sqrt((self.agentX-gx)**2 + (self.agentY-gy)**2)
 
 			if dis_to_goal < self.epsilon:
 				break

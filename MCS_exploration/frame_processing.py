@@ -126,7 +126,8 @@ def convert_observation(env,frame_idx, agent_pos=None, rotation=None):
     else :
         all_points, obj_masks = convert_output_dead_reckoning(env,agent_pos, rotation)
     #print ("time taken for getting point cloud", time.time()-start_time)
-    env.occupancy_map, polygons,object_occupancy_grids = point_cloud_to_polygon(all_points,env.occupancy_map,env.grid_size,env.step_output.object_mask_list[-1])#obj_masks)
+    #env.occupancy_map, polygons,object_occupancy_grids = point_cloud_to_polygon(all_points,env.occupancy_map,env.grid_size,env.step_output.object_mask_list[-1])#obj_masks)
+    env.occupancy_map, polygons,object_occupancy_grids = point_cloud_to_polygon_v2(all_points,env.occupancy_map,env.grid_size,env.displacement,env.step_output.object_mask_list[-1])#obj_masks)
     start_time = time.time()
     goal_id = find_goal_id(object_occupancy_grids, env.goal_bounding_box, env.occupancy_map.shape, env.grid_size, displacement)
     #print ("time taken for finidnig goal id", time.time()-start_time)
@@ -173,7 +174,7 @@ def convert_output_dead_reckoning(env,agent_pos, rotation ):
                    agent_pos, rotation, o.head_tilt]
     start_time = time.time()
     pts = depth_to_points(depth_mask, *camera_desc)
-    print ("time taken for getting point cloud from depth img", time.time()-start_time)
+    #print ("time taken for getting point cloud from depth img", time.time()-start_time)
     return pts, obj_mask
 
 def convert_obj_mask(mask, objs):
@@ -400,26 +401,108 @@ def occupancy_to_polygons(occupancy, scale, displacement):
         polygons.append(box(i*scale-d, minX*scale-d, (i+1)*scale-d, maxX*scale-d))
     return unary_union(polygons)
 
-def point_cloud_to_polygon(points,occupancy_map,grid_size,obj_masks = None):
-    
-    displacement = 5.5
+def point_cloud_to_polygon_v2(points,occupancy_map,grid_size, displacement, obj_masks= None):
     start_time = time.time()
-    arr_mask = np.array(obj_masks)#.reshape(-1, arr_mask.shape[-1])
+    object_occupancy_grids_row_view = {}
+    np_occ_map = np.zeros(occupancy_map.shape)
+    arr_mask = np.array(obj_masks)
     obj_masks = arr_mask.reshape(-1, arr_mask.shape[-1])
     sample = 2
     points = points[::sample]
+    obj_masks_new = obj_masks[::sample]
+    obj_masks = obj_masks_new[:]
+    new_points = np.where((points[:,1] > 0.05) & (points[:,1] <= 3))#,1,0).reshape(points.shape[0],1)
+    points = points[new_points[0]]
+    obj_masks = obj_masks[new_points[0]]
+    ar_row_view = obj_masks.view('|S%d' % (obj_masks.itemsize * obj_masks.shape[1]))
+    unique_row_view = np.unique(ar_row_view)
+
+    for elem in unique_row_view :
+        obj_coords = np.where(ar_row_view==elem)
+        #print ("obj coords shape", obj_coords[0].shape)
+        obj_points = points[obj_coords[0]]
+        obj_points = np.delete(obj_points, 1, 1)
+        obj_points = np.int_((obj_points+displacement)/grid_size)
+        obj_points_str = obj_points.view('|S%d' % (obj_points.itemsize * obj_points.shape[1]))
+        _,unique_indices,unique_counts = np.unique(obj_points_str,return_index=True,return_counts=True)
+        #_,unique_indices = np.unique(obj_points,axis=1, return_index=True)
+        #print ("obj points shape after unique", obj_points.shape)
+        #print ("type of indixes", type(unique_indices))
+        object_occupancy_grids_row_view[elem] = obj_points[unique_indices]
+        #print ("unique_indices shape",unique_indices.shape)
+        #print ("points with unique_indices ",obj_points[unique_indices])
+        #print ("unique shapw shape",unique_counts.shape)
+        np_occ_map[obj_points[unique_indices][:,0],obj_points[unique_indices][:,1]] = unique_counts[:]
+        np_occ_map = np.where(np_occ_map>=3, 1, 0)
+        #print ("\n np occ map", np_occ_map) 
+        occupancy_map = merge_occupancy_map(occupancy_map, np_occ_map)
+
+    all_polygons = occupancy_to_polygons(occupancy_map, grid_size, displacement  )
+    #print ("[new] time taken to update polygons : " , time.time()-start_time)
+    #time.sleep(1)
+    simplified_polygon = polygon_simplify(all_polygons,0.08)
+    show_animation =  False
+    #plt.close()
+    if show_animation :
+        plt.cla()
+        #patch1 = PolygonPatch(all_polygons,fc='grey', ec="black", alpha=0.2, zorder=1)
+        patch1 = PolygonPatch(simplified_polygon,fc='grey', ec="black", alpha=0.2, zorder=1)
+        
+        plt.gca().add_patch(patch1)
+        plt.axis("equal")
+        plt.pause(0.01)
+    #print ("time taken for point cloud to polygon part", time.time()-start_time)
+    return occupancy_map, simplified_polygon,object_occupancy_grids_row_view
+
+def point_cloud_to_polygon(points,occupancy_map,grid_size,obj_masks = None):
+    
+    displacement = 5.5
+    '''
+    start_time = time.time()
+    arr_mask = np.array(obj_masks.convert('L'))#.reshape(-1, arr_mask.shape[-1])
+    unique = np.unique(arr_mask)
+    print ("[new] time taken to for unique with convert L : " , time.time()-start_time)
+    print ("unique L : ",len(unique))
+    start_time = time.time()
+    arr_mask = np.array(obj_masks.convert('P'))#.reshape(-1, arr_mask.shape[-1])
+    unique = np.unique(arr_mask)
+    print ("[new] time taken to for unique with convert P : " , time.time()-start_time)
+    print ("unique P" ,len(unique))
+    #exit()
+
+    print ("obj masks shape",obj_masks.shape)
+    start_time = time.time()
+    unique = np.unique(obj_masks,axis=0)
+    print ("[new] time taken to for unique : " , time.time()-start_time)
+
+
+    print ("number unqie from direct axis ", len(unique))
+    print ("number unqie from direct", len(np.unique(obj_masks)))
+    '''
+    start_time = time.time()
+    arr_mask = np.array(obj_masks)
+    obj_masks = arr_mask.reshape(-1, arr_mask.shape[-1])
+    ar_row_view = obj_masks.view('|S%d' % (obj_masks.itemsize * obj_masks.shape[1]))
+    unique_row_view = np.unique(ar_row_view)
+
+    #print ("number unqie from direct", len(np.unique(obj_masks)))
+    start_time = time.time()
+    sample = 1
+    points = points[::sample]
     obj_masks = obj_masks[::sample]
+    ar_row_view = ar_row_view[::sample]
     new_occupancy_map = np.zeros(occupancy_map.shape)
     np_occ_map = np.zeros(occupancy_map.shape)
     object_occupancy_grids = {}
+    object_occupancy_grids_row_view = {}
     #print ("array mask shape",arr_mask.shape)
     
     number_of_correct_z = 0
 
-    #print ("obj mask shape", obj_masks.shape)
-    #for i,pt in enumerate( points ):
-    for pt,object_id in zip( points,obj_masks ):
-        object_id = tuple(object_id)
+    #for pt,object_id in zip( points,obj_masks ):
+    for pt,object_id in zip( points, ar_row_view ):
+        #object_id = tuple(object_id)
+        object_id = object_id[0]
         if pt[1] > 0.05  and pt[1] <= 3: 
             occupancy_x = int((pt[0] + 5.5)/grid_size)
             occupancy_z = int((pt[2] + 5.5)/grid_size)
@@ -434,10 +517,46 @@ def point_cloud_to_polygon(points,occupancy_map,grid_size,obj_masks = None):
                     
 
     new_occupancy_map = np.where(new_occupancy_map>=1, 1, 0)
-    occupancy_map = merge_occupancy_map(occupancy_map, new_occupancy_map)
+    #occupancy_map = merge_occupancy_map(occupancy_map, new_occupancy_map)
     #print ("[new] time taken to project into 2d occupancy map : " , time.time()-start_time)
+    #start_time = time.time()
+    all_polygons = occupancy_to_polygons(occupancy_map, grid_size, displacement  )
+    #print ("[new] time taken to update polygons : " , time.time()-start_time)
+    #time.sleep(1)
+    simplified_polygon = polygon_simplify(all_polygons,0.08)
+    show_animation = False
+    #plt.close()
+    if show_animation :
+        plt.cla()
+        #patch1 = PolygonPatch(all_polygons,fc='grey', ec="black", alpha=0.2, zorder=1)
+        patch1 = PolygonPatch(simplified_polygon,fc='grey', ec="black", alpha=0.2, zorder=1)
+        
+        plt.gca().add_patch(patch1)
+        plt.axis("equal")
+        plt.pause(0.01)
+    #print ("time taken for point cloud to polygon part", time.time()-start_time)
+    return occupancy_map, simplified_polygon,object_occupancy_grids
 
+def point_cloud_to_polygon_experiments():
+
+    #print ("\n new occ map ", new_occupancy_map)
+        #object_occupancy_grids_row_view[elem] = (np.int_(obj_points[:,0]+displacement/grid_size),np.int_(obj_points[:,0]+displacement/grid_size))
+
+    print ("[new] time taken to for unique full mask processing : " , time.time()-start_time)
+    #print ("[new] occ grid map", object_occupancy_grids_row_view)
+    #print ("[old] occ giid map",object_occupancy_grids)
+    '''
+    for key,value in object_occupancy_grids_row_view.items():
+        print ("key = ",key)
+        print ("number of points from pixel space x y ", len(value))
+        #print ("number of points from pixel space y", len(value))
     
+    for key,value in object_occupancy_grids.items():
+        print ("key = ",key)
+        print ("number of points from pixel space x y ", len(value))
+        #print ("number of points from pixel space y", len(value))
+    #exit()
+    '''
     '''
     start_time = time.time()
     new_points = np.where((points[:,1] > 0.05) & (points[:,1] <= 3),1,0).reshape(points.shape[0],1)
@@ -469,27 +588,6 @@ def point_cloud_to_polygon(points,occupancy_map,grid_size,obj_masks = None):
     '''
     #occu_map[int((points[:,0]+displacement) / scale) , int(points[:,2]+displacement / scale)] = points[:,3]
 
-    #print (len(object_occupancy_grids))
-    #start_time = time.time()
-    all_polygons = occupancy_to_polygons(occupancy_map, grid_size, displacement  )
-    #print ("[new] time taken to update polygons : " , time.time()-start_time)
-    #time.sleep(1)
-    simplified_polygon = polygon_simplify(all_polygons,0.08)
-    show_animation = True
-    #plt.close()
-    if show_animation :
-        plt.cla()
-        #patch1 = PolygonPatch(all_polygons,fc='grey', ec="black", alpha=0.2, zorder=1)
-        patch1 = PolygonPatch(simplified_polygon,fc='grey', ec="black", alpha=0.2, zorder=1)
-        
-        plt.gca().add_patch(patch1)
-        plt.axis("equal")
-        plt.pause(0.01)
-    #print ("time taken for point cloud to polygon part", time.time()-start_time)
-    return occupancy_map, simplified_polygon,object_occupancy_grids
-
-
-        
 def polygon_simplify(all_polygons,scale=0.0):
     
     simplified_polygon = []

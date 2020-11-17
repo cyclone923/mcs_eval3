@@ -14,10 +14,10 @@ from cover_floor import *
 import shapely.geometry.polygon as sp
 from MCS_exploration.navigation.visibility_road_map import ObstaclePolygon,IncrementalVisibilityRoadMap
 from MCS_exploration.frame_processing import *
+from shapely.geometry import Point, MultiPoint
 
 
 import constants
-
 
 assert(constants.SCENE_PADDING == 5)
 
@@ -96,7 +96,8 @@ class GameState(object):
         self.grid_size = 0.1 
         #self.grid_size = 1 
         self.map_width = 12
-        self.map_length = 12                                                                          
+        self.map_length = 12                                                                     
+        self.displacement = 5.5
         self.occupancy_map = self.occupancy_map_init() #* unexplored
         self.object_mask = None
         self.goal_id = None
@@ -160,6 +161,10 @@ class GameState(object):
             lastActionSuccess = False
             self.discovered_explored = {}
             self.discovered_objects = []
+            self.occupancy_map = self.occupancy_map_init() #* unexplored
+            self.object_mask = None
+            self.goal_id = None
+            self.pose_estimate = np.zeros((3,1),dtype = np.float64)
 
             self.bounds = None
 
@@ -189,16 +194,32 @@ class GameState(object):
                     self.goal_object = elem
             
             #print (self.goal_object)
-            x_list = []
-            z_list = []
-            for i in range(4,8):    
-                x_list.append(self.goal_object.dimensions[i]['x'])
-                z_list.append(self.goal_object.dimensions[i]['z'])
-            self.goal_bounding_box = ObstaclePolygon(x_list,z_list)
+
+            dimensions = self.goal_object.dimensions
+            bd_point = set()
+            for i in range(0, 8):
+                x, z = dimensions[i]['x'], dimensions[i]['z']
+                if (x, z) not in bd_point:
+                    bd_point.add((x, z))
+
+            poly = MultiPoint(sorted(bd_point)).convex_hull
+            x_list, z_list = poly.exterior.coords.xy
+            self.goal_bounding_box = ObstaclePolygon(x_list, z_list)
+
+
+            #for i in range(0,8):    
+            #    x_list.append(self.goal_object.dimensions[i]['x'])
+            #    z_list.append(self.goal_object.dimensions[i]['z'])
+            #self.goal_bounding_box = ObstaclePolygon(x_list,z_list)
             
+            #print ("self goal object x list , y list", x_list,z_list)
+            #print ("self goal ext cooords", self.goal_bounding_box.exterior.coords.xy)
+            #exit()
+
             position = self.event.position
             current_angle = math.radians(self.event.rotation)
             self.pose_estimate = np.array([float(position['x']),float(position['z']),current_angle]).reshape(3, 1)
+            #self.pose_estimate = np.array([0,0,0]).reshape(3,1)
             agent_pos = {'x': self.pose_estimate[0][0], 'y': 0.465, 'z':self.pose_estimate[1][0]}
             rotation = math.degrees(self.pose_estimate[2][0])
             self.step_output = self.event
@@ -316,6 +337,7 @@ class GameState(object):
         # if self.times[2, 1] % 100 == 0:
         #     print('env step time %.3f' % (self.times[2, 0] / self.times[2, 1]))
 
+        
         #print ("return status from step " , self.event.return_status)
         #if self.event.metadata['lastActionSuccess']:
         if self.event.return_status :

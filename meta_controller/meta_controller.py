@@ -191,6 +191,9 @@ class MetaController:
 
     def excecute(self):
         scene_config = main.explore_scene(self.sequence_generator_object, self.env.step_output)#'retrieval-', '0001'
+        print("Task Reward: {}\n".format(self.env.step_output.reward))
+        #return self.env.step_output.reward, self.env.step_output.return_status
+        return True
         self.get_inital_planner_state(scene_config)
         if isinstance(self.nav, BoundingBoxNavigator):
             self.nav.clear_obstacle_dict()

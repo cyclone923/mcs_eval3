@@ -18,7 +18,7 @@ class GraphAgent(object):
             #self.game_state.add_obstacle_func = self.nav.add_obstacle_from_step_output
             self.game_state.add_obstacle_func = self.nav.add_obstacle_from_bounding_boxes
             self.game_state.get_obstacles = self.nav.get_obstacles
-            self.game_state.add_obstacle_func_eval3 = self.nav_eval3.add_obstacle_from_bounding_boxes
+            #self.game_state.add_obstacle_func_eval3 = self.nav_eval3.add_obstacle_from_bounding_boxes
             #self.game_state = GameState(sess=sess,env=env)
         else:
             self.game_state = game_state
