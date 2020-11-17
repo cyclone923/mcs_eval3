@@ -333,8 +333,6 @@ class SequenceGenerator(object):
 
     def go_to_goal_and_pick(self):
 
-        #print ("Beginning of go to goal")
-        
         self.update_goal_centre()
         agent_pos = self.agent.game_state.event.position
         #print ("agent position" , agent_pos)

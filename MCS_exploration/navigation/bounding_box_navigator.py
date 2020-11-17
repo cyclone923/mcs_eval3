@@ -10,7 +10,7 @@ import time
 from shapely.geometry import Point, MultiPoint
 import numpy as np
 
-SHOW_ANIMATION = False
+SHOW_ANIMATION = True
 LIMIT_STEPS = 350
 
 class BoundingBoxNavigator:
