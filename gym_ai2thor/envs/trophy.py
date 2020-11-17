@@ -31,18 +31,16 @@ INVALID_OPTIONS = {
     "treasure_chest_small": lambda o: (None, o[6]),
 }
 
-def set_goal_with_trophy(scene_config, box_config, only_trophy=False):
+def set_goal_with_trophy(scene_config, box_config, trophy_prob=1):
     box_config = deepcopy(box_config)
     obstacles = []
 
-    if only_trophy:
-        scene_config['objects'] = []
-    else:
-        remove_walls = []
-        for obj in scene_config['objects']:
-            if "wall" not in obj['id']:
-                remove_walls.append(obj)
-        scene_config['objects'] = remove_walls
+
+    remove_walls = []
+    for obj in scene_config['objects']:
+        if "wall" not in obj['id']:
+            remove_walls.append(obj)
+    scene_config['objects'] = remove_walls
 
     for obj in scene_config['objects']:
         x_list = []
@@ -63,7 +61,7 @@ def set_goal_with_trophy(scene_config, box_config, only_trophy=False):
     y_list = [z+AGENT_RADIUS, z-AGENT_RADIUS, z-AGENT_RADIUS, z+AGENT_RADIUS]
     obstacles.append(ObstaclePolygon(x_list, y_list))
 
-    objs = pre_process_objects(box_config['objects'], tuple(obstacles))
+    objs = pre_process_objects(box_config['objects'], tuple(obstacles), trophy_prob=trophy_prob)
 
     new_scene_config = scene_config.copy()
     for o in objs:
@@ -74,9 +72,9 @@ def set_goal_with_trophy(scene_config, box_config, only_trophy=False):
 
 
 
-def pre_process_objects(objects, all_obstacles):
+def pre_process_objects(objects, all_obstacles, trophy_prob=1):
 
-    if random.random() > 0: # turn this to 0.x to have 0.x probability to see a box contains a trophy
+    if random.random() > 1 - trophy_prob: # turn this to 0.x to have 0.x probability to see a box contains a trophy
         # args = TROPHY_OPTION['single_trophy'](objects)
         valid_keys = random.choice(list(TROPHY_OPTION.keys()))
         args = TROPHY_OPTION[valid_keys](objects)

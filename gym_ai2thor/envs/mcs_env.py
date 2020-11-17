@@ -16,7 +16,7 @@ class McsEnv:
     """
     Wrapper base class
     """
-    def __init__(self, task=None, scene_type=None, seed=None, start_scene_number=0, frame_collector=None, set_trophy=False):
+    def __init__(self, task=None, scene_type=None, seed=None, start_scene_number=0, frame_collector=None, set_trophy=False, trophy_prob=1):
 
         if platform.system() == "Linux":
             app = "unity_app/MCS-AI2-THOR-Unity-App-v0.3.3.x86_64"
@@ -26,6 +26,7 @@ class McsEnv:
             app = None
 
         self.trophy_config = None
+        self.trophy_prob = None
         if set_trophy:
             goal_dir = os.path.join(task, "eval3")
             all_scenes = sorted(os.listdir(goal_dir))
@@ -33,6 +34,7 @@ class McsEnv:
             assert len(all_scenes) == 1
             self.trophy_config, _ = mcs.load_config_json_file(all_scenes[0])
             self.debug_dir = os.path.join(task, "debug")
+            self.trophy_prob = trophy_prob
             try:
                 shutil.rmtree(self.debug_dir)
             except:
@@ -88,7 +90,7 @@ class McsEnv:
         #     print(self.scene_config['answer']["choice"])
 
         if self.trophy_config:
-            self.scene_config = set_goal_with_trophy(self.scene_config, self.trophy_config, only_trophy=False)
+            self.scene_config = set_goal_with_trophy(self.scene_config, self.trophy_config, trophy_prob=self.trophy_prob)
             with open(os.path.join(self.debug_dir, 'box_trophy_{0:0=4d}.json'.format(self.current_scene)), 'w') as fp:
                 json.dump(self.scene_config, fp, indent=4)
 
