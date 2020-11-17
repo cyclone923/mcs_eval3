@@ -76,7 +76,7 @@ def set_goal_with_trophy(scene_config, box_config, only_trophy=False):
 
 def pre_process_objects(objects, all_obstacles):
 
-    if random.random() > 0:
+    if random.random() > 0: # turn this to 0.x to have 0.x probability to see a box contains a trophy
         # args = TROPHY_OPTION['single_trophy'](objects)
         valid_keys = random.choice(list(TROPHY_OPTION.keys()))
         args = TROPHY_OPTION[valid_keys](objects)
@@ -99,7 +99,7 @@ def pre_process_objects(objects, all_obstacles):
     empty_box_2 = TrophyWithBox(None, args_2[1])
     _ = empty_box.place_to_scene(all_obstacles)
 
-    return random_pick, empty_box, empty_box_2
+    return random_pick, empty_box, empty_box_2 # there will always be 2 empty boxes in the scene, and one trophy or trophy with box
 
 
 class TrophyWithBox:
