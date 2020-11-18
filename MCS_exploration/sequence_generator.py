@@ -335,7 +335,8 @@ class SequenceGenerator(object):
 
         self.update_goal_centre()
         agent_pos = self.agent.game_state.event.position
-        #print ("agent position" , agent_pos)
+        print ("In go goal and pick up")
+        print ("agent position" , agent_pos)
         dist_nearest_points = 1000
         #x_list = self.goal_object.exterior.coords.xy[0]
         #y_list = self.goal_object.exterior.coords.xy[1]
@@ -359,7 +360,12 @@ class SequenceGenerator(object):
         new_end_point[1] = self.goal_object_nearest_point[1] 
         #new_end_point[2] = pose[2]
         success_distance = 0.40 
+        print ("goal point : ", new_end_point)
+        print ("agent current position" , self.agent.game_state.event.position)
         nav_success = self.agent.nav.go_to_goal(new_end_point, self.agent, success_distance) 
+
+        print ("after nav end")
+
     
         #pose = game_util.get_pose(self.agent.game_state.event)[:3]
         #print ("after moving pose" ,pose)

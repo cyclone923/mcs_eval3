@@ -409,11 +409,11 @@ def point_cloud_to_polygon_v2(points,occupancy_map,grid_size, displacement, obj_
     #print ("max min x", np.amax(points[:,0]), np.amin(points[:,0]))
     #print ("max min z", np.amax(points[:,2]), np.amin(points[:,2]))
 
-    if (np.max(points[:,0])) > 5.5  or np.amin(points[:,0]) < -5.5 : 
-        return None,None,None
+    #if (np.max(points[:,0])) > 5.5  or np.amin(points[:,0]) < -5.5 : 
+    #    return None,None,None
     
-    if (np.max(points[:,0])) > 5.5  or np.amin(points[:,0]) < -5.5 : 
-        return None, None,None
+    #if (np.max(points[:,0])) > 5.5  or np.amin(points[:,0]) < -5.5 : 
+    #    return None, None,None
 
     object_occupancy_grids_row_view = {}
     np_occ_map = np.zeros(occupancy_map.shape)

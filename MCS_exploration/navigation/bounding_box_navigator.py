@@ -163,7 +163,7 @@ class BoundingBoxNavigator:
 				#roadmap.addObstacle(obstacle)
 
 		roadmap = DiscreteActionPlanner(self.radius, obs)
-		#print ("initial roadmap creation time" , time.time()-start_time)
+		print ("initial roadmap creation time" , time.time()-start_time)
 
 		while True:
 			start_time = time.time()
@@ -175,7 +175,7 @@ class BoundingBoxNavigator:
 						#print ("adding new obstacles ", self.current_nav_steps)
 						self.scene_obstacles_dict_roadmap[obstacle_key] =1
 						roadmap.addObstacle(obstacle)
-			#print("every step roadmap creation time", time.time()-start_time)
+			print("every step roadmap creation time", time.time()-start_time)
 
 			'''
 			goal_obj_bonding_box = None
@@ -217,7 +217,7 @@ class BoundingBoxNavigator:
 					obstacle.plot("green")
 
 				plt.axis("equal")
-				plt.pause(0.001)
+				plt.pause(3)
 
 			start_time = time.time()
 			stepSize, heading = self.get_one_step_move([gx, gy], roadmap)
@@ -239,6 +239,7 @@ class BoundingBoxNavigator:
 				rotation_degree -= 360
 			if rotation_degree < -180:
 				rotation_degree += 360
+			print("Rotation being done,heading returned ,step size " , rotation_degree,heading, stepSize)
 
 			n = int(abs(rotation_degree) // 10)
 			if rotation_degree > 0:
@@ -256,7 +257,10 @@ class BoundingBoxNavigator:
 			cover_floor.update_seen(self.agentX, self.agentY, agent.game_state, rotation, 42.5,
 									self.scene_obstacles_dict.values())
 
+			if stepSize == 0:
+				continue
 
+			print("Move ahead being done" )
 			action={'action':"MoveAhead"}
 			agent.step(action)
 			rotation = agent.game_state.event.rotation
