@@ -29,6 +29,10 @@ import psutil
 from shapely.ops import unary_union
 from heapq import heappush, heappop
 
+from shapely import speedups
+if speedups.available:
+    speedups.enable()
+
 show_animation = True
 
 
@@ -69,7 +73,7 @@ class Node(object):
 class DiscreteActionPlanner:
 
     def __init__(self, robot_radius, obstacles, eps=0.2, do_plot=False):
-        self.robot_radius = robot_radius
+        self.robot_radius = robot_radius*1.1
         self.obstacles = (unary_union(obstacles))
         self.eps = eps
         self.step = 0.1

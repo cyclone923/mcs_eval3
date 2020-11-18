@@ -1,6 +1,7 @@
 import numpy as np
 from scipy.spatial.transform import Rotation
 
+import math
 import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
@@ -22,10 +23,9 @@ def convert_output(o):
     structs = o.structural_object_list
     img = o.image_list[-1]
     obj_mask = convert_obj_mask(o.object_mask_list[-1], objs).flatten()
-    depth_mask = np.array(o.depth_mask_list[-1])
-    camera_desc = [o.camera_clipping_planes, o.camera_field_of_view,
-                   o.position, o.rotation, o.head_tilt]
-    pts = depth_to_points(depth_mask, *camera_desc)
+    depth_map = np.array(o.depth_map_list[-1])
+    camera_desc = [o.camera_field_of_view, o.position, o.rotation, o.head_tilt]
+    pts = depth_to_points(depth_map, *camera_desc)
     return pts, obj_mask
 
 
@@ -41,8 +41,7 @@ def convert_obj_mask(mask, objs):
     return out_mask
 
 
-def depth_to_points(depth, camera_clipping_planes,
-                    camera_field_of_view, pos_dict, rotation, tilt):
+def depth_to_points(depth, camera_field_of_view, pos_dict, rotation, tilt):
     """ Convert a depth map and camera description into a list of 3D world
     points.
     Args:
@@ -53,7 +52,7 @@ def depth_to_points(depth, camera_clipping_planes,
         Px3 np.ndarray of (x,y,z) positions for each of P points.
     """
     # Get local offset from the camera of each pixel
-    local_pts = depth_to_local(depth, camera_clipping_planes, camera_field_of_view)
+    local_pts = depth_to_local(depth, camera_field_of_view)
     # Convert to world space
     # Use rotation & tilt to calculate rotation matrix.
     rot = Rotation.from_euler('yx', (rotation, tilt), degrees=True)
@@ -66,7 +65,7 @@ def depth_to_points(depth, camera_clipping_planes,
     return flat_list_pts
 
 
-def depth_to_local(depth, clip_planes, fov_deg):
+def depth_to_local(depth, fov_deg):
     """ Calculate local offset of each pixel in a depth mask.
     Args:
         depth (np.ndarray): HxW depth image array with values between 0-255
@@ -84,23 +83,18 @@ def depth_to_local(depth, clip_planes, fov_deg):
     px_arr = np.stack(idx_grid, axis=-1) # Each pixel's index
     uv_arr = px_arr*[2/w for w in aspect_ratio]-1
     uv_arr[:, :, 1] *= -1 # Each pixel's UV coords
-    """ Convert the depth mask values into per-pixel world-space depth
-    measurements using the provided clip plane distances.
-    """
-    depth_mix = depth/255
-    z_depth = clip_planes[0] + (clip_planes[1]-clip_planes[0])*depth_mix
     """ Determine vertical & horizontal FOV in radians.
     Use the UV coordinate values and tan(fov/2) to determine the 'XY' direction
     vector for each pixel.
     """
     vfov = np.radians(fov_deg)
-    hfov = np.radians(fov_deg*aspect_ratio[0]/aspect_ratio[1])
+    hfov = 2*math.atan(math.tan(vfov/2) * aspect_ratio[0]/aspect_ratio[1])
     tans = np.array([np.tan(fov/2) for fov in (hfov, vfov)])
     px_dir_vec = uv_arr * tans
     """ Add Z coordinate and scale to the pixel's known depth.  """
     const_zs = np.ones((px_dir_vec.shape[0:2])+(1,))
     px_dir_vec = np.concatenate((px_dir_vec, const_zs), axis=-1)
-    camera_offsets = px_dir_vec * np.expand_dims(z_depth, axis=-1)
+    camera_offsets = px_dir_vec * np.expand_dims(depth, axis=-1)
     return camera_offsets
 
 
