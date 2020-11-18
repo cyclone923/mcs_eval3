@@ -78,7 +78,7 @@ class DiscreteActionPlanner:
         self.eps = eps
         self.step = 0.1
         self.turn = 10
-        self.offsets = [ (math.sin(a)*self.step, math.cos(a)*self.step) for a in [self.turn*x/180*np.pi for x in range(1,360//self.turn)]]
+        self.offsets = [ (math.sin(a)*self.step, math.cos(a)*self.step) for a in [self.turn*x/180*np.pi for x in range(0,360//self.turn)]]
         self.existing_plan = None
         
 
