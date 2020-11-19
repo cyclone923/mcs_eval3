@@ -10,7 +10,7 @@ import time
 from shapely.geometry import Point, MultiPoint
 import numpy as np
 
-SHOW_ANIMATION = True
+SHOW_ANIMATION = False
 LIMIT_STEPS = 350
 
 class BoundingBoxNavigator:
@@ -163,7 +163,7 @@ class BoundingBoxNavigator:
 				#roadmap.addObstacle(obstacle)
 
 		roadmap = DiscreteActionPlanner(self.radius, obs)
-		print ("initial roadmap creation time" , time.time()-start_time)
+		#print ("initial roadmap creation time" , time.time()-start_time)
 
 		while True:
 			start_time = time.time()
@@ -175,7 +175,7 @@ class BoundingBoxNavigator:
 						#print ("adding new obstacles ", self.current_nav_steps)
 						self.scene_obstacles_dict_roadmap[obstacle_key] =1
 						roadmap.addObstacle(obstacle)
-			print("every step roadmap creation time", time.time()-start_time)
+			#print("every step roadmap creation time", time.time()-start_time)
 
 			'''
 			goal_obj_bonding_box = None
@@ -217,7 +217,7 @@ class BoundingBoxNavigator:
 					obstacle.plot("green")
 
 				plt.axis("equal")
-				plt.pause(3)
+				plt.pause(0.001)
 
 			start_time = time.time()
 			stepSize, heading = self.get_one_step_move([gx, gy], roadmap)
@@ -232,6 +232,7 @@ class BoundingBoxNavigator:
 
 
 			rotation_degree = heading / (2 * math.pi) * 360 - agent.game_state.event.rotation
+			#print("Rotation being done,heading returned ,step size " , rotation_degree,heading, stepSize)
 
 			if np.abs(rotation_degree) > 360:
 				rotation_degree = np.sign(rotation_degree) * (np.abs(rotation_degree) - 360)
@@ -239,9 +240,9 @@ class BoundingBoxNavigator:
 				rotation_degree -= 360
 			if rotation_degree < -180:
 				rotation_degree += 360
-			print("Rotation being done,heading returned ,step size " , rotation_degree,heading, stepSize)
 
-			n = int(abs(rotation_degree) // 10)
+			n = int(abs(round(rotation_degree)) // 10)
+			#print("n to turn by ", n , round(rotation_degree))
 			if rotation_degree > 0:
 				for _ in range(n):
 					agent.game_state.step({'action': 'RotateLeft'})
@@ -257,10 +258,18 @@ class BoundingBoxNavigator:
 			cover_floor.update_seen(self.agentX, self.agentY, agent.game_state, rotation, 42.5,
 									self.scene_obstacles_dict.values())
 
+			if agent.game_state.number_actions >= 595 :
+				print("Reached overall STEPS limit")
+				return
+
+			if self.current_nav_steps >= LIMIT_STEPS:
+				print("Reach LIMIT STEPS")
+				return False
+
 			if stepSize == 0:
 				continue
 
-			print("Move ahead being done" )
+			#print("Move ahead being done" )
 			action={'action':"MoveAhead"}
 			agent.step(action)
 			rotation = agent.game_state.event.rotation
@@ -274,6 +283,7 @@ class BoundingBoxNavigator:
 			self.current_nav_steps += 1
 
 			if agent.game_state.number_actions >= 595 :
+				print("Reached overall STEPS limit")
 				return
 
 			#if agent.game_state.goals_found == True:

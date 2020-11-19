@@ -335,8 +335,8 @@ class SequenceGenerator(object):
 
         self.update_goal_centre()
         agent_pos = self.agent.game_state.event.position
-        print ("In go goal and pick up")
-        print ("agent position" , agent_pos)
+        #print ("In go goal and pick up")
+        #print ("agent position" , agent_pos)
         dist_nearest_points = 1000
         #x_list = self.goal_object.exterior.coords.xy[0]
         #y_list = self.goal_object.exterior.coords.xy[1]
@@ -360,11 +360,11 @@ class SequenceGenerator(object):
         new_end_point[1] = self.goal_object_nearest_point[1] 
         #new_end_point[2] = pose[2]
         success_distance = 0.40 
-        print ("goal point : ", new_end_point)
-        print ("agent current position" , self.agent.game_state.event.position)
+        #print ("goal point : ", new_end_point)
+        #print ("agent current position" , self.agent.game_state.event.position)
         nav_success = self.agent.nav.go_to_goal(new_end_point, self.agent, success_distance) 
 
-        print ("after nav end")
+        #print ("after nav end")
 
     
         #pose = game_util.get_pose(self.agent.game_state.event)[:3]
@@ -429,16 +429,11 @@ class SequenceGenerator(object):
             #return
         #else: 
         exterior_coords = self.goal_object.exterior.coords.xy
-        #print ("exterior coords" ,exterior_coords)
-        #print ("exterior coords" ,exterior_coords[0])
-        #print ("exterior coords" ,exterior_coords[0][0])
-        #print ()
         
         self.goal_object = ObstaclePolygon(exterior_coords[0], exterior_coords[1])
         #print ("exterior coords calculated", exterior_coords)
         #print ("Exterior coords grnd truth x ", self.agent.game_state.goal_bounding_box.x_list)
         #print ("Exterior coords grnd truth z ", self.agent.game_state.goal_bounding_box.y_list)
-        #print ("agent pose" , pose)
         self.goal_centre_x = np.mean(np.array(self.goal_object.x_list,dtype=object))
         self.goal_centre_z = np.mean(np.array(self.goal_object.y_list,dtype=object))
         
@@ -459,6 +454,19 @@ class SequenceGenerator(object):
         #print ("ymax,ymin", np.amax(goal_pixel_coords[1]), np.amin(goal_pixel_coords[1]))
         x = ((np.amax(goal_pixel_coords[0]) - np.amin(goal_pixel_coords[0]))/2) + np.amin(goal_pixel_coords[0])
         y = ((np.amax(goal_pixel_coords[1]) - np.amin(goal_pixel_coords[1]))/2) + np.amin(goal_pixel_coords[1])
+
+        goal_pixel_coords_tuples = np.array((goal_pixel_coords[0],goal_pixel_coords[1])).T
+
+        '''
+        print (type(goal_pixel_coords_tuples), len(goal_pixel_coords_tuples))
+        print ("get goal pixels")
+        print ("example,", goal_pixel_coords_tuples[0], (x,y))
+        
+        if (x,y) in goal_pixel_coords_tuples : 
+            print ("goal pixels in the list of possible goal pixels")
+        else :
+            print ("goal pixels not in list of possible goal pixels")
+        '''
         return x,y
 
 

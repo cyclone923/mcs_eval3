@@ -315,7 +315,8 @@ class GameState(object):
         #print ("self objects" , self.event.object_list[0])
         #exit()
         agent_movement = np.array([vel, ang_rate],dtype=np.float64).reshape(2, 1)
-        self.pose_estimate = self.motion_model(self.pose_estimate,agent_movement) 
+        if self.event.return_status != "OBSTRUCTED":
+            self.pose_estimate = self.motion_model(self.pose_estimate,agent_movement) 
         #agent_pos = self.event.position
         #rotation = self.event.rotation
         agent_pos = {'x': self.pose_estimate[0][0], 'y': 0.465, 'z':self.pose_estimate[1][0]}
