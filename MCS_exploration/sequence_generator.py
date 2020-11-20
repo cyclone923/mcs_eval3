@@ -334,7 +334,7 @@ class SequenceGenerator(object):
     def go_to_goal_and_pick(self):
 
         self.update_goal_centre()
-        agent_pos = self.agent.game_state.event.position
+        agent_pos = self.agent.game_state.position
         #print ("In go goal and pick up")
         #print ("agent position" , agent_pos)
         dist_nearest_points = 1000
@@ -404,7 +404,6 @@ class SequenceGenerator(object):
 
     def update_goal_centre(self):
         displacement = self.agent.game_state.displacement
-        #pose = game_util.get_pose(self.agent.game_state.event)[:3]
         goal_points = self.agent.game_state.goal_calculated_points
         obj_occ_map = get_occupancy_from_points( goal_points,self.agent.game_state.occupancy_map.shape)   
         self.goal_object = polygon_simplify(occupancy_to_polygons( obj_occ_map,self.agent.game_state.grid_size,displacement ))
@@ -452,8 +451,8 @@ class SequenceGenerator(object):
 
         #print ("xmax,xmin", np.amax(goal_pixel_coords[0]), np.amin(goal_pixel_coords[0]))
         #print ("ymax,ymin", np.amax(goal_pixel_coords[1]), np.amin(goal_pixel_coords[1]))
-        x = ((np.amax(goal_pixel_coords[0]) - np.amin(goal_pixel_coords[0]))/2) + np.amin(goal_pixel_coords[0])
-        y = ((np.amax(goal_pixel_coords[1]) - np.amin(goal_pixel_coords[1]))/2) + np.amin(goal_pixel_coords[1])
+        y = ((np.amax(goal_pixel_coords[0]) - np.amin(goal_pixel_coords[0]))/2) + np.amin(goal_pixel_coords[0])
+        x = ((np.amax(goal_pixel_coords[1]) - np.amin(goal_pixel_coords[1]))/2) + np.amin(goal_pixel_coords[1])
 
         goal_pixel_coords_tuples = np.array((goal_pixel_coords[0],goal_pixel_coords[1])).T
 
@@ -505,6 +504,16 @@ class SequenceGenerator(object):
             for _ in range(m):
                 self.agent.game_state.step(action)
         
+
+    '''
+    def get_nearest_object_point(self):
+        position =self.agent.game_state.position
+
+    def explore_object_eval3(self,object_id_to_search):
+        self.get_nearest_object_point()
+        self.go_to_object()
+        self.face_object()
+    ''' 
 
     def explore_object(self, object_id_to_search):
         uuid = object_id_to_search

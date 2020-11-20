@@ -351,7 +351,7 @@ def merge_occupancy_map(occupancy_map, new_occupancy_map):
 
 def find_goal_id(object_occupancy_grids,goal_bounding_box, size, scale,displacement):
     start_time = time.time()
-    max_intersect_area = 0
+    max_intersect_area = 0.0001
     goal_object_id = -1
     #print ("number of objects seen", len (object_occupancy_grids))
     #print ("goal object bounding box" , goal_bounding_box.exterior.coords.xy)

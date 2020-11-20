@@ -153,7 +153,6 @@ class GameState(object):
             self.number_actions = 0
             self.id_goal_in_hand = None
             #print ("Full reset - in the first time of load")
-            #grid_file = 'layouts/%s-layout_%s.npy' % (scene_name,str(constants.AGENT_STEP_SIZE))
             self.graph = None
             self.goal_in_hand = False
             if seed is not None:
@@ -207,34 +206,25 @@ class GameState(object):
             self.goal_bounding_box = ObstaclePolygon(x_list, z_list)
 
 
-            #for i in range(0,8):    
-            #    x_list.append(self.goal_object.dimensions[i]['x'])
-            #    z_list.append(self.goal_object.dimensions[i]['z'])
-            #self.goal_bounding_box = ObstaclePolygon(x_list,z_list)
-            
-            #print ("self goal object x list , y list", x_list,z_list)
-            #print ("self goal ext cooords", self.goal_bounding_box.exterior.coords.xy)
-            #exit()
-
+            '''
+            Need to change below statements to 0,0,0 for local coordinates
+            '''
             position = self.event.position
             current_angle = math.radians(self.event.rotation)
             self.pose_estimate = np.array([float(position['x']),float(position['z']),current_angle]).reshape(3, 1)
+            '''
+            Local coordinate system init 
             #self.pose_estimate = np.array([0,0,0]).reshape(3,1)
-            agent_pos = {'x': self.pose_estimate[0][0], 'y': 0.465, 'z':self.pose_estimate[1][0]}
-            rotation = math.degrees(self.pose_estimate[2][0])
+            '''
+            self.position = {'x': self.pose_estimate[0][0], 'y': 0.465, 'z':self.pose_estimate[1][0]}
+            self.rotation = math.degrees(self.pose_estimate[2][0])
             self.step_output = self.event
-            #if self.number_actions %3 == 0 :
-            bounding_boxes =convert_observation(self,self.number_actions,agent_pos, rotation)
-            #self.add_obstacle_func(self.event)
+            bounding_boxes = convert_observation(self,self.number_actions,self.position,self.rotation) 
             self.add_obstacle_func(bounding_boxes)
             #self.add_obstacle_func_eval3(bounding_boxes)
-            #self.add_obstale_func_eval3()#(self.event)
-            #print ("type of event 2 : ", type(self.event))
             lastActionSuccess = self.event.return_status
             #print (self.pose_estimate)
             #print (self.step_output.position, math.radians(self.step_output.rotation))
-            #break
-
 
         self.process_frame()
         self.board = None
@@ -267,8 +257,6 @@ class GameState(object):
         elif action['action'] == 'MoveAhead':
             vel = 0.1
             action =  'MoveAhead'
-            #action =  'MoveAhead, amount=0.5'
-            #action =  'MoveAhead, amount=0.2'
         elif action['action'] == 'OpenObject':
             action = "OpenObject,objectId="+ str(action["objectId"])
             #print ("constructed action for open object", action)
@@ -319,28 +307,18 @@ class GameState(object):
             self.pose_estimate = self.motion_model(self.pose_estimate,agent_movement) 
         #agent_pos = self.event.position
         #rotation = self.event.rotation
-        agent_pos = {'x': self.pose_estimate[0][0], 'y': 0.465, 'z':self.pose_estimate[1][0]}
-        rotation = math.degrees(self.pose_estimate[2][0])
+        self.position = {'x': self.pose_estimate[0][0], 'y': 0.465, 'z':self.pose_estimate[1][0]}
+        self.rotation = math.degrees(self.pose_estimate[2][0])
         self.step_output = self.event
         start_time = time.time()
-        bounding_boxes = convert_observation(self,self.number_actions,agent_pos, rotation)# ,self.occupancy_map) 
+        bounding_boxes = convert_observation(self,self.number_actions,self.position,self.rotation) 
         #bounding_boxes = convert_observation(self,self.number_actions)#,agent_pos, rotation) 
         #print ("Frame processing time" , time.time()- start_time)
-        #self.add_obstacle_func(self.event)
         self.add_obstacle_func(bounding_boxes)
-        #self.add_obstacle_func_eval3(bounding_boxes)
         self.number_actions += 1
-        #print (self.pose_estimate)
-        #print (self.step_output.position, math.radians(self.step_output.rotation))
-
-        #self.times[2, 0] += time.time() - t_start
-        #self.times[2, 1] += 1
-        # if self.times[2, 1] % 100 == 0:
-        #     print('env step time %.3f' % (self.times[2, 0] / self.times[2, 1]))
 
         
         #print ("return status from step " , self.event.return_status)
-        #if self.event.metadata['lastActionSuccess']:
         if self.event.return_status :
             self.process_frame()
         else :
