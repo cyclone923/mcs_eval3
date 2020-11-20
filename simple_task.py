@@ -12,19 +12,9 @@ if __name__ == "__main__":
         task="interaction_scenes", scene_type="retrieval", seed=50,
         #task="interaction_scenes", scene_type="traversal", seed=50,
         #task="interaction_scenes", scene_type="transferral", seed=50,
-<<<<<<< HEAD
         #task="interaction_scenes", scene_type="experiment", seed=50,
         start_scene_number=start_scene_number, frame_collector=None, set_trophy=True, trophy_prob=1
         #start_scene_number=start_scene_number, frame_collector=None, set_trophy=False, trophy_prob=1
-||||||| merged common ancestors
-        task="interaction_scenes", scene_type="experiment", seed=50,
-        #start_scene_number=start_scene_number, frame_collector=None, set_trophy=True, trophy_prob=1
-        start_scene_number=start_scene_number, frame_collector=None, set_trophy=False, trophy_prob=1
-=======
-        #task="interaction_scenes", scene_type="experiment", seed=50,
-        #start_scene_number=start_scene_number, frame_collector=None, set_trophy=True, trophy_prob=1
-        start_scene_number=start_scene_number, frame_collector=None, set_trophy=False, trophy_prob=1
->>>>>>> ca33620218b39ce5e4f1801cef2b908cd36c2dea
     ) # trophy_prob=1 mean the trophy is 100% outside the box, trophy_prob=0 mean the trophy is 100% inside the box,
     metaController = MetaController(env)
     result_total = 0
