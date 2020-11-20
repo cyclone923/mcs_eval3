@@ -3,7 +3,7 @@ import pickle
 import os.path as osp
 import numpy as np
 from easydict import EasyDict as edict
-from tracker.save_tool import SaveTool
+from tracker.generateData.save_tool import SaveTool
 
 imgSaver = SaveTool()
 cfg = edict()
