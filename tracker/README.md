@@ -37,18 +37,26 @@
         cd external/DCNv2
         python setup.py build develop
         ```
-    3. Add './tracker' to the system path
-        + In script: 'import sys  sys.path.append('./tracker')'
-        + In command line: export PYTHONPATH=$PYTHONPATH:./tracker
-    
+    3. download the weights file and save under 'tracker/instSeg/'.
+        ``` Shell
+        todo::
+        ```
+        
     4. Run the demo test
         ```Shell
         cd tracker/instSeg
-        python inference.py
+        python MaskAndClassPredictor.py
         ```
 
     5. Call the API from path.
+        + Add './tracker' to the system path
+            - In script: 'import sys  sys.path.append('./tracker')'
+            - In command line: export PYTHONPATH=$PYTHONPATH:./tracker
+    
         ```Shell
-        from instSeg.inference import xxxx
+        from instSeg.MaskAndClassPredictor import MaskAndClassPredictor as Predictor
+        model = Predictor(dataset='mcsvideo3_inter')
+        # prepare bgrI, depthI
+        ret = model(bgrI, depthI)
         ```
         

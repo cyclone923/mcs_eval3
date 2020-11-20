@@ -8,13 +8,18 @@ import data
 from dvis_network import DVIS
 from utils.augmentations import BaseTransform
 
-class SegmentProcess(object):
+class MaskAndClassPredictor(object):
     '''
     The class is used to load trained DVIS-MC model and predict panoptic segmentation from raw data (RGB or RGB+D)
     '''
     def __init__(self, dataset='mcsvideo3_inter',
                        config='plus_resnet50_config_depth_MC',
                        weights=None, cuda=True):
+        '''
+        @Param: dataset -- 'mcsvideo3_inter | mcsvideo_inter | mcsvideo_voe'
+                config -- check the config files in data for more configurations.
+                weights -- file for loading model weights
+        '''
         cfg, set_cfg = data.dataset_specific_import(dataset)
         set_cfg(cfg, config)
 
@@ -117,7 +122,7 @@ if __name__=='__main__':
     bgrI   = cv2.imread('./demo/original-24-0.jpg')
     depthI = smisc.imread('./demo/depth-24-0.png', mode='P')
 
-    model = SegmentProcess()
+    model = MaskAndClassPredictor()
     ret   = model.step(bgrI, depthI)
 
     fig, ax = plt.subplots(2,2)
