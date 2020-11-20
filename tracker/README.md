@@ -34,18 +34,20 @@
     
     2. Compile deformable convolutional layers (from [DCNv2](https://github.com/CharlesShang/DCNv2/tree/pytorch_1.0)). Make sure you have the latest CUDA toolkit installed from [NVidia's Website](https://developer.nvidia.com/cuda-toolkit).
         ```Shell
-        cd external/DCNv2
+        cd tracker/instSeg/external/DCNv2
         python setup.py build develop
+        cd ../../
         ```
     3. download the weights file and save under 'tracker/instSeg/'.
         ``` Shell
-        todo::
+        wget https://oregonstate.box.com/shared/static/0syjouwkkpm0g1zbnt1riheshfvtd2by.pth 
+        mv 0syjouwkkpm0g1zbnt1riheshfvtd2by.pth dvis_resnet50_mc.pth 
         ```
         
     4. Run the demo test
         ```Shell
-        cd tracker/instSeg
         python MaskAndClassPredictor.py
+        cd ../../
         ```
 
     5. Call the API from path.
