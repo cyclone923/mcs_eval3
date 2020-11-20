@@ -9,7 +9,7 @@ import json
 import matplotlib
 matplotlib.use('TkAgg')
 
-AGENT_RADIUS = 0.35
+AGENT_RADIUS = 0.2
 
 TROPHY_OPTION = {
     "single_trophy_1": lambda o: (o[12], None),

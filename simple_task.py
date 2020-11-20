@@ -6,13 +6,15 @@ import sys
 
 
 if __name__ == "__main__":
-    start_scene_number = 20
+    start_scene_number = 0
     collector = Frame_collector(scene_dir="simple_task_img", start_scene_number=start_scene_number)
     env = McsEnv(
         task="interaction_scenes", scene_type="retrieval", seed=50,
         #task="interaction_scenes", scene_type="traversal", seed=50,
         #task="interaction_scenes", scene_type="transferral", seed=50,
-        start_scene_number=start_scene_number, frame_collector=None, set_trophy=True, trophy_prob=1
+        #task="interaction_scenes", scene_type="experiment", seed=50,
+        start_scene_number=start_scene_number, frame_collector=None, set_trophy=True, trophy_prob=0
+        #start_scene_number=start_scene_number, frame_collector=None, set_trophy=False, trophy_prob=1
     ) # trophy_prob=1 mean the trophy is 100% outside the box, trophy_prob=0 mean the trophy is 100% inside the box,
     metaController = MetaController(env)
     result_total = 0
@@ -22,7 +24,7 @@ if __name__ == "__main__":
     exploration_success = 0
     negative_reward = 0
     number_tasks_success = 0 
-    number_scenes = 100
+    number_scenes = 10
     negative_rewards = 0
     failure_return_status = {}
     print ("Start scene number = ", start_scene_number)
@@ -60,6 +62,7 @@ if __name__ == "__main__":
         #        str(result_total)+",exploration success until now,"+ str(exploration_success)  +"\n")
         #f.close()
         #print ("scene number completed = ", env.current_scene)
+        break
 
     #print ("Number tasks attempted" , number_tasks_attempted)
     print ("Total Success envs", number_tasks_success)

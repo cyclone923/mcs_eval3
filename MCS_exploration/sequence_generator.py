@@ -184,6 +184,8 @@ class SequenceGenerator(object):
         #print ("done exploring point and now going to random points")
         #print ("current pose ", pose)
 
+        self.explore_all_objects()
+
         if self.agent.game_state.goals_found:
             #print ("Object found returning to main ")
             self.go_to_goal_and_pick()
@@ -333,51 +335,18 @@ class SequenceGenerator(object):
 
     def go_to_goal_and_pick(self):
 
-        self.update_goal_centre()
-        agent_pos = self.agent.game_state.event.position
-        print ("In go goal and pick up")
-        print ("agent position" , agent_pos)
-        dist_nearest_points = 1000
-        #x_list = self.goal_object.exterior.coords.xy[0]
-        #y_list = self.goal_object.exterior.coords.xy[1]
-        x_list = self.goal_object.x_list
-        y_list = self.goal_object.y_list
-        #print (x_list)
-        #print (y_list)
-        for x in x_list:
-            for y in y_list:
-                if math.sqrt( (x-agent_pos['x'])**2 + (y-agent_pos['z'])**2 ) < dist_nearest_points :
-                     
-                    self.goal_object_nearest_point = (x,y)
-                    dist_nearest_points = math.sqrt( (x-agent_pos['x'])**2 + (y-agent_pos['z'])**2 )
+        #print ("object goal ID = " , self.agent.game_state.goal_id)
 
+        target_obj = self.get_target_obj(self.agent.game_state.goal_id)
+        object_nearest_point = self.get_nearest_object_point(target_obj)
+        agent_pos = self.agent.game_state.position
 
-        #print ("nearest point found = ", self.goal_object_nearest_point)
-        new_end_point = [0]*2
-        #new_end_point[0] = self.goal_object_nearest_point[0] *constants.AGENT_STEP_SIZE 
-        #new_end_point[1] = self.goal_object_nearest_point[1] *constants.AGENT_STEP_SIZE 
-        new_end_point[0] = self.goal_object_nearest_point[0] 
-        new_end_point[1] = self.goal_object_nearest_point[1] 
-        #new_end_point[2] = pose[2]
         success_distance = 0.40 
-        print ("goal point : ", new_end_point)
-        print ("agent current position" , self.agent.game_state.event.position)
-        nav_success = self.agent.nav.go_to_goal(new_end_point, self.agent, success_distance) 
-
-        print ("after nav end")
-
-    
-        #pose = game_util.get_pose(self.agent.game_state.event)[:3]
-        #print ("after moving pose" ,pose)
-        
-        #print ("Returned to going and picking goal function")
-        self.update_goal_centre()
-
-        self.face_object()
-
-        #goal_pixel_coords = []
-        x,y = self.get_goal_pixels()
-        #print (x,y)
+        #print ("agent position" , agent_pos)
+        #print ("goal point : ", object_nearest_point)
+        nav_success = self.agent.nav.go_to_goal(object_nearest_point, self.agent, success_distance) 
+        self.face_object(target_obj)
+        x,y = self.get_obj_pixels(target_obj)
                 
         action = {'action':"PickupObject", 'x': x, 'y':y}
         self.agent.game_state.step(action)
@@ -385,10 +354,10 @@ class SequenceGenerator(object):
 
         while self.agent.game_state.event.return_status == "OUT_OF_REACH":
             success_distance -= 0.03
-            nav_success = self.agent.nav.go_to_goal(new_end_point, self.agent, success_distance) 
-            self.update_goal_centre()
+            nav_success = self.agent.nav.go_to_goal(object_nearest_point, self.agent, success_distance) 
+            #self.update_goal_centre()
             self.face_object()
-            x,y = self.get_goal_pixels()
+            x,y = self.get_obj_pixels(target_obj)
             #print (x,y)
             if x == None and y == None :
                 continue
@@ -397,76 +366,53 @@ class SequenceGenerator(object):
             going_closer_counter += 1
             if going_closer_counter > 5:
                 break
-            
-
-        #print ("Done executing ")
-
-
-    def update_goal_centre(self):
-        displacement = self.agent.game_state.displacement
-        #pose = game_util.get_pose(self.agent.game_state.event)[:3]
-        goal_points = self.agent.game_state.goal_calculated_points
-        obj_occ_map = get_occupancy_from_points( goal_points,self.agent.game_state.occupancy_map.shape)   
-        self.goal_object = polygon_simplify(occupancy_to_polygons( obj_occ_map,self.agent.game_state.grid_size,displacement ))
-        if self.goal_object.geom_type == "MultiPolygon":
-            #allparts = [p.buffer(0) for p in .geometry]
-            #simensions = self.goal_object.dimensions
-            bd_point = set()
-            for polygon in self.goal_object :
-                x_list, z_list = polygon.exterior.coords.xy
-                #print ("each poly exterior pts", x_list,z_list)
-                for x,z in zip(x_list,z_list):
-                    #x, z = dimensions[i]['x'], dimensions[i]['z']
-                    if (x, z) not in bd_point:
-                        bd_point.add((x, z))
-
-            #print ("boundary points")
-            poly = MultiPoint(sorted(bd_point)).convex_hull
-            self.goal_object = poly.simplify(0.0)#MultiPoint(sorted(bd_point)).convex_hull
-            #x_list, z_list = poly.exterior.coords.xy
-            #self.goal_bounding_box = ObstaclePolygon(x_list, z_list)
-            #print ("multi polygon ",self.goal_bounding_box.exterior.coords.xy)    
-            #return
-        #else: 
-        exterior_coords = self.goal_object.exterior.coords.xy
-        #print ("exterior coords" ,exterior_coords)
-        #print ("exterior coords" ,exterior_coords[0])
-        #print ("exterior coords" ,exterior_coords[0][0])
-        #print ()
-        
-        self.goal_object = ObstaclePolygon(exterior_coords[0], exterior_coords[1])
-        #print ("exterior coords calculated", exterior_coords)
-        #print ("Exterior coords grnd truth x ", self.agent.game_state.goal_bounding_box.x_list)
-        #print ("Exterior coords grnd truth z ", self.agent.game_state.goal_bounding_box.y_list)
-        #print ("agent pose" , pose)
-        self.goal_centre_x = np.mean(np.array(self.goal_object.x_list,dtype=object))
-        self.goal_centre_z = np.mean(np.array(self.goal_object.y_list,dtype=object))
         
 
-
-    def get_goal_pixels(self):
+    def get_obj_pixels(self,target_obj):
         arr_mask = np.array(self.agent.game_state.event.object_mask_list[-1])
         reshaped_obj_masks = arr_mask.reshape(-1, arr_mask.shape[-1])
         ar_row_view= reshaped_obj_masks.view('|S%d' % (reshaped_obj_masks.itemsize * reshaped_obj_masks.shape[1]))
         reshaped_obj_masks = ar_row_view.reshape(arr_mask.shape[:2])
         #goal_pixel_coords = np.where(ar_row_view==self.agent.game_state.goal_id )
-        goal_pixel_coords = np.where(reshaped_obj_masks==self.agent.game_state.goal_id )
+        goal_pixel_coords = np.where(reshaped_obj_masks==target_obj.current_frame_id )
         #print (len(goal_pixel_coords[0]))  
         if len(goal_pixel_coords[0])==0 :
             return None, None
 
         #print ("xmax,xmin", np.amax(goal_pixel_coords[0]), np.amin(goal_pixel_coords[0]))
         #print ("ymax,ymin", np.amax(goal_pixel_coords[1]), np.amin(goal_pixel_coords[1]))
-        x = ((np.amax(goal_pixel_coords[0]) - np.amin(goal_pixel_coords[0]))/2) + np.amin(goal_pixel_coords[0])
-        y = ((np.amax(goal_pixel_coords[1]) - np.amin(goal_pixel_coords[1]))/2) + np.amin(goal_pixel_coords[1])
+        y = ((np.amax(goal_pixel_coords[0]) - np.amin(goal_pixel_coords[0]))/2) + np.amin(goal_pixel_coords[0])
+        x = ((np.amax(goal_pixel_coords[1]) - np.amin(goal_pixel_coords[1]))/2) + np.amin(goal_pixel_coords[1])
+
+        goal_pixel_coords_tuples = np.array((goal_pixel_coords[0],goal_pixel_coords[1])).T
+
+        '''
+        print (type(goal_pixel_coords_tuples), len(goal_pixel_coords_tuples))
+        print ("get goal pixels")
+        print ("example,", goal_pixel_coords_tuples[0], (x,y))
+        
+        if (x,y) in goal_pixel_coords_tuples : 
+            print ("goal pixels in the list of possible goal pixels")
+        else :
+            print ("goal pixels not in list of possible goal pixels")
+        '''
         return x,y
 
+    def get_target_obj(self,target_obj_id):
+        target_obj = None
+        for obstacle in self.agent.game_state.global_obstacles :
+            if obstacle.id == target_obj_id:
+                target_obj = obstacle
+                break
+        return target_obj
+        
 
-    def face_object(self):
+    def face_object(self,target_obj):
+            
         goal_object_centre = [0]*3
-        goal_object_centre[0] = self.goal_centre_x
-        goal_object_centre[1] = 0.1
-        goal_object_centre[2] = self.goal_centre_z
+        goal_object_centre[0] = target_obj.centre_x
+        goal_object_centre[1] = target_obj.centre_y
+        goal_object_centre[2] = target_obj.centre_z
         #goal_pixel_coords = np.where(self.agent.game_state.object_mask==self.agent.game_state.goal_id )
         
         theta = - NavigatorResNet.get_polar_direction(goal_object_centre, self.agent.game_state.event) * 180/math.pi
@@ -496,7 +442,98 @@ class SequenceGenerator(object):
             action = {'action': 'LookUp'}
             for _ in range(m):
                 self.agent.game_state.step(action)
+
+    def look_straight(self):
+        omega = self.agent.game_state.event.head_tilt
+         
+        m = int(abs(omega) // 10)
+        if omega > 0:
+            action = {'action': 'LookUp'}
+            for _ in range(m):
+                self.agent.game_state.step(action)
+        else:
+            action = {'action': 'LookDown'}
+            for _ in range(m):
+                self.agent.game_state.step(action)
         
+
+    def get_best_object_point(self,target_obj,dist_points,dist_func):
+        agent_pos  =self.agent.game_state.position
+        exterior_coords = target_obj.get_convex_polygon_coords()
+        x_list = exterior_coords[0]
+        y_list = exterior_coords[1]
+        for x in x_list:
+            for y in y_list:
+                #if math.sqrt( (x-agent_pos['x'])**2 + (y-agent_pos['z'])**2 ) < dist_points :
+                if dist_func(math.sqrt( (x-agent_pos['x'])**2 + (y-agent_pos['z'])**2 ),dist_points) :
+                    object_point = [x,y]
+                    dist_points = math.sqrt( (x-agent_pos['x'])**2 + (y-agent_pos['z'])**2 )
+
+        return object_point
+
+    def nearest(self,a,b):  
+        if a < b :
+            return True
+
+    def farthest(self,a,b):
+        if a > b :
+            return True
+
+    def go_to_object_and_open(self,target_obj):
+        #target_obj = get_target_obj(target_obj_id)
+        object_nearest_point = self.get_best_object_point(target_obj, 1000, self.nearest)
+        object_farthest_point = self.get_best_object_point(target_obj, 0.0 , self.farthest)
+
+        success_distance = 0.40 
+        nav_success = self.agent.nav.go_to_goal(object_nearest_point, self.agent, success_distance) 
+        self.face_object(target_obj)
+
+        x,y = self.get_obj_pixels (target_obj)
+        action = {'action':"OpenObject", 'x': x, 'y':y}
+        self.agent.game_state.step(action)
+
+        self.look_straight()
+        #nav_success = self.agent.nav.go_to_goal(object_farthest_point, self.agent, success_distance) 
+        #self.face_object(target_obj)
+    
+    def explore_all_objects(self):
+        for obstacle in self.agent.game_state.global_obstacles[2:] :
+            self.go_to_object_and_open(obstacle)
+
+
+    def update_goal_centre(self):
+        displacement = self.agent.game_state.displacement
+        goal_points = self.agent.game_state.goal_calculated_points
+        obj_occ_map = get_occupancy_from_points( goal_points,self.agent.game_state.occupancy_map.shape)   
+        self.goal_object = polygon_simplify(occupancy_to_polygons( obj_occ_map,self.agent.game_state.grid_size,displacement ))
+        if self.goal_object.geom_type == "MultiPolygon":
+            #allparts = [p.buffer(0) for p in .geometry]
+            #simensions = self.goal_object.dimensions
+            bd_point = set()
+            for polygon in self.goal_object :
+                x_list, z_list = polygon.exterior.coords.xy
+                #print ("each poly exterior pts", x_list,z_list)
+                for x,z in zip(x_list,z_list):
+                    #x, z = dimensions[i]['x'], dimensions[i]['z']
+                    if (x, z) not in bd_point:
+                        bd_point.add((x, z))
+
+            #print ("boundary points")
+            poly = MultiPoint(sorted(bd_point)).convex_hull
+            self.goal_object = poly.simplify(0.0)#MultiPoint(sorted(bd_point)).convex_hull
+            #x_list, z_list = poly.exterior.coords.xy
+            #self.goal_bounding_box = ObstaclePolygon(x_list, z_list)
+            #print ("multi polygon ",self.goal_bounding_box.exterior.coords.xy)    
+            #return
+        #else: 
+        exterior_coords = self.goal_object.exterior.coords.xy
+        
+        self.goal_object = ObstaclePolygon(exterior_coords[0], exterior_coords[1])
+        #print ("exterior coords calculated", exterior_coords)
+        #print ("Exterior coords grnd truth x ", self.agent.game_state.goal_bounding_box.x_list)
+        #print ("Exterior coords grnd truth z ", self.agent.game_state.goal_bounding_box.y_list)
+        self.goal_centre_x = np.mean(np.array(self.goal_object.x_list,dtype=object))
+        self.goal_centre_z = np.mean(np.array(self.goal_object.y_list,dtype=object))
 
     def explore_object(self, object_id_to_search):
         uuid = object_id_to_search
