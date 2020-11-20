@@ -338,7 +338,7 @@ class SequenceGenerator(object):
         #print ("object goal ID = " , self.agent.game_state.goal_id)
 
         target_obj = self.get_target_obj(self.agent.game_state.goal_id)
-        object_nearest_point = self.get_nearest_object_point(target_obj)
+        object_nearest_point = self.get_best_object_point(target_obj, 1000, self.nearest )
         agent_pos = self.agent.game_state.position
 
         success_distance = 0.40 
