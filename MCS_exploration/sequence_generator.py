@@ -483,6 +483,9 @@ class SequenceGenerator(object):
         #target_obj = get_target_obj(target_obj_id)
         object_nearest_point = self.get_best_object_point(target_obj, 1000, self.nearest)
         object_farthest_point = self.get_best_object_point(target_obj, 0.0 , self.farthest)
+    
+        print ("object nearest point", object_nearest_point)
+        print ("object nearest point", object_farthest_point)
 
         success_distance = 0.40 
         nav_success = self.agent.nav.go_to_goal(object_nearest_point, self.agent, success_distance) 
@@ -493,8 +496,8 @@ class SequenceGenerator(object):
         self.agent.game_state.step(action)
 
         self.look_straight()
-        #nav_success = self.agent.nav.go_to_goal(object_farthest_point, self.agent, success_distance) 
-        #self.face_object(target_obj)
+        nav_success = self.agent.nav.go_to_goal(object_farthest_point, self.agent, success_distance) 
+        self.face_object(target_obj)
     
     def explore_all_objects(self):
         for obstacle in self.agent.game_state.global_obstacles[2:] :

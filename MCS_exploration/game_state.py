@@ -285,7 +285,7 @@ class GameState(object):
 
         '''
         '''
-        print (action)
+        #print (action)
         end_time_1 = time.time()
         action_creation_time = end_time_1 - t_start
         #print ("action creating time",action_creation_time)
@@ -321,6 +321,8 @@ class GameState(object):
         agent_movement = np.array([vel, ang_rate],dtype=np.float64).reshape(2, 1)
         if self.event.return_status != "OBSTRUCTED":
             self.pose_estimate = self.motion_model(self.pose_estimate,agent_movement) 
+        else :
+            print ("return status from step " , self.event.return_status)
         #agent_pos = self.event.position
         #rotation = self.event.rotation
         self.position = {'x': self.pose_estimate[0][0], 'y': 0.465, 'z':self.pose_estimate[1][0]}
@@ -336,7 +338,6 @@ class GameState(object):
         self.number_actions += 1
 
         
-        print ("return status from step " , self.event.return_status)
         if self.event.return_status :
             self.process_frame()
         else :
