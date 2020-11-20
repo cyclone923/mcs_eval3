@@ -29,9 +29,6 @@ class Obstacle():
         obj_occ_map = get_occupancy_from_points( self.occupancy_map_points,size)   
         self.bounding_box = polygon_simplify(occupancy_to_polygons(obj_occ_map,scale,displacement ))
 
-    def get_occupancy_map_points(self):
-        return self.occupancy_map_points
-
     def calculate_centre(self):
         exterior_coords = self.get_convex_polygon_coords()
         self.centre_x = np.mean(np.array(exterior_coords[0],dtype=object))
