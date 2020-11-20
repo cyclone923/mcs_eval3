@@ -15,6 +15,8 @@ import shapely.geometry.polygon as sp
 from MCS_exploration.navigation.visibility_road_map import ObstaclePolygon,IncrementalVisibilityRoadMap
 from MCS_exploration.frame_processing import *
 from shapely.geometry import Point, MultiPoint
+from MCS_exploration.obstacle import Obstacle
+import copy
 
 
 import constants
@@ -102,6 +104,9 @@ class GameState(object):
         self.object_mask = None
         self.goal_id = None
         self.pose_estimate = np.zeros((3,1),dtype = np.float64)
+        self.global_obstacles = []
+        self.current_frame_obstacles = []
+        self.objs = 0
 
     def occupancy_map_init(self):
         #rows = int(self.map_width//self.grid_size)
@@ -174,6 +179,11 @@ class GameState(object):
             else :
                 self.event = game_util.reset(self.env, self.scene_name,config_filename)
             self.goals = []
+
+            '''
+            Oracle data being used (eval 2)
+            '''
+
             for key,value in self.event.goal.metadata.items():
                 if key == "target" or key == "target_1" or key == "target_2":
                     self.goals.append(self.event.goal.metadata[key]["id"])
@@ -187,6 +197,10 @@ class GameState(object):
                     self.discovered_objects[-1]['explored'] = 0
                     self.discovered_objects[-1]['openable'] = None
                     #self.discovered_objects[-1]['agent_position'] = None
+
+            '''
+            Oracle data being used (eval 3 )
+            '''
 
             for elem in self.event.object_list:
                 if self.event.goal.metadata['target']['id'] == elem.uuid :
@@ -219,7 +233,8 @@ class GameState(object):
             self.position = {'x': self.pose_estimate[0][0], 'y': 0.465, 'z':self.pose_estimate[1][0]}
             self.rotation = math.degrees(self.pose_estimate[2][0])
             self.step_output = self.event
-            bounding_boxes = convert_observation(self,self.number_actions,self.position,self.rotation) 
+            bounding_boxes,current_frame_occupancy_points = convert_observation(self,self.number_actions,self.position,self.rotation) 
+            self.create_current_frame_obstacles(current_frame_occupancy_points)
             self.add_obstacle_func(bounding_boxes)
             #self.add_obstacle_func_eval3(bounding_boxes)
             lastActionSuccess = self.event.return_status
@@ -311,7 +326,9 @@ class GameState(object):
         self.rotation = math.degrees(self.pose_estimate[2][0])
         self.step_output = self.event
         start_time = time.time()
-        bounding_boxes = convert_observation(self,self.number_actions,self.position,self.rotation) 
+        #bounding_boxes = convert_observation(self,self.number_actions,self.position,self.rotation) 
+        bounding_boxes,current_frame_occupancy_points = convert_observation(self,self.number_actions,self.position,self.rotation) 
+        self.create_current_frame_obstacles(current_frame_occupancy_points)
         #bounding_boxes = convert_observation(self,self.number_actions)#,agent_pos, rotation) 
         #print ("Frame processing time" , time.time()- start_time)
         self.add_obstacle_func(bounding_boxes)
@@ -324,28 +341,33 @@ class GameState(object):
         else :
             print ("Failed status : ",self.event.return_status )
 
-    
+        start_time = time.time()
+        self.update_global_obstacles()
+        self.merge_global_obstacles()
+        #print ("time taken to update global obstacle list", time.time()-start_time)
+        #print ("global list len", len(self.global_obstacles))
+        #print ("bb len", len(self.get_obstacles()))
+
+        SHOW_ANIMATION = False
+
+        if SHOW_ANIMATION:
+            plt.cla()
+            plt.xlim((-7, 7))
+            plt.ylim((-7, 7))
+            plt.gca().set_xlim((-7, 7))
+            plt.gca().set_ylim((-7, 7))
+
+            for obstacle in self.global_obstacles:
+                patch1 = PolygonPatch(obstacle.get_bounding_box(), fc='green', ec="black", alpha=0.2, zorder=1)
+                plt.gca().add_patch(patch1)
+                centre_x,centre_y,centre_z = obstacle.get_centre()
+                plt.plot(centre_x, centre_z, "x")
+
+            plt.axis("equal")
+            plt.pause(0.001)
+
         #goal_occupancy_map = 
 
-        '''
-        #print (self.event.object_mask_list)
-        min_obstacle_area = 100000
-        for obstacle_id,obstacle_polygon in self.get_obstacles().items():
-            print ("obstcle poly area",obstacle_polygon.area)
-            if obstacle_polygon.area < min_obstacle_area :
-                min_area_obstacle = obstacle_id
-                min_obstacle_area = obstacle_polygon.area
-
-        epsilon = 1.1* grid_size * grid_size
-        if  (min_obstacle_area) < epsilon:
-            print ("small area")
-            #self.goal_centre_y = 
-            #print (self.goal_centre_x)
-            #print (self.goal_centre_z)
-            #print (agent_pos)  
-            #print (self.goal_object_nearest_point)
-            self.goals_found = True
-        '''
         #for elem in self.discovered_explored:
         #    if elem in self.goals:
         #        #total_goal_objects_found[scene_type] += 1
@@ -353,6 +375,78 @@ class GameState(object):
 
         #if len(self.goals) == 0 :
         #    self.goals_found = True
+
+    def update_global_obstacles(self):
+        #for key,values in self.current_frame_obstacles.items():
+        for curr_frame_obstacle in self.current_frame_obstacles:
+            flag = 0 
+            #obj_occ_map = get_occupancy_from_points( values,self.occupancy_map.shape)   
+            #obj_polygon = polygon_simplify(occupancy_to_polygons(obj_occ_map,self.grid_size,self.displacement ))
+            #print (values)
+            for i,obstacle in enumerate(self.global_obstacles) :
+                intersect_area = curr_frame_obstacle.get_bounding_box().intersection(obstacle.get_bounding_box()).area
+                #print ("Intersection area : ", intersect_area)
+                if intersect_area > 0.00001 :
+                    self.global_obstacles[i].expand_obstacle(curr_frame_obstacle.get_occupancy_map_points(),self.occupancy_map.shape,self.grid_size,self.displacement)
+                    self.global_obstacles[i].current_frame_id = curr_frame_obstacle.current_frame_id
+                    self.global_obstacles[i].is_goal =  curr_frame_obstacle.is_goal
+                    if self.global_obstacles[i].is_goal :
+                        self.goal_id = self.global_obstacles[i].id
+                        self.goals_found = True
+                    flag = 1
+                    break
+            if flag == 0 :
+                #self.global_obstacles.append(Obstacle(self.objs, values,self.occupancy_map.shape,self.grid_size,self.displacement))
+                self.global_obstacles.append(copy.deepcopy(curr_frame_obstacle))
+                self.global_obstacles[-1].id = self.objs
+                if self.global_obstacles[-1].is_goal == True :
+                    self.goal_id = self.objs
+                    self.goals_found = True
+                self.objs += 1
+
+    def merge_global_obstacles(self):
+        #print ("in merge before ", len(self.global_obstacles))
+        elem_to_pop = []
+        for i,obstacle1 in enumerate(self.global_obstacles):
+            if obstacle1 in elem_to_pop :
+                continue
+            
+            for j in range(i+1,len(self.global_obstacles)):
+                obstacle2 = self.global_obstacles[j]
+                intersect_area = obstacle1.get_bounding_box().intersection(obstacle2.get_bounding_box()).area
+                if intersect_area > 0.00001 :
+                    obstacle1.expand_obstacle(obstacle2.get_occupancy_map_points(),self.occupancy_map.shape,self.grid_size,self.displacement)
+                    elem_to_pop.append(obstacle2) 
+            
+        #print ("len of elements to pop", len(elem_to_pop))
+        for elem in elem_to_pop:
+            self.global_obstacles.remove(elem)        
+        #print ("in merge end ", len(self.global_obstacles))
+
+    def create_current_frame_obstacles(self, current_frame_obstacles_dict):
+        obj_id =  1000
+        max_intersect_area = 0.001
+        i = 0
+        self.current_frame_obstacles = []
+        goal_index = -1
+        for key,values in current_frame_obstacles_dict.items():
+            self.current_frame_obstacles.append(Obstacle(obj_id, values,self.occupancy_map.shape,self.grid_size,self.displacement))
+            self.current_frame_obstacles[-1].current_frame_id = key
+            intersect_area = self.current_frame_obstacles[-1].get_bounding_box().intersection(self.goal_bounding_box).area
+            #print ("obj polygons points" ,obj_polygon.exterior.coords.xy)
+            #print ("Intersection area : ", intersect_area)
+            #print ("polygon area" ,.area)
+            if intersect_area > max_intersect_area :
+                goal_index = i
+                self.goal_calculated_points = self.current_frame_obstacles[-1].get_bounding_box() 
+                max_intersect_area = intersect_area
+            i += 1
+            obj_id += 1
+
+        if goal_index != -1:
+            self.current_frame_obstacles[goal_index].is_goal = True
+
+        #print ("current frame obstacles size", len(self.current_frame_obstacles))
 
 
     def motion_model(self, x, u):

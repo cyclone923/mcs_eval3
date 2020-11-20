@@ -25,3 +25,6 @@ SCENE_HISTORY/
 
 #Ignore the results folder
 results/
+
+#ignore any original files from git 
+**.*.orig

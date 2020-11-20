@@ -62,7 +62,6 @@ if __name__ == "__main__":
         #        str(result_total)+",exploration success until now,"+ str(exploration_success)  +"\n")
         #f.close()
         #print ("scene number completed = ", env.current_scene)
-        break
 
     #print ("Number tasks attempted" , number_tasks_attempted)
     print ("Total Success envs", number_tasks_success)

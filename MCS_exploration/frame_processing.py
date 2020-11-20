@@ -6,7 +6,6 @@ import matplotlib
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 from numpy import array
-import alphashape
 from descartes import PolygonPatch
 #from occupancy_grid_a_star.gridmap import OccupancyGridMap
 #from occupancy_grid_a_star.a_star import a_star
@@ -128,12 +127,14 @@ def convert_observation(env,frame_idx, agent_pos=None, rotation=None):
     #print ("time taken for getting point cloud", time.time()-start_time)
     #env.occupancy_map, polygons,object_occupancy_grids = point_cloud_to_polygon(all_points,env.occupancy_map,env.grid_size,env.step_output.object_mask_list[-1])#obj_masks)
     env.occupancy_map, polygons,object_occupancy_grids = point_cloud_to_polygon_v2(all_points,env.occupancy_map,env.grid_size,env.displacement,env.step_output.object_mask_list[-1])#obj_masks)
+    return polygons, object_occupancy_grids
+    '''
     start_time = time.time()
     if polygons == None:
         goal_id = -1 
         return None
     goal_id = find_goal_id(object_occupancy_grids, env.goal_bounding_box, env.occupancy_map.shape, env.grid_size, displacement)
-    #print ("time taken for finidnig goal id", time.time()-start_time)
+    print ("time taken for finidnig goal id", time.time()-start_time)
     if goal_id == -1 :
         pass
         #print ("Goal not seen in this frame")
@@ -143,8 +144,9 @@ def convert_observation(env,frame_idx, agent_pos=None, rotation=None):
         env.goal_id= goal_id
         #print ("goal found at location : " , object_occupancy_grids[goal_id])
     env.object_mask = obj_masks
+    env.current_frame_obstacles = object_occupancy_grids
     return polygons
-
+    '''
 
 def convert_output(env):
     o = env.step_output
@@ -441,18 +443,11 @@ def point_cloud_to_polygon_v2(points,occupancy_map,grid_size, displacement, obj_
         #print ("obj points shape after unique", obj_points.shape)
         #print ("type of indixes", type(unique_indices))
         object_occupancy_grids_row_view[elem] = obj_points[unique_indices]
-        #print ("unique_indices shape",unique_indices.shape)
-        #print ("points with unique_indices ",obj_points[unique_indices])
-        #print ("unique shapw shape",unique_counts.shape)
-        #print (obj_points[unique_indices])
         np_occ_map[obj_points[unique_indices][:,0],obj_points[unique_indices][:,1]] = unique_counts[:]
         np_occ_map = np.where(np_occ_map>=3, 1, 0)
-        #print ("\n np occ map", np_occ_map) 
         occupancy_map = merge_occupancy_map(occupancy_map, np_occ_map)
 
     all_polygons = occupancy_to_polygons(occupancy_map, grid_size, displacement  )
-    #print ("[new] time taken to update polygons : " , time.time()-start_time)
-    #time.sleep(1)
     simplified_polygon = polygon_simplify(all_polygons,0.08)
     show_animation =  False
     #plt.close()

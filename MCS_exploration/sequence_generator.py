@@ -333,51 +333,18 @@ class SequenceGenerator(object):
 
     def go_to_goal_and_pick(self):
 
-        self.update_goal_centre()
+        #print ("object goal ID = " , self.agent.game_state.goal_id)
+
+        target_obj = self.get_target_obj(self.agent.game_state.goal_id)
+        object_nearest_point = self.get_nearest_object_point(target_obj)
         agent_pos = self.agent.game_state.position
-        #print ("In go goal and pick up")
-        #print ("agent position" , agent_pos)
-        dist_nearest_points = 1000
-        #x_list = self.goal_object.exterior.coords.xy[0]
-        #y_list = self.goal_object.exterior.coords.xy[1]
-        x_list = self.goal_object.x_list
-        y_list = self.goal_object.y_list
-        #print (x_list)
-        #print (y_list)
-        for x in x_list:
-            for y in y_list:
-                if math.sqrt( (x-agent_pos['x'])**2 + (y-agent_pos['z'])**2 ) < dist_nearest_points :
-                     
-                    self.goal_object_nearest_point = (x,y)
-                    dist_nearest_points = math.sqrt( (x-agent_pos['x'])**2 + (y-agent_pos['z'])**2 )
 
-
-        #print ("nearest point found = ", self.goal_object_nearest_point)
-        new_end_point = [0]*2
-        #new_end_point[0] = self.goal_object_nearest_point[0] *constants.AGENT_STEP_SIZE 
-        #new_end_point[1] = self.goal_object_nearest_point[1] *constants.AGENT_STEP_SIZE 
-        new_end_point[0] = self.goal_object_nearest_point[0] 
-        new_end_point[1] = self.goal_object_nearest_point[1] 
-        #new_end_point[2] = pose[2]
         success_distance = 0.40 
-        #print ("goal point : ", new_end_point)
-        #print ("agent current position" , self.agent.game_state.event.position)
-        nav_success = self.agent.nav.go_to_goal(new_end_point, self.agent, success_distance) 
-
-        #print ("after nav end")
-
-    
-        #pose = game_util.get_pose(self.agent.game_state.event)[:3]
-        #print ("after moving pose" ,pose)
-        
-        #print ("Returned to going and picking goal function")
-        self.update_goal_centre()
-
-        self.face_object()
-
-        #goal_pixel_coords = []
-        x,y = self.get_goal_pixels()
-        #print (x,y)
+        #print ("agent position" , agent_pos)
+        #print ("goal point : ", object_nearest_point)
+        nav_success = self.agent.nav.go_to_goal(object_nearest_point, self.agent, success_distance) 
+        self.face_object(target_obj)
+        x,y = self.get_obj_pixels(target_obj)
                 
         action = {'action':"PickupObject", 'x': x, 'y':y}
         self.agent.game_state.step(action)
@@ -385,10 +352,10 @@ class SequenceGenerator(object):
 
         while self.agent.game_state.event.return_status == "OUT_OF_REACH":
             success_distance -= 0.03
-            nav_success = self.agent.nav.go_to_goal(new_end_point, self.agent, success_distance) 
-            self.update_goal_centre()
+            nav_success = self.agent.nav.go_to_goal(object_nearest_point, self.agent, success_distance) 
+            #self.update_goal_centre()
             self.face_object()
-            x,y = self.get_goal_pixels()
+            x,y = self.get_obj_pixels(target_obj)
             #print (x,y)
             if x == None and y == None :
                 continue
@@ -397,9 +364,107 @@ class SequenceGenerator(object):
             going_closer_counter += 1
             if going_closer_counter > 5:
                 break
-            
+        
 
-        #print ("Done executing ")
+    def get_obj_pixels(self,target_obj):
+        arr_mask = np.array(self.agent.game_state.event.object_mask_list[-1])
+        reshaped_obj_masks = arr_mask.reshape(-1, arr_mask.shape[-1])
+        ar_row_view= reshaped_obj_masks.view('|S%d' % (reshaped_obj_masks.itemsize * reshaped_obj_masks.shape[1]))
+        reshaped_obj_masks = ar_row_view.reshape(arr_mask.shape[:2])
+        #goal_pixel_coords = np.where(ar_row_view==self.agent.game_state.goal_id )
+        goal_pixel_coords = np.where(reshaped_obj_masks==target_obj.current_frame_id )
+        #print (len(goal_pixel_coords[0]))  
+        if len(goal_pixel_coords[0])==0 :
+            return None, None
+
+        #print ("xmax,xmin", np.amax(goal_pixel_coords[0]), np.amin(goal_pixel_coords[0]))
+        #print ("ymax,ymin", np.amax(goal_pixel_coords[1]), np.amin(goal_pixel_coords[1]))
+        y = ((np.amax(goal_pixel_coords[0]) - np.amin(goal_pixel_coords[0]))/2) + np.amin(goal_pixel_coords[0])
+        x = ((np.amax(goal_pixel_coords[1]) - np.amin(goal_pixel_coords[1]))/2) + np.amin(goal_pixel_coords[1])
+
+        goal_pixel_coords_tuples = np.array((goal_pixel_coords[0],goal_pixel_coords[1])).T
+
+        '''
+        print (type(goal_pixel_coords_tuples), len(goal_pixel_coords_tuples))
+        print ("get goal pixels")
+        print ("example,", goal_pixel_coords_tuples[0], (x,y))
+        
+        if (x,y) in goal_pixel_coords_tuples : 
+            print ("goal pixels in the list of possible goal pixels")
+        else :
+            print ("goal pixels not in list of possible goal pixels")
+        '''
+        return x,y
+
+    def get_target_obj(self,target_obj_id):
+        target_obj = None
+        for obstacle in self.agent.game_state.global_obstacles :
+            if obstacle.id == target_obj_id:
+                target_obj = obstacle
+                break
+        return target_obj
+        
+
+    def face_object(self,target_obj):
+            
+        goal_object_centre = [0]*3
+        goal_object_centre[0] = target_obj.centre_x
+        goal_object_centre[1] = target_obj.centre_y
+        goal_object_centre[2] = target_obj.centre_z
+        #goal_pixel_coords = np.where(self.agent.game_state.object_mask==self.agent.game_state.goal_id )
+        
+        theta = - NavigatorResNet.get_polar_direction(goal_object_centre, self.agent.game_state.event) * 180/math.pi
+        omega = FaceTurnerResNet.get_head_tilt(goal_object_centre, self.agent.game_state.event) - self.agent.game_state.event.head_tilt
+
+        n = int(abs(theta) // 10)
+        m = int(abs(omega) // 10)
+
+        #print ("Theta", theta)
+        #print ("Omega", omega)
+        if theta > 0:
+            #action = {'action': 'RotateRight'}
+            action = {'action': 'RotateLeft'}
+            for _ in range(n):
+                self.agent.game_state.step(action)
+        else:
+            action = {'action': 'RotateRight'}
+            #action = {'action': 'RotateLeft'}
+            for _ in range(n):
+                self.agent.game_state.step(action)
+
+        if omega > 0:
+            action = {'action': 'LookDown'}
+            for _ in range(m):
+                self.agent.game_state.step(action)
+        else:
+            action = {'action': 'LookUp'}
+            for _ in range(m):
+                self.agent.game_state.step(action)
+        
+
+    def get_nearest_object_point(self,target_obj):
+        agent_pos  =self.agent.game_state.position
+        exterior_coords = target_obj.get_convex_polygon_coords()
+        dist_nearest_points = 1000
+        x_list = exterior_coords[0]
+        y_list = exterior_coords[1]
+        for x in x_list:
+            for y in y_list:
+                if math.sqrt( (x-agent_pos['x'])**2 + (y-agent_pos['z'])**2 ) < dist_nearest_points :
+                    object_nearest_point = [x,y]
+                    dist_nearest_points = math.sqrt( (x-agent_pos['x'])**2 + (y-agent_pos['z'])**2 )
+
+        return object_nearest_point
+
+    def go_to_object_and_open(self,target_obj_id):
+        target_obj = get_target_obj(target_obj_id)
+        object_nearest_point = self.get_nearest_object_point(target_obj)
+
+        success_distance = 0.40 
+        nav_success = self.agent.nav.go_to_goal(object_nearest_point, self.agent, success_distance) 
+        
+        self.face_object(target_obj)
+
 
 
     def update_goal_centre(self):
@@ -435,85 +500,6 @@ class SequenceGenerator(object):
         #print ("Exterior coords grnd truth z ", self.agent.game_state.goal_bounding_box.y_list)
         self.goal_centre_x = np.mean(np.array(self.goal_object.x_list,dtype=object))
         self.goal_centre_z = np.mean(np.array(self.goal_object.y_list,dtype=object))
-        
-
-
-    def get_goal_pixels(self):
-        arr_mask = np.array(self.agent.game_state.event.object_mask_list[-1])
-        reshaped_obj_masks = arr_mask.reshape(-1, arr_mask.shape[-1])
-        ar_row_view= reshaped_obj_masks.view('|S%d' % (reshaped_obj_masks.itemsize * reshaped_obj_masks.shape[1]))
-        reshaped_obj_masks = ar_row_view.reshape(arr_mask.shape[:2])
-        #goal_pixel_coords = np.where(ar_row_view==self.agent.game_state.goal_id )
-        goal_pixel_coords = np.where(reshaped_obj_masks==self.agent.game_state.goal_id )
-        #print (len(goal_pixel_coords[0]))  
-        if len(goal_pixel_coords[0])==0 :
-            return None, None
-
-        #print ("xmax,xmin", np.amax(goal_pixel_coords[0]), np.amin(goal_pixel_coords[0]))
-        #print ("ymax,ymin", np.amax(goal_pixel_coords[1]), np.amin(goal_pixel_coords[1]))
-        y = ((np.amax(goal_pixel_coords[0]) - np.amin(goal_pixel_coords[0]))/2) + np.amin(goal_pixel_coords[0])
-        x = ((np.amax(goal_pixel_coords[1]) - np.amin(goal_pixel_coords[1]))/2) + np.amin(goal_pixel_coords[1])
-
-        goal_pixel_coords_tuples = np.array((goal_pixel_coords[0],goal_pixel_coords[1])).T
-
-        '''
-        print (type(goal_pixel_coords_tuples), len(goal_pixel_coords_tuples))
-        print ("get goal pixels")
-        print ("example,", goal_pixel_coords_tuples[0], (x,y))
-        
-        if (x,y) in goal_pixel_coords_tuples : 
-            print ("goal pixels in the list of possible goal pixels")
-        else :
-            print ("goal pixels not in list of possible goal pixels")
-        '''
-        return x,y
-
-
-    def face_object(self):
-        goal_object_centre = [0]*3
-        goal_object_centre[0] = self.goal_centre_x
-        goal_object_centre[1] = 0.1
-        goal_object_centre[2] = self.goal_centre_z
-        #goal_pixel_coords = np.where(self.agent.game_state.object_mask==self.agent.game_state.goal_id )
-        
-        theta = - NavigatorResNet.get_polar_direction(goal_object_centre, self.agent.game_state.event) * 180/math.pi
-        omega = FaceTurnerResNet.get_head_tilt(goal_object_centre, self.agent.game_state.event) - self.agent.game_state.event.head_tilt
-
-        n = int(abs(theta) // 10)
-        m = int(abs(omega) // 10)
-
-        #print ("Theta", theta)
-        #print ("Omega", omega)
-        if theta > 0:
-            #action = {'action': 'RotateRight'}
-            action = {'action': 'RotateLeft'}
-            for _ in range(n):
-                self.agent.game_state.step(action)
-        else:
-            action = {'action': 'RotateRight'}
-            #action = {'action': 'RotateLeft'}
-            for _ in range(n):
-                self.agent.game_state.step(action)
-
-        if omega > 0:
-            action = {'action': 'LookDown'}
-            for _ in range(m):
-                self.agent.game_state.step(action)
-        else:
-            action = {'action': 'LookUp'}
-            for _ in range(m):
-                self.agent.game_state.step(action)
-        
-
-    '''
-    def get_nearest_object_point(self):
-        position =self.agent.game_state.position
-
-    def explore_object_eval3(self,object_id_to_search):
-        self.get_nearest_object_point()
-        self.go_to_object()
-        self.face_object()
-    ''' 
 
     def explore_object(self, object_id_to_search):
         uuid = object_id_to_search
