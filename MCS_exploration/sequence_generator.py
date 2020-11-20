@@ -184,6 +184,8 @@ class SequenceGenerator(object):
         #print ("done exploring point and now going to random points")
         #print ("current pose ", pose)
 
+        self.explore_all_objects()
+
         if self.agent.game_state.goals_found:
             #print ("Object found returning to main ")
             self.go_to_goal_and_pick()
@@ -440,31 +442,63 @@ class SequenceGenerator(object):
             action = {'action': 'LookUp'}
             for _ in range(m):
                 self.agent.game_state.step(action)
+
+    def look_straight(self):
+        omega = self.agent.game_state.event.head_tilt
+         
+        m = int(abs(omega) // 10)
+        if omega > 0:
+            action = {'action': 'LookUp'}
+            for _ in range(m):
+                self.agent.game_state.step(action)
+        else:
+            action = {'action': 'LookDown'}
+            for _ in range(m):
+                self.agent.game_state.step(action)
         
 
-    def get_nearest_object_point(self,target_obj):
+    def get_best_object_point(self,target_obj,dist_points,dist_func):
         agent_pos  =self.agent.game_state.position
         exterior_coords = target_obj.get_convex_polygon_coords()
-        dist_nearest_points = 1000
         x_list = exterior_coords[0]
         y_list = exterior_coords[1]
         for x in x_list:
             for y in y_list:
-                if math.sqrt( (x-agent_pos['x'])**2 + (y-agent_pos['z'])**2 ) < dist_nearest_points :
-                    object_nearest_point = [x,y]
-                    dist_nearest_points = math.sqrt( (x-agent_pos['x'])**2 + (y-agent_pos['z'])**2 )
+                #if math.sqrt( (x-agent_pos['x'])**2 + (y-agent_pos['z'])**2 ) < dist_points :
+                if dist_func(math.sqrt( (x-agent_pos['x'])**2 + (y-agent_pos['z'])**2 ),dist_points) :
+                    object_point = [x,y]
+                    dist_points = math.sqrt( (x-agent_pos['x'])**2 + (y-agent_pos['z'])**2 )
 
-        return object_nearest_point
+        return object_point
 
-    def go_to_object_and_open(self,target_obj_id):
-        target_obj = get_target_obj(target_obj_id)
-        object_nearest_point = self.get_nearest_object_point(target_obj)
+    def nearest(self,a,b):  
+        if a < b :
+            return True
+
+    def farthest(self,a,b):
+        if a > b :
+            return True
+
+    def go_to_object_and_open(self,target_obj):
+        #target_obj = get_target_obj(target_obj_id)
+        object_nearest_point = self.get_best_object_point(target_obj, 1000, self.nearest)
+        object_farthest_point = self.get_best_object_point(target_obj, 0.0 , self.farthest)
 
         success_distance = 0.40 
         nav_success = self.agent.nav.go_to_goal(object_nearest_point, self.agent, success_distance) 
-        
         self.face_object(target_obj)
 
+        x,y = self.get_obj_pixels (target_obj)
+        action = {'action':"OpenObject", 'x': x, 'y':y}
+        self.agent.game_state.step(action)
+
+        self.look_straight()
+        #nav_success = self.agent.nav.go_to_goal(object_farthest_point, self.agent, success_distance) 
+        #self.face_object(target_obj)
+    
+    def explore_all_objects(self):
+        for obstacle in self.agent.game_state.global_obstacles[2:] :
+            self.go_to_object_and_open(obstacle)
 
 
     def update_goal_centre(self):

@@ -273,8 +273,9 @@ class GameState(object):
             vel = 0.1
             action =  'MoveAhead'
         elif action['action'] == 'OpenObject':
-            action = "OpenObject,objectId="+ str(action["objectId"])
+            #action = "OpenObject,objectId="+ str(action["objectId"])
             #print ("constructed action for open object", action)
+            action = "OpenObject,objectImageCoordsX="+str(int(action['x']))+",objectImageCoordsY="+str(int(action['y']))
         
         elif action['action'] == 'PickupObject':
             #action = "PickupObject,objectId=" + str(action['objectId'])
@@ -284,7 +285,7 @@ class GameState(object):
 
         '''
         '''
-        #print (action)
+        print (action)
         end_time_1 = time.time()
         action_creation_time = end_time_1 - t_start
         #print ("action creating time",action_creation_time)
@@ -335,7 +336,7 @@ class GameState(object):
         self.number_actions += 1
 
         
-        #print ("return status from step " , self.event.return_status)
+        print ("return status from step " , self.event.return_status)
         if self.event.return_status :
             self.process_frame()
         else :
