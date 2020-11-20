@@ -73,7 +73,7 @@ class Node(object):
 class DiscreteActionPlanner:
 
     def __init__(self, robot_radius, obstacles, eps=0.2, do_plot=False):
-        self.robot_radius = robot_radius*1.1
+        self.robot_radius = robot_radius
         self.obstacles = (unary_union(obstacles))
         self.eps = eps
         self.step = 0.1
@@ -140,7 +140,8 @@ class DiscreteActionPlanner:
                 heappush(openList, s)
                 openSet.add(s)
             
-             
+        if i == 1:
+            raise ValueError("Stuck at start state")
 
         #pr.disable()
         #s = StringIO()
