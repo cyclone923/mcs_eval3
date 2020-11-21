@@ -2,7 +2,7 @@
 
 import cv2
 import numpy as np
-from data import MEANS, STD
+from vision.instSeg.data import MEANS, STD
 
 def undo_image_transformation(bkbone_cfg, img, w=None, h=None):
     """

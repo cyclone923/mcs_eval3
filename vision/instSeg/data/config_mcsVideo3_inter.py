@@ -1,4 +1,4 @@
-from data.base_config import *
+from vision.instSeg.data.base_config import *
 
 # ----------------------- DATASETS ----------------------- #
 MCSVIDEO_INTER_CLASSES_BG = ['others_bg', 'floor', 'ceiling', 'wall'] #0~3

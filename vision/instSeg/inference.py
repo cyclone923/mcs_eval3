@@ -4,9 +4,9 @@ import numpy as np
 import torch
 from torch.nn import functional as F
 
-import data
-from dvis_network import DVIS
-from utils.augmentations import BaseTransform
+from vision.instSeg import data
+from vision.instSeg.dvis_network import DVIS
+from vision.instSeg.utils.augmentations import BaseTransform
 
 class MaskAndClassPredictor(object):
     '''
@@ -28,7 +28,7 @@ class MaskAndClassPredictor(object):
         self.net       = DVIS(cfg)
 
         if weights is None:
-            weights = './dvis_'+config.split('_')[1]+'_mc.pth'
+            weights = './vision/instSeg/dvis_'+config.split('_')[1]+'_mc.pth'
             if not os.path.exists(weights):
                 print('Please get the weights file ready to use the model')
         self.net.load_weights(weights)
@@ -75,7 +75,8 @@ class MaskAndClassPredictor(object):
         batch = torch.from_numpy(normI[None, ...]).permute(0, 3, 1, 2) # [1, ch, ht, wd]
         if self.cuda:
             batch = batch.cuda()
-        preds = self.net(batch)
+        with torch.no_grad():
+            preds = self.net(batch)
 
         cls_logits, mask_logits = preds['cls_logits'][0], preds['proto'][0]
         cls_logits  = cls_logits.view(mask_logits.size(1), -1)
@@ -119,8 +120,8 @@ if __name__=='__main__':
     import scipy.misc as smisc  # scipy in version <= 1.2.0
     from matplotlib import pyplot as plt
 
-    bgrI   = cv2.imread('./demo/original-24-0.jpg')
-    depthI = smisc.imread('./demo/depth-24-0.png', mode='P')
+    bgrI   = cv2.imread('./vision/instSeg/demo/original-24-0.jpg')
+    depthI = smisc.imread('./vision/instSeg/demo/depth-24-0.png', mode='P')
 
     model = MaskAndClassPredictor(cuda=False)
     ret   = model.step(bgrI, depthI)

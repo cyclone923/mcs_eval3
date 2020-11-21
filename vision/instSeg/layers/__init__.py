@@ -1,1 +1,1 @@
-from .functions import *
+from vision.instSeg.layers.functions import *

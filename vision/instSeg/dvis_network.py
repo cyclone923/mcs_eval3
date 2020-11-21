@@ -8,9 +8,9 @@ from math import sqrt
 from typing import List
 from collections import defaultdict
 
-from backbone import construct_backbone
-from utils import timer
-from utils.functions import MovingAverage, make_net
+from vision.instSeg.backbone import construct_backbone
+from vision.instSeg.utils import timer
+from vision.instSeg.utils.functions import MovingAverage, make_net
 
 import torch.backends.cudnn as cudnn
 from matplotlib import pyplot as plt

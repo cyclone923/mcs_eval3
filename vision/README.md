@@ -51,7 +51,7 @@
         ```
 
     5. Call the API from path.
-        + Add './tracker' to the system path
+        + Add './vision' to the system path
             - In script: 'import sys  sys.path.append('./tracker')'
             - In command line: export PYTHONPATH=$PYTHONPATH:./tracker
     

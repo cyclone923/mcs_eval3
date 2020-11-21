@@ -11,8 +11,8 @@ import torch
 import torch.utils.data as data
 import torch.nn.functional as F
 
-from .base_dataset import Detection
-from .base_dataset import FromImageAnnotationTransform as AnnotationTransform
+from vision.instSeg.base_dataset import Detection
+from vision.instSeg.base_dataset import FromImageAnnotationTransform as AnnotationTransform
 
 class MCSVIDEODetection(Detection):
     """`

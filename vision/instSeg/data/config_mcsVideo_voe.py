@@ -1,4 +1,4 @@
-from data.base_config import *
+from vision.instSeg.data.base_config import *
 
 # ----------------------- DATASETS ----------------------- #
 
