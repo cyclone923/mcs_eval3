@@ -19,4 +19,5 @@ if __name__ == "__main__":
         metaController.reset()
         result = metaController.pick_trophy()
         sys.stdout.flush()
+
         # collector.reset()
