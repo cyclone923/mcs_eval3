@@ -46,7 +46,7 @@
         
     4. Run the demo test
         ```Shell
-        python MaskAndClassPredictor.py
+        python inference.py
         cd ../../
         ```
 
@@ -56,7 +56,7 @@
             - In command line: export PYTHONPATH=$PYTHONPATH:./tracker
     
         ```Shell
-        from instSeg.MaskAndClassPredictor import MaskAndClassPredictor as Predictor
+        from instSeg.inference import MaskAndClassPredictor as Predictor
         model = Predictor(dataset='mcsvideo3_inter')
         # prepare bgrI, depthI
         ret = model(bgrI, depthI)
