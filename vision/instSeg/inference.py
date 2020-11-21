@@ -95,9 +95,9 @@ class MaskAndClassPredictor(object):
         if len(obj_idxes) > 0:
             fg_probs   = preds_score[self.fg_stCh:, :, :][obj_idxes[0], :, :]
             out_probs  = torch.cat([bg_probs, fg_probs], axis=0)
-            out_scores = cls_score[self.fg_stCh:, :][obj_idxes, :]
+            out_scores = cls_score[self.fg_stCh:, :][obj_idxes[0], :]
         else:
-            out_probs, out_scores = bg_probs, cls_scores[:0, :]
+            out_probs, out_scores = bg_probs, cls_score[:0, :]
 
         # convert to numpy
         if self.cuda:
@@ -105,8 +105,8 @@ class MaskAndClassPredictor(object):
             out_probs  = out_probs.cpu().detach().numpy()
             out_scores = out_scores.cpu().detach().numpy()
         else:
-            net_mask   = preds_score.numpy().argmax(axis=0)
-            out_probs, out_scores = out_probs.numpy(), out_scores.numpy()
+            net_mask   = preds_score.detach().numpy().argmax(axis=0)
+            out_probs, out_scores = out_probs.detach().numpy(), out_scores.detach().numpy()
 
         return {'mask_prob': out_probs,
                 'obj_class_score': out_scores,
@@ -122,7 +122,7 @@ if __name__=='__main__':
     bgrI   = cv2.imread('./demo/original-24-0.jpg')
     depthI = smisc.imread('./demo/depth-24-0.png', mode='P')
 
-    model = MaskAndClassPredictor()
+    model = MaskAndClassPredictor(cuda=False)
     ret   = model.step(bgrI, depthI)
 
     fig, ax = plt.subplots(2,2)

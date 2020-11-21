@@ -4,7 +4,7 @@
 + API used to predict panoptic segmentation from raw data + depth data
     - input in numpy array, raw image with shape [ht, wd, ch] in BGR colorspace + depth image with shape [ht, wd]
     - output is a dictionary contains:
-        * mask_prob --  array in shape [ht, wd, fg_stCh+num_objs] 
+        * mask_prob --  array in shape [fg_stCh+num_objs, ht, wd]
         * fg_stCh -- the start channel of objects in mask_prob, with that,
            + channels before fg_stCh is for semantic segmentation of BG pixels
            + channels afterwards fg_stCh is for object segmentation, with each channel has one object segmented.

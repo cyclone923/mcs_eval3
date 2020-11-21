@@ -17,7 +17,7 @@ from matplotlib import pyplot as plt
 
 # This is required for Pytorch 1.0.1 on Windows to initialize Cuda on some driver versions.
 # See the bug report here: https://github.com/pytorch/pytorch/issues/17108
-torch.cuda.current_device()
+# torch.cuda.current_device()
 
 # As of March 10, 2019, Pytorch DataParallel still doesn't support JIT Script Modules
 use_jit = torch.cuda.device_count() <= 1
@@ -207,7 +207,7 @@ class DVIS(nn.Module):
 
     def load_weights(self, path, load_firstLayer=True, load_lastLayer=True, load_clsLayer=True):
         """ Loads weights from a compressed save file. """
-        state_dict = torch.load(path, map_location=torch.device(0))
+        state_dict = torch.load(path, map_location='cpu' if not torch.cuda.is_available() else torch.device(0))
 
         # For backward compatability, remove these (the new variable is called layers)
         for key in list(state_dict.keys()):
