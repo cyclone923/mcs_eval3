@@ -125,7 +125,9 @@ class BoundingBoxNavigator:
 				circle = plt.Circle((self.agentX, self.agentY), radius=self.radius, color='r')
 				plt.gca().add_artist(circle)
 
-				self.scene_obstacles_dict[obj_id].plot("green")
+				for obstacle in self.scene_obstacles_dict.values():
+					obstacle.plot("green")
+				#self.scene_obstacles_dict[obj_id].plot("green")
 
 				plt.axis("equal")
 				plt.pause(1)
