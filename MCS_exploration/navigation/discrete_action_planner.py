@@ -74,7 +74,7 @@ class DiscreteActionPlanner:
 
     def __init__(self, robot_radius, obstacles, eps=0.2, do_plot=False):
         self.robot_radius = robot_radius
-        self.obstacles = (unary_union(obstacles))
+        self.obstacles = (unary_union([o.boundary for o in obstacles]))
         self.eps = eps
         self.step = 0.1
         self.turn = 10
@@ -84,11 +84,11 @@ class DiscreteActionPlanner:
 
     def addObstacle(self, obstacle):
         # add obstacle and just rebuild the map
-        self.obstacles = (self.obstacles.union(obstacle))
+        self.obstacles = (self.obstacles.union(obstacle.boundary))
         
     def resetObstacles(self, obstacles=None):
         if obstacles:
-            self.obstacles = unary_union(obstacles)
+            self.obstacles = unary_union([o.boundary for o in obstacles])
         else:
             self.obstacles = MultiPolygon()
 
@@ -96,22 +96,16 @@ class DiscreteActionPlanner:
 
         poly = prep(self.obstacles)
 
-
         if self.existing_plan and len(self.existing_plan) > 1:
 
             linePlan = sp.LineString( self.existing_plan ).buffer(self.robot_radius)
-
-            
+  
             if not poly.intersects(linePlan):
                 self.existing_plan.pop(0)
                 return [p[0] for p in self.existing_plan], [p[1] for p in self.existing_plan]
             else:
                 self.existing_plan = None
-
-
-        #pr = cProfile.Profile()
-        #pr.enable()
-        
+ 
         #use a max heap for the open set ordered by heuristic
         openList = [  Node(start_x, start_y, self.heurstic(start_x, start_y, goal_x, goal_y), 0, None) ]
 
@@ -134,7 +128,7 @@ class DiscreteActionPlanner:
                 nearest = curr
 
             i += 1
-            #print("Exp # {:d} -- |Open| = {:d} -- |Closed| = {:d}".format(i, len(openList), len(closedSet)))
+            
             # add any successors that arent already in the open/closed set
             for s in filter(lambda x: x not in openSet and x not in closedSet, self.validSuccessors(curr, goal, poly)):
                 heappush(openList, s)
@@ -142,13 +136,6 @@ class DiscreteActionPlanner:
             
         if i == 1:
             raise ValueError("Stuck at start state")
-
-        #pr.disable()
-        #s = StringIO()
-        #sortby = 'cumulative'
-        #ps = pstats.Stats(pr, stream=s).sort_stats(sortby)
-        #ps.print_stats()
-        #print(s.getvalue())
 
         if openList and openList[0].h <= self.eps:
             path = [openList[0]]
@@ -161,34 +148,9 @@ class DiscreteActionPlanner:
         self.existing_plan = [ (n.x, n.y) for n in path ]
 
         return [p.x for p in path], [p.y for p in path]
-
-        # what do do when we find no path? well... this often happens when the final step forward to the goal radius would result in a collision. We arent modelling that so just tell it to step forward anyway?
-        #return [goal_x], [goal_y]
-        #raise ValueError("Planner failed to find a path")
         
     def validSuccessors(self, loc, goal, poly):
         return [ Node(loc.x+x, loc.y+y, self.heurstic(loc.x+x, loc.y+y, goal.x, goal.y), loc.g+self.step, loc) for x,y in self.offsets if validEdge( (loc.x, loc.y), (loc.x+x, loc.y+y), poly, self.robot_radius) ]
        
     def heurstic(self,loc_x,loc_y, goal_x, goal_y):
         return math.sqrt( (loc_x - goal_x)**2 + (loc_y - goal_y)**2)
-
-
-
-
-class ObstaclePolygon(sp.Polygon):
-    def __init__(self, x, y):
-        super().__init__(zip(x,y))
-        self.x_list = x
-        self.y_list = y
-
-    def plot(self, clr="grey"):
-        patch1 = PolygonPatch(self, fc=clr, ec="black", alpha=0.2, zorder=1)
-        plt.gca().add_patch(patch1)
-
-    def contains_goal(self, goal):
-        return self.contains(sp.Point(goal))
-
-    def get_goal_bonding_box_polygon(self):
-        return self
-
-

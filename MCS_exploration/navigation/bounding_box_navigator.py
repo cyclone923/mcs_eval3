@@ -7,8 +7,9 @@ import matplotlib.pyplot as plt
 from MCS_exploration.navigation.fov import FieldOfView
 import cover_floor
 import time
-from shapely.geometry import Point, MultiPoint
+from shapely.geometry import Point, MultiPoint, LineString
 import numpy as np
+from descartes import PolygonPatch
 
 SHOW_ANIMATION = True
 LIMIT_STEPS = 350
@@ -37,6 +38,11 @@ class BoundingBoxNavigator:
 			pathX, pathY = roadmap.planning(self.agentX, self.agentY, goal[0], goal[1])
 		except ValueError:
 			return None,None
+		if len(pathX) > 1 and SHOW_ANIMATION:
+			linePlan = LineString( zip(pathX, pathY) ).buffer(self.radius)
+			patch1 = PolygonPatch(linePlan,fc='grey', ec="black", alpha=0.2, zorder=1)
+			plt.gca().add_patch(patch1)
+			plt.pause(0.001)
 
 		# execute a small step along that plan by
 		# turning to face the first waypoint
@@ -136,7 +142,9 @@ class BoundingBoxNavigator:
         
 	#def go_to_goal(self, nav_env, goal, success_distance, epsd_collector=None, frame_collector=None):
 	def can_add_obstacle(self, obstacle, goal):
-		return not obstacle.contains_goal(goal) and obstacle.distance(Point(goal[0], goal[1])) > 0.5
+		#return not obstacle.contains_goal(goal) and obstacle.distance(Point(goal[0], goal[1])) > 0.5
+		return True
+
 	def get_obstacles(self):
 		return self.scene_obstacles_dict
 
