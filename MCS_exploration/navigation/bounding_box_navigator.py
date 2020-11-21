@@ -224,7 +224,7 @@ class BoundingBoxNavigator:
 			
 			#plot out the state if enabled
 			if SHOW_ANIMATION:
-				fov = FieldOfView([sx, sy, 0], 42.5 / 180.0 * math.pi, self.scene_obstacles_dict.values())
+				fov = FieldOfView([self.agentX, self.agentY, 0], 42.5 / 180.0 * math.pi, self.scene_obstacles_dict.values())
 				fov.agentX = self.agentX
 				fov.agentY = self.agentY
 				fov.agentH = self.agentH
