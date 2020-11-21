@@ -7,4 +7,6 @@ scikit-image==0.17.2
 descartes
 ray==1.0.1
 opencv-python==4.1.2.30
+easydict==1.9
+fonts==0.0.3
 git+https://github.com/NextCenturyCorporation/MCS@latest#egg=machine_common_sense

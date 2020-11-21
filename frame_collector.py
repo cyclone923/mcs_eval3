@@ -1,6 +1,6 @@
 import os
 import numpy as np
-from tracker.instSeg_parse_mask import parse_label_info, save_depth_image
+from vision.generateData.instSeg_parse_mask import parse_label_info, save_depth_image
 
 class Frame_collector:
 

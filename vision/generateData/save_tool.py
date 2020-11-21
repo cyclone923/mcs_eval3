@@ -5,7 +5,7 @@ import numpy as np
 from PIL import Image as PilImage
 from PIL import ImageDraw as PilImageDraw
 from PIL import ImageFont
-from fonts.ttf import FredokaOne
+# from fonts.ttf import FredokaOne
 
 '''
 pip install fonts
@@ -357,75 +357,75 @@ class SaveTool(object):
         new_mask.putpalette(palette)
         return new_mask
 
-    def save_group_pilImage_RGB(self, images,
-                                      palettes=None,
-                                      texts=None,
-                                      nr=1,
-                                      nc=1,
-                                      resize=None,
-                                      autoScale=True,
-                                      fontsize=18,
-                                      save_path='dummy.png'):
-        '''
-        Args: images -- list of arrays in size [ht, wd] or [ht, wd , 3]
-              palettes -- list of str indicates the palette to use, 'RGB' | 'Label' | 'Range'
-              texts  -- list of str to be show on the sub-grid image
-              nr/nc  -- int
-              resize -- if not None, (ht, wd) to resize all given images.
-              autoScale -- scale range image if 'true'
-        '''
-        if not isinstance(images, list):
-            images = [images]
-
-        if resize is not None:
-            if isinstance(resize, list):
-                resize = resize[0]
-            if images[0].shape[0]>images[0].shape[1]:
-                ht, wd = (images[0].shape[0]*resize)//images[0].shape[1], resize
-            else:
-                ht, wd = resize, (images[0].shape[1]*resize)//images[0].shape[0]
-        else:
-            ht, wd = images[0].shape[:2]
-        save_img   = PilImage.new('RGB', (nc * (wd + self.margin) - self.margin,
-                                          nr * (ht + self.margin) - self.margin))
-        if texts is not None:
-            draw_img = PilImageDraw.Draw(save_img)
-
-        # images
-        for k, img in enumerate(images):
-            if img is None:
-                continue
-
-            rk, ck   = k//nc, k%nc
-            pwd, pht = ck*(wd+self.margin), rk*(ht+self.margin)
-
-            # image
-            if palettes[k].lower() == 'rgb':
-                if resize is not None:
-                    img = cv2.resize(img, (wd, ht))
-                pil_img = PilImage.fromarray(img.astype(np.uint8))
-            else:
-                if resize is not None:
-                    img = cv2.resize(img, (wd, ht), interpolation=cv2.INTER_NEAREST)
-                if palettes[k].lower() == 'range':
-                    if autoScale:
-                        img = (img*255.)/(img.max() + 0.01)
-                pil_img = self._colorize_mask(img.astype(np.uint8), palettes[k].lower())
-            save_img.paste(pil_img, (pwd, pht))
-
-            # text
-            if texts is not None and texts[k] is not None:
-                text = texts[k]
-                if not isinstance(text, list):
-                    text = [text]
-                color = [(200, 200, 200), (180, 30, 150)]
-                for tk in range(len(text)):
-                    draw_img.text((pwd+10, pht+10+20*tk),
-                            text[tk],
-                            fill=color[tk%2],
-                            font=ImageFont.truetype(FredokaOne, size=fontsize))
-
-        save_img.save(save_path)
+    # def save_group_pilImage_RGB(self, images,
+    #                                   palettes=None,
+    #                                   texts=None,
+    #                                   nr=1,
+    #                                   nc=1,
+    #                                   resize=None,
+    #                                   autoScale=True,
+    #                                   fontsize=18,
+    #                                   save_path='dummy.png'):
+    #     '''
+    #     Args: images -- list of arrays in size [ht, wd] or [ht, wd , 3]
+    #           palettes -- list of str indicates the palette to use, 'RGB' | 'Label' | 'Range'
+    #           texts  -- list of str to be show on the sub-grid image
+    #           nr/nc  -- int
+    #           resize -- if not None, (ht, wd) to resize all given images.
+    #           autoScale -- scale range image if 'true'
+    #     '''
+    #     if not isinstance(images, list):
+    #         images = [images]
+    #
+    #     if resize is not None:
+    #         if isinstance(resize, list):
+    #             resize = resize[0]
+    #         if images[0].shape[0]>images[0].shape[1]:
+    #             ht, wd = (images[0].shape[0]*resize)//images[0].shape[1], resize
+    #         else:
+    #             ht, wd = resize, (images[0].shape[1]*resize)//images[0].shape[0]
+    #     else:
+    #         ht, wd = images[0].shape[:2]
+    #     save_img   = PilImage.new('RGB', (nc * (wd + self.margin) - self.margin,
+    #                                       nr * (ht + self.margin) - self.margin))
+    #     if texts is not None:
+    #         draw_img = PilImageDraw.Draw(save_img)
+    #
+    #     # images
+    #     for k, img in enumerate(images):
+    #         if img is None:
+    #             continue
+    #
+    #         rk, ck   = k//nc, k%nc
+    #         pwd, pht = ck*(wd+self.margin), rk*(ht+self.margin)
+    #
+    #         # image
+    #         if palettes[k].lower() == 'rgb':
+    #             if resize is not None:
+    #                 img = cv2.resize(img, (wd, ht))
+    #             pil_img = PilImage.fromarray(img.astype(np.uint8))
+    #         else:
+    #             if resize is not None:
+    #                 img = cv2.resize(img, (wd, ht), interpolation=cv2.INTER_NEAREST)
+    #             if palettes[k].lower() == 'range':
+    #                 if autoScale:
+    #                     img = (img*255.)/(img.max() + 0.01)
+    #             pil_img = self._colorize_mask(img.astype(np.uint8), palettes[k].lower())
+    #         save_img.paste(pil_img, (pwd, pht))
+    #
+    #         # text
+    #         if texts is not None and texts[k] is not None:
+    #             text = texts[k]
+    #             if not isinstance(text, list):
+    #                 text = [text]
+    #             color = [(200, 200, 200), (180, 30, 150)]
+    #             for tk in range(len(text)):
+    #                 draw_img.text((pwd+10, pht+10+20*tk),
+    #                         text[tk],
+    #                         fill=color[tk%2],
+    #                         font=ImageFont.truetype(FredokaOne, size=fontsize))
+    #
+    #     save_img.save(save_path)
 
     def save_single_pilImage_gray(self, image,
                                         palette='range',
