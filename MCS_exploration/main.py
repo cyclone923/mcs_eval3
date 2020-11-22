@@ -49,11 +49,11 @@ def explore_scene(sequence_generator,event, scene_type=None, scene_number=None, 
     config_data['performerStart']['position'] = {}
     config_data['performerStart']['rotation'] = {}
 
-    config_data['performerStart']['position']['x']=sequence_generator.agent.game_state.event.position['x']
-    config_data['performerStart']['position']['y']=sequence_generator.agent.game_state.event.position['y']
-    config_data['performerStart']['position']['z']=sequence_generator.agent.game_state.event.position['z']
+    config_data['performerStart']['position']['x']=sequence_generator.agent.game_state.position['x']
+    config_data['performerStart']['position']['y']=sequence_generator.agent.game_state.position['y']
+    config_data['performerStart']['position']['z']=sequence_generator.agent.game_state.position['z']
 
-    config_data['performerStart']['rotation']['y']=sequence_generator.agent.game_state.event.rotation
+    config_data['performerStart']['rotation']['y']=sequence_generator.agent.game_state.rotation
     config_data['objects'] = []
 
     current_explored_objects = sequence_generator.agent.game_state.discovered_objects

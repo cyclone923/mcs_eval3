@@ -354,14 +354,13 @@ def explore_initial_point(x,y, agent,obstacles):
 
 def explore_point(x, y, agent, obstacles):
     directions = 360 // 10
-    event = agent.game_state.event
     camera_field_of_view = agent.game_state.event.camera_field_of_view
     #action = {'action':'RotateLook', 'horizon':1}
     #agent.game_state.step(action)
     action = {'action':'RotateLeft'}
     for _ in range (directions):
         agent.game_state.step(action)
-        rotation = agent.game_state.event.rotation
+        rotation = agent.game_state.rotation
         update_seen(x , y ,agent.game_state,rotation,camera_field_of_view, agent.nav.scene_obstacles_dict.values() )
         #if agent.game_state.goals_found == True :
         #    return
