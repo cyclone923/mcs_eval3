@@ -82,11 +82,12 @@ class MaskAndClassPredictor(object):
         cls_logits  = cls_logits.view(mask_logits.size(1), -1)
         cls_score   = torch.nn.Softmax(dim=1)(cls_logits) # [BG_cls+N, FG_cls+1]
 
-        mask_logits = F.interpolate(mask_logits,
+        preds_score = torch.nn.Softmax(dim=1)(mask_logits)
+        preds_score = F.interpolate(preds_score,
                                     size=[height, width],
                                     mode='bilinear',
                                     align_corners=True)
-        preds_score = torch.nn.Softmax(dim=1)(mask_logits)[0] # [BG_cls+N, ht, wd]
+        preds_score = preds_score[0] # [BG_cls+N, ht, wd]
 
         # remove redundent channel
         _, cls_ids = cls_score.max(axis=1)
@@ -123,7 +124,7 @@ if __name__=='__main__':
     bgrI   = cv2.imread('./vision/instSeg/demo/original-24-0.jpg')
     depthI = smisc.imread('./vision/instSeg/demo/depth-24-0.png', mode='P')
 
-    model = MaskAndClassPredictor(cuda=False)
+    model = MaskAndClassPredictor(cuda=True)
     ret   = model.step(bgrI, depthI)
 
     fig, ax = plt.subplots(2,2)
