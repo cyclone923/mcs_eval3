@@ -239,12 +239,13 @@ class GameState(object):
             '''
             self.obj_mask = self.event.object_mask_list[-1]
         
+            self.camera_height = self.event.camera_height
 
             '''
             Local coordinate system init 
             '''
             self.pose_estimate = np.array([0,0,0]).reshape(3,1)
-            self.position = {'x': self.pose_estimate[0][0], 'y': 0.465, 'z':self.pose_estimate[1][0]}
+            self.position = {'x': self.pose_estimate[0][0], 'y': self.camera_height, 'z':self.pose_estimate[1][0]}
             self.rotation = math.degrees(self.pose_estimate[2][0])
             self.head_tilt = self.event.head_tilt
             self.step_output = self.event
@@ -348,7 +349,7 @@ class GameState(object):
                 do the following
         '''
         self.obj_mask = self.event.object_mask_list[-1]
-        self.position = {'x': self.pose_estimate[0][0], 'y': 0.465, 'z':self.pose_estimate[1][0]}
+        self.position = {'x': self.pose_estimate[0][0], 'y': self.camera_height, 'z':self.pose_estimate[1][0]}
         self.rotation = math.degrees(self.pose_estimate[2][0])
         self.head_tilt = self.event.head_tilt
         self.step_output = self.event
