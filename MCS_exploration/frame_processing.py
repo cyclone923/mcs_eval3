@@ -20,13 +20,9 @@ import math
 Image -> Point cloud conversion
 """
 
-def convert_observation(env,frame_idx, agent_pos=None, rotation=None):
+def convert_observation(env,frame_idx, agent_pos, rotation):
     start_time = time.time()
-    if agent_pos == None and rotation == None :
-        all_points, obj_masks = convert_output(env)
-    else :
-        all_points, obj_masks = convert_output_dead_reckoning(env,agent_pos, rotation)
-    #print ("time taken for getting point cloud", time.time()-start_time)
+    all_points, obj_masks = convert_output_dead_reckoning(env,agent_pos, rotation)
     env.occupancy_map, polygons,object_occupancy_grids = point_cloud_to_polygon(all_points,env.occupancy_map,env.grid_size,env.displacement,env.step_output.object_mask_list[-1])
     return polygons, object_occupancy_grids
 
