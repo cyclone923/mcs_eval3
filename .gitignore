@@ -28,3 +28,6 @@ results/
 
 #ignore any original files from git 
 **.*.orig
+
+#ignore any json files 
+**/*.json
