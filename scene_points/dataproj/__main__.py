@@ -8,7 +8,7 @@ def make_parser():
     parser = ArgumentParser()
     parser.add_argument('--thor', type=Path, default=Path('data/thor'))
     parser.add_argument('--data', type=Path, default=Path('data/thor/scenes'))
-    parser.add_argument('--filter', type=str, default='object_permanence')
+    parser.add_argument('--filter', type=str, default=None)
     return parser
 
 def main(thor_path, data_path, filter):
