@@ -19,8 +19,9 @@ The scenes are processed in a random order, so multiple instances of the above c
 4. Use data
 
 ```
-python -m masks.masks --scenes SCENES_PATH
+python track.py --scenes SCENES_PATH
 ```
+
 
 `masks.py` shows how the resulting data can be used to isolate objects in each scene. 
 
