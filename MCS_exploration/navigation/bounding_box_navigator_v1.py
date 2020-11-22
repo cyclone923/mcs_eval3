@@ -112,13 +112,12 @@ class BoundingBoxNavigator:
 		obj_id = int(0)
 		self.scene_obstacles_dict = {}
 		self.scene_obstacles_dict_roadmap = {}
-		#print ("in the new obstacle calculation function", len(list(bounding_boxes)))
+		#print ("in the new obstacle calculation function")
 		if bounding_boxes.geom_type != "MultiPolygon" :
 			self.scene_obstacles_dict[obj_id] = ObstaclePolygon(bounding_boxes.exterior.coords.xy[0], bounding_boxes.exterior.coords.xy[1])
 			self.scene_obstacles_dict_roadmap[obj_id] = 0
 			return
 		for bounding_box in bounding_boxes:
-			#print ("in the new obstacle calculation function", len(list(bounding_boxes)))
 			#obstacle_polygon = ObstaclePolygon(bounding_box[0],bounding_box[1]).simplify(2)
 			#if bounding_box.geom_type == "MultiPolygon":
 			#obstacle_polygon = ObstaclePolygon(bounding_box[0],bounding_box[1]).simplify(2)
@@ -173,6 +172,15 @@ class BoundingBoxNavigator:
 		for obstacle_key, obstacle in self.scene_obstacles_dict.items():
 			self.scene_obstacles_dict_roadmap[obstacle_key] = 0
 
+		obs = []
+		start_time = time.time()
+		for obstacle_key, obstacle in self.scene_obstacles_dict.items():
+			if self.can_add_obstacle(obstacle, (gx, gy)):
+				self.scene_obstacles_dict_roadmap[obstacle_key] = 1
+				obs.append(obstacle)
+				
+		roadmap = DiscreteActionPlanner(self.radius, obs)
+		
 		plan = []
 		collision = False
 		
@@ -183,7 +191,7 @@ class BoundingBoxNavigator:
 			dis_to_goal = math.sqrt((self.agentX-gx)**2 + (self.agentY-gy)**2)
 			if dis_to_goal < self.epsilon:
 				break
-			obs = []
+
 
 			#add any new obstacles
 			for obstacle_key, obstacle in self.scene_obstacles_dict.items():
@@ -192,9 +200,7 @@ class BoundingBoxNavigator:
 					if self.can_add_obstacle(obstacle, (gx, gy)):
 						#print ("adding new obstacles ", self.current_nav_steps)
 						self.scene_obstacles_dict_roadmap[obstacle_key] =1
-						obs.append(obstacle)
-						#roadmap.addObstacle(obstacle)
-			roadmap = DiscreteActionPlanner(self.radius, obs)
+						roadmap.addObstacle(obstacle)
 			
 			#check if the plan is still valid / exists and replan if not
 			if not roadmap.validPlan(plan, (self.agentX, self.agentY)):
