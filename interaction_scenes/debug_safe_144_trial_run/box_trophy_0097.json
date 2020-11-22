@@ -1,0 +1,311 @@
+{
+    "name": "retrieval_goal-0098.json",
+    "ceilingMaterial": "AI2-THOR/Materials/Walls/DrywallBeige",
+    "floorMaterial": "AI2-THOR/Materials/Walls/Drywall4Tiled",
+    "wallMaterial": "AI2-THOR/Materials/Walls/DrywallBeige",
+    "performerStart": {
+        "position": {
+            "x": 4.51,
+            "y": 0,
+            "z": 4.78
+        },
+        "rotation": {
+            "y": 0
+        }
+    },
+    "objects": [
+        {
+            "id": "02919341-3502-4df7-907b-866ac36ce9f1",
+            "type": "apple_1",
+            "info": [
+                "tiny",
+                "light",
+                "food",
+                "red",
+                "apple",
+                "tiny light food red apple"
+            ],
+            "mass": 0.5,
+            "dimensions": {
+                "x": 0.111,
+                "y": 0.12,
+                "z": 0.122
+            },
+            "moveable": true,
+            "pickupable": true,
+            "shows": [
+                {
+                    "rotation": {
+                        "x": 0.0,
+                        "y": 0.0,
+                        "z": 0.0
+                    },
+                    "position": {
+                        "x": 0,
+                        "y": -0.0585,
+                        "z": -0.131
+                    },
+                    "bounding_box": [
+                        {
+                            "x": -1.6847558800164655,
+                            "y": 0,
+                            "z": -0.9477781745930519
+                        },
+                        {
+                            "x": -1.512221825406948,
+                            "y": 0,
+                            "z": -0.7752441199835344
+                        },
+                        {
+                            "x": -1.3552441199835346,
+                            "y": 0,
+                            "z": -0.9322218254069479
+                        },
+                        {
+                            "x": -1.527778174593052,
+                            "y": 0,
+                            "z": -1.1047558800164654
+                        }
+                    ],
+                    "stepBegin": 0,
+                    "scale": {
+                        "x": 1,
+                        "y": 1,
+                        "z": 1
+                    }
+                }
+            ],
+            "salientMaterials": [
+                "food"
+            ],
+            "locationParent": "2492a18e-2418-4278-9a90-1b43136c2c1e"
+        },
+        {
+            "id": "2492a18e-2418-4278-9a90-1b43136c2c1e",
+            "type": "box_3",
+            "info": [
+                "small",
+                "light",
+                "paper",
+                "brown",
+                "box",
+                "small light paper brown box"
+            ],
+            "mass": 0.5,
+            "dimensions": {
+                "x": 0.712,
+                "y": 0.25,
+                "z": 0.503
+            },
+            "moveable": true,
+            "pickupable": true,
+            "receptacle": true,
+            "openable": true,
+            "shows": [
+                {
+                    "rotation": {
+                        "x": 0,
+                        "y": 135,
+                        "z": 0
+                    },
+                    "position": {
+                        "x": -3.918,
+                        "y": 0.15,
+                        "z": 2.245
+                    },
+                    "bounding_box": [
+                        {
+                            "x": -4.769134739141656,
+                            "y": 0,
+                            "z": 2.2777853172679885
+                        },
+                        {
+                            "x": -4.057785317267989,
+                            "y": 0,
+                            "z": 2.9891347391416554
+                        },
+                        {
+                            "x": -3.050865260858345,
+                            "y": 0,
+                            "z": 1.9822146827320115
+                        },
+                        {
+                            "x": -3.762214682732012,
+                            "y": 0,
+                            "z": 1.2708652608583446
+                        }
+                    ],
+                    "stepBegin": 0,
+                    "scale": {
+                        "x": 1,
+                        "y": 0.5,
+                        "z": 1
+                    }
+                }
+            ],
+            "salientMaterials": [
+                "paper"
+            ]
+        },
+        {
+            "id": "a97232fd-e22e-46b7-a096-2b696566ea4a",
+            "type": "chair_1",
+            "info": [
+                "medium",
+                "heavy",
+                "blue",
+                "wood",
+                "chair",
+                "medium heavy blue wood chair"
+            ],
+            "mass": 5,
+            "dimensions": {
+                "x": 0.54,
+                "y": 1.04,
+                "z": 0.46
+            },
+            "moveable": true,
+            "receptacle": true,
+            "stackTarget": true,
+            "shows": [
+                {
+                    "rotation": {
+                        "x": 0,
+                        "y": 45,
+                        "z": 0
+                    },
+                    "position": {
+                        "x": -0.31,
+                        "y": 0,
+                        "z": 2.85
+                    },
+                    "bounding_box": [
+                        {
+                            "x": -0.2534314575050761,
+                            "y": 0,
+                            "z": 3.5371067811865475
+                        },
+                        {
+                            "x": 0.3971067811865475,
+                            "y": 0,
+                            "z": 2.8865685424949237
+                        },
+                        {
+                            "x": -0.3665685424949239,
+                            "y": 0,
+                            "z": 2.1228932188134526
+                        },
+                        {
+                            "x": -1.0171067811865475,
+                            "y": 0,
+                            "z": 2.7734314575050765
+                        }
+                    ],
+                    "stepBegin": 0,
+                    "scale": {
+                        "x": 1,
+                        "y": 1,
+                        "z": 1
+                    }
+                }
+            ],
+            "materials": [
+                "UnityAssetStore/Kindergarten_Interior/Models/Materials/color wood 1"
+            ],
+            "salientMaterials": [
+                "wood"
+            ]
+        },
+        {
+            "id": "trophy",
+            "type": "trophy",
+            "shows": [
+                {
+                    "stepBegin": 0,
+                    "position": {
+                        "x": -1.0642326202823273,
+                        "y": 0.04,
+                        "z": 3.6112316087769507
+                    },
+                    "rotation": {
+                        "x": 0,
+                        "y": 0,
+                        "z": 0
+                    }
+                }
+            ]
+        },
+        {
+            "id": "treasure_chest_small",
+            "type": "chest_2",
+            "salientMaterials": [
+                "metal"
+            ],
+            "materials": [
+                "AI2-THOR/Materials/Metals/BrownMetal 1"
+            ],
+            "shows": [
+                {
+                    "stepBegin": 0,
+                    "position": {
+                        "x": 4.834498471110235,
+                        "y": 0,
+                        "z": -3.4942425274269198
+                    },
+                    "rotation": {
+                        "x": 0,
+                        "y": 180,
+                        "z": 0
+                    },
+                    "scale": {
+                        "x": 0.3,
+                        "y": 0.3,
+                        "z": 0.3
+                    }
+                }
+            ]
+        },
+        {
+            "id": "sturdy_box_large",
+            "type": "chest_1",
+            "salientMaterials": [
+                "metal"
+            ],
+            "materials": [
+                "AI2-THOR/Materials/Metals/Metal"
+            ],
+            "shows": [
+                {
+                    "stepBegin": 0,
+                    "position": {
+                        "x": -1.5,
+                        "y": 0,
+                        "z": 1
+                    },
+                    "rotation": {
+                        "x": 0,
+                        "y": 180,
+                        "z": 0
+                    },
+                    "scale": {
+                        "x": 0.65,
+                        "y": 0.65,
+                        "z": 0.65
+                    }
+                }
+            ]
+        }
+    ],
+    "goal": {
+        "category": "retrieval",
+        "description": "Find and pick up the trophy.",
+        "last_step": 3000,
+        "metadata": {
+            "target": {
+                "id": "trophy",
+                "image": null
+            }
+        }
+    },
+    "answer": {}
+}

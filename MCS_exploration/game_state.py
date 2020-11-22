@@ -403,7 +403,7 @@ class GameState(object):
                     self.global_obstacles[i].is_goal =  curr_frame_obstacle.is_goal
                     if self.global_obstacles[i].is_goal :
                         self.goal_id = self.global_obstacles[i].id
-                        #self.goals_found = True
+                        self.goals_found = True
                     flag = 1
                     break
             if flag == 0 :
@@ -412,7 +412,7 @@ class GameState(object):
                 self.global_obstacles[-1].id = self.objs
                 if self.global_obstacles[-1].is_goal == True :
                     self.goal_id = self.objs
-                    #self.goals_found = True
+                    self.goals_found = True
                 self.objs += 1
 
     def merge_global_obstacles(self):

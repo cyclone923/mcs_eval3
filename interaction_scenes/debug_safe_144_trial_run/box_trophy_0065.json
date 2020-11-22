@@ -1,0 +1,174 @@
+{
+    "name": "retrieval_goal-0066.json",
+    "ceilingMaterial": "UnityAssetStore/Kindergarten_Interior/Models/Materials/color wood 2",
+    "floorMaterial": "AI2-THOR/Materials/Fabrics/RugPattern224",
+    "wallMaterial": "UnityAssetStore/Kindergarten_Interior/Models/Materials/color wood 2",
+    "performerStart": {
+        "position": {
+            "x": -2.12,
+            "y": 0,
+            "z": 3.07
+        },
+        "rotation": {
+            "y": 45
+        }
+    },
+    "objects": [
+        {
+            "id": "e7acf998-2cc9-4c56-ad79-802b11ac60de",
+            "type": "apple_2",
+            "info": [
+                "tiny",
+                "light",
+                "food",
+                "green",
+                "apple",
+                "tiny light food green apple"
+            ],
+            "mass": 0.5,
+            "dimensions": {
+                "x": 0.117,
+                "y": 0.121,
+                "z": 0.116
+            },
+            "moveable": true,
+            "pickupable": true,
+            "shows": [
+                {
+                    "rotation": {
+                        "x": 0,
+                        "y": 45,
+                        "z": 0
+                    },
+                    "position": {
+                        "x": -3.84,
+                        "y": 0.03,
+                        "z": -4.05
+                    },
+                    "bounding_box": [
+                        {
+                            "x": -3.839292893218813,
+                            "y": 0,
+                            "z": -3.8852441199835344
+                        },
+                        {
+                            "x": -3.6752441199835344,
+                            "y": 0,
+                            "z": -4.049292893218813
+                        },
+                        {
+                            "x": -3.8407071067811867,
+                            "y": 0,
+                            "z": -4.214755880016465
+                        },
+                        {
+                            "x": -4.004755880016465,
+                            "y": 0,
+                            "z": -4.050707106781186
+                        }
+                    ],
+                    "stepBegin": 0,
+                    "scale": {
+                        "x": 1,
+                        "y": 1,
+                        "z": 1
+                    }
+                }
+            ],
+            "salientMaterials": [
+                "food"
+            ]
+        },
+        {
+            "id": "trophy",
+            "type": "trophy",
+            "shows": [
+                {
+                    "stepBegin": 0,
+                    "position": {
+                        "x": -1.747610345577514,
+                        "y": 0.04,
+                        "z": 3.3861936156835597
+                    },
+                    "rotation": {
+                        "x": 0,
+                        "y": 0,
+                        "z": 0
+                    }
+                }
+            ]
+        },
+        {
+            "id": "sturdy_box_small",
+            "type": "chest_1",
+            "salientMaterials": [
+                "plastic"
+            ],
+            "materials": [
+                "UnityAssetStore/Kindergarten_Interior/Models/Materials/color 3"
+            ],
+            "shows": [
+                {
+                    "stepBegin": 0,
+                    "position": {
+                        "x": -1.106191078200347,
+                        "y": 0,
+                        "z": 0.16035158378100522
+                    },
+                    "rotation": {
+                        "x": 0,
+                        "y": 180,
+                        "z": 0
+                    },
+                    "scale": {
+                        "x": 0.35,
+                        "y": 0.35,
+                        "z": 0.35
+                    }
+                }
+            ]
+        },
+        {
+            "id": "sturdy_box_med",
+            "type": "chest_1",
+            "salientMaterials": [
+                "wood"
+            ],
+            "materials": [
+                "AI2-THOR/Materials/Wood/WornWood"
+            ],
+            "shows": [
+                {
+                    "stepBegin": 0,
+                    "position": {
+                        "x": -1.5,
+                        "y": 0,
+                        "z": 0
+                    },
+                    "rotation": {
+                        "x": 0,
+                        "y": 180,
+                        "z": 0
+                    },
+                    "scale": {
+                        "x": 0.5,
+                        "y": 0.5,
+                        "z": 0.5
+                    }
+                }
+            ]
+        }
+    ],
+    "goal": {
+        "category": "retrieval",
+        "description": "Find and pick up the trophy.",
+        "last_step": 3000,
+        "metadata": {
+            "target": {
+                "id": "trophy",
+                "image": null
+            }
+        }
+    },
+    "answer": {}
+}

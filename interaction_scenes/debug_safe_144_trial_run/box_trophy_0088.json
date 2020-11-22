@@ -1,0 +1,177 @@
+{
+    "name": "retrieval_goal-0089.json",
+    "ceilingMaterial": "AI2-THOR/Materials/Wood/TexturesCom_WoodFine0050_1_seamless_S",
+    "floorMaterial": "AI2-THOR/Materials/Metals/BrushedIron_AlbedoTransparency",
+    "wallMaterial": "AI2-THOR/Materials/Wood/TexturesCom_WoodFine0050_1_seamless_S",
+    "performerStart": {
+        "position": {
+            "x": -4.61,
+            "y": 0,
+            "z": -2.41
+        },
+        "rotation": {
+            "y": 315
+        }
+    },
+    "objects": [
+        {
+            "id": "272fd329-af00-4818-b6c8-c4d7e704e1e2",
+            "type": "sphere",
+            "info": [
+                "tiny",
+                "light",
+                "yellow",
+                "wood",
+                "ball",
+                "tiny light yellow wood ball"
+            ],
+            "mass": 0.125,
+            "dimensions": {
+                "x": 0.025,
+                "y": 0.025,
+                "z": 0.025
+            },
+            "moveable": true,
+            "pickupable": true,
+            "shows": [
+                {
+                    "rotation": {
+                        "x": 0,
+                        "y": 135,
+                        "z": 0
+                    },
+                    "position": {
+                        "x": 4.13,
+                        "y": 0.0125,
+                        "z": -3.77
+                    },
+                    "bounding_box": [
+                        {
+                            "x": 4.094644660940673,
+                            "y": 0,
+                            "z": -3.77
+                        },
+                        {
+                            "x": 4.13,
+                            "y": 0,
+                            "z": -3.7346446609406727
+                        },
+                        {
+                            "x": 4.165355339059327,
+                            "y": 0,
+                            "z": -3.77
+                        },
+                        {
+                            "x": 4.13,
+                            "y": 0,
+                            "z": -3.8053553390593273
+                        }
+                    ],
+                    "stepBegin": 0,
+                    "scale": {
+                        "x": 0.025,
+                        "y": 0.025,
+                        "z": 0.025
+                    }
+                }
+            ],
+            "materials": [
+                "UnityAssetStore/Kindergarten_Interior/Models/Materials/color wood 4"
+            ],
+            "salientMaterials": [
+                "wood"
+            ]
+        },
+        {
+            "id": "trophy",
+            "type": "trophy",
+            "shows": [
+                {
+                    "stepBegin": 0,
+                    "position": {
+                        "x": 2.5097363726844515,
+                        "y": 0.04,
+                        "z": -0.03362565761246916
+                    },
+                    "rotation": {
+                        "x": 0,
+                        "y": 0,
+                        "z": 0
+                    }
+                }
+            ]
+        },
+        {
+            "id": "sturdy_box_small",
+            "type": "chest_1",
+            "salientMaterials": [
+                "plastic"
+            ],
+            "materials": [
+                "UnityAssetStore/Kindergarten_Interior/Models/Materials/color 3"
+            ],
+            "shows": [
+                {
+                    "stepBegin": 0,
+                    "position": {
+                        "x": -2.231573845097834,
+                        "y": 0,
+                        "z": -2.050764148140235
+                    },
+                    "rotation": {
+                        "x": 0,
+                        "y": 180,
+                        "z": 0
+                    },
+                    "scale": {
+                        "x": 0.35,
+                        "y": 0.35,
+                        "z": 0.35
+                    }
+                }
+            ]
+        },
+        {
+            "id": "treasure_chest_med",
+            "type": "chest_2",
+            "salientMaterials": [
+                "plastic"
+            ],
+            "materials": [
+                "UnityAssetStore/Kindergarten_Interior/Models/Materials/color 2"
+            ],
+            "shows": [
+                {
+                    "stepBegin": 0,
+                    "position": {
+                        "x": 0,
+                        "y": 0,
+                        "z": 1.5
+                    },
+                    "rotation": {
+                        "x": 0,
+                        "y": 180,
+                        "z": 0
+                    },
+                    "scale": {
+                        "x": 0.7,
+                        "y": 0.7,
+                        "z": 0.7
+                    }
+                }
+            ]
+        }
+    ],
+    "goal": {
+        "category": "retrieval",
+        "description": "Find and pick up the trophy.",
+        "last_step": 3000,
+        "metadata": {
+            "target": {
+                "id": "trophy",
+                "image": null
+            }
+        }
+    },
+    "answer": {}
+}

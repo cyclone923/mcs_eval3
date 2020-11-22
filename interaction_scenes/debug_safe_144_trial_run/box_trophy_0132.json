@@ -1,0 +1,174 @@
+{
+    "name": "retrieval_goal-0133.json",
+    "ceilingMaterial": "AI2-THOR/Materials/Metals/BrushedIron_AlbedoTransparency",
+    "floorMaterial": "AI2-THOR/Materials/Fabrics/RugPattern224",
+    "wallMaterial": "AI2-THOR/Materials/Metals/BrushedIron_AlbedoTransparency",
+    "performerStart": {
+        "position": {
+            "x": 0.48,
+            "y": 0,
+            "z": 4.22
+        },
+        "rotation": {
+            "y": 0
+        }
+    },
+    "objects": [
+        {
+            "id": "c2ae89eb-c529-43eb-95ed-fccb22a6e9f8",
+            "type": "crayon_blue",
+            "info": [
+                "tiny",
+                "light",
+                "wax",
+                "blue",
+                "crayon",
+                "tiny light wax blue crayon"
+            ],
+            "mass": 0.125,
+            "dimensions": {
+                "x": 0.01,
+                "y": 0.085,
+                "z": 0.01
+            },
+            "moveable": true,
+            "pickupable": true,
+            "shows": [
+                {
+                    "rotation": {
+                        "x": 0,
+                        "y": 180,
+                        "z": 0
+                    },
+                    "position": {
+                        "x": -4.75,
+                        "y": 0.01,
+                        "z": 4.08
+                    },
+                    "bounding_box": [
+                        {
+                            "x": -4.76,
+                            "y": 0,
+                            "z": 4.07
+                        },
+                        {
+                            "x": -4.76,
+                            "y": 0,
+                            "z": 4.09
+                        },
+                        {
+                            "x": -4.74,
+                            "y": 0,
+                            "z": 4.09
+                        },
+                        {
+                            "x": -4.74,
+                            "y": 0,
+                            "z": 4.07
+                        }
+                    ],
+                    "stepBegin": 0,
+                    "scale": {
+                        "x": 1,
+                        "y": 1,
+                        "z": 1
+                    }
+                }
+            ],
+            "salientMaterials": [
+                "wax"
+            ]
+        },
+        {
+            "id": "trophy",
+            "type": "trophy",
+            "shows": [
+                {
+                    "stepBegin": 0,
+                    "position": {
+                        "x": 1.3407825012522414,
+                        "y": 0.08,
+                        "z": 2.1041631845658015
+                    },
+                    "rotation": {
+                        "x": 90,
+                        "y": 180,
+                        "z": 0
+                    }
+                }
+            ]
+        },
+        {
+            "id": "sturdy_box_small",
+            "type": "chest_1",
+            "salientMaterials": [
+                "plastic"
+            ],
+            "materials": [
+                "UnityAssetStore/Kindergarten_Interior/Models/Materials/color 3"
+            ],
+            "shows": [
+                {
+                    "stepBegin": 0,
+                    "position": {
+                        "x": 1.6508779661374273,
+                        "y": 0,
+                        "z": 4.823073674747269
+                    },
+                    "rotation": {
+                        "x": 0,
+                        "y": 180,
+                        "z": 0
+                    },
+                    "scale": {
+                        "x": 0.35,
+                        "y": 0.35,
+                        "z": 0.35
+                    }
+                }
+            ]
+        },
+        {
+            "id": "suitcase_med",
+            "type": "suitcase_1",
+            "salientMaterials": [
+                "metal"
+            ],
+            "materials": [
+                "AI2-THOR/Materials/Metals/WhiteMetal"
+            ],
+            "shows": [
+                {
+                    "stepBegin": 0,
+                    "position": {
+                        "x": 1.5,
+                        "y": 0,
+                        "z": 0
+                    },
+                    "rotation": {
+                        "x": 0,
+                        "y": 0,
+                        "z": 0
+                    },
+                    "scale": {
+                        "x": 1.25,
+                        "y": 1.25,
+                        "z": 1.25
+                    }
+                }
+            ]
+        }
+    ],
+    "goal": {
+        "category": "retrieval",
+        "description": "Find and pick up the trophy.",
+        "last_step": 3000,
+        "metadata": {
+            "target": {
+                "id": "trophy",
+                "image": null
+            }
+        }
+    },
+    "answer": {}
+}

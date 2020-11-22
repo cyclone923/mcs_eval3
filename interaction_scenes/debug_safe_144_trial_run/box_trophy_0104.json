@@ -1,0 +1,437 @@
+{
+    "name": "retrieval_goal-0105.json",
+    "ceilingMaterial": "AI2-THOR/Materials/Wood/BedroomFloor1",
+    "floorMaterial": "AI2-THOR/Materials/Ceramics/GREYGRANITE",
+    "wallMaterial": "AI2-THOR/Materials/Wood/BedroomFloor1",
+    "performerStart": {
+        "position": {
+            "x": 3.77,
+            "y": 0,
+            "z": 4.28
+        },
+        "rotation": {
+            "y": 135
+        }
+    },
+    "objects": [
+        {
+            "id": "7889a8d3-eefb-4e86-8bf2-58aa3cfd9fe2",
+            "type": "block_blank_wood_cube",
+            "info": [
+                "tiny",
+                "light",
+                "red",
+                "wood",
+                "blank block",
+                "cube",
+                "tiny light red wood blank block cube"
+            ],
+            "mass": 2.66,
+            "dimensions": {
+                "x": 0.2,
+                "y": 0.1,
+                "z": 0.2
+            },
+            "moveable": true,
+            "pickupable": true,
+            "stackTarget": true,
+            "shows": [
+                {
+                    "rotation": {
+                        "x": 0.0,
+                        "y": 0.0,
+                        "z": 0.0
+                    },
+                    "position": {
+                        "x": 0,
+                        "y": -0.0585,
+                        "z": -0.131
+                    },
+                    "bounding_box": [
+                        {
+                            "x": 1.06,
+                            "y": 0,
+                            "z": 3.7571572875253807
+                        },
+                        {
+                            "x": 0.7771572875253809,
+                            "y": 0,
+                            "z": 4.04
+                        },
+                        {
+                            "x": 1.06,
+                            "y": 0,
+                            "z": 4.3228427124746185
+                        },
+                        {
+                            "x": 1.342842712474619,
+                            "y": 0,
+                            "z": 4.04
+                        }
+                    ],
+                    "stepBegin": 0,
+                    "scale": {
+                        "x": 2,
+                        "y": 1,
+                        "z": 2
+                    }
+                }
+            ],
+            "materials": [
+                "UnityAssetStore/Wooden_Toys_Bundle/ToyBlocks/meshes/Materials/red_1x1"
+            ],
+            "salientMaterials": [
+                "wood"
+            ],
+            "locationParent": "efb8f5db-0ac6-4724-ba41-107858f3e617"
+        },
+        {
+            "id": "efb8f5db-0ac6-4724-ba41-107858f3e617",
+            "type": "box_3",
+            "info": [
+                "small",
+                "light",
+                "paper",
+                "brown",
+                "box",
+                "small light paper brown box"
+            ],
+            "mass": 0.5,
+            "dimensions": {
+                "x": 0.712,
+                "y": 0.25,
+                "z": 0.503
+            },
+            "moveable": true,
+            "pickupable": true,
+            "receptacle": true,
+            "openable": true,
+            "shows": [
+                {
+                    "rotation": {
+                        "x": 0,
+                        "y": 135,
+                        "z": 0
+                    },
+                    "position": {
+                        "x": -0.698,
+                        "y": 0.15,
+                        "z": 2.2550000000000003
+                    },
+                    "bounding_box": [
+                        {
+                            "x": -1.549134739141655,
+                            "y": 0,
+                            "z": 2.2877853172679883
+                        },
+                        {
+                            "x": -0.8377853172679881,
+                            "y": 0,
+                            "z": 2.999134739141655
+                        },
+                        {
+                            "x": 0.16913473914165522,
+                            "y": 0,
+                            "z": 1.9922146827320117
+                        },
+                        {
+                            "x": -0.5422146827320117,
+                            "y": 0,
+                            "z": 1.2808652608583448
+                        }
+                    ],
+                    "stepBegin": 0,
+                    "scale": {
+                        "x": 1,
+                        "y": 0.5,
+                        "z": 1
+                    }
+                }
+            ],
+            "salientMaterials": [
+                "paper"
+            ]
+        },
+        {
+            "id": "912c9af3-5c34-4725-b253-20133c1ae143",
+            "type": "sofa_1",
+            "info": [
+                "huge",
+                "massive",
+                "brown",
+                "sofa",
+                "huge massive brown sofa"
+            ],
+            "mass": 100,
+            "dimensions": {
+                "x": 2.5,
+                "y": 1.1,
+                "z": 1.1
+            },
+            "receptacle": true,
+            "stackTarget": true,
+            "shows": [
+                {
+                    "rotation": {
+                        "x": 0,
+                        "y": 225,
+                        "z": 0
+                    },
+                    "position": {
+                        "x": 1.9,
+                        "y": 0,
+                        "z": -1.615
+                    },
+                    "bounding_box": [
+                        {
+                            "x": 0.9100505063388329,
+                            "y": 0,
+                            "z": -4.185584412271571
+                        },
+                        {
+                            "x": -0.6455844122715717,
+                            "y": 0,
+                            "z": -2.629949493661166
+                        },
+                        {
+                            "x": 2.8899494936611667,
+                            "y": 0,
+                            "z": 0.9055844122715713
+                        },
+                        {
+                            "x": 4.445584412271572,
+                            "y": 0,
+                            "z": -0.6500505063388338
+                        }
+                    ],
+                    "stepBegin": 0,
+                    "scale": {
+                        "x": 1,
+                        "y": 1,
+                        "z": 1
+                    }
+                }
+            ]
+        },
+        {
+            "id": "4e4c3780-774f-4e28-919e-f7360d133322",
+            "type": "block_blank_wood_cylinder",
+            "info": [
+                "small",
+                "heavy",
+                "blue",
+                "wood",
+                "blank block",
+                "cylinder",
+                "small heavy blue wood blank block cylinder"
+            ],
+            "mass": 5,
+            "dimensions": {
+                "x": 0.25,
+                "y": 0.25,
+                "z": 0.25
+            },
+            "moveable": true,
+            "shows": [
+                {
+                    "rotation": {
+                        "x": 0,
+                        "y": 225,
+                        "z": 0
+                    },
+                    "position": {
+                        "x": -1.32,
+                        "y": 0,
+                        "z": 3.44
+                    },
+                    "bounding_box": [
+                        {
+                            "x": -1.3200000000000003,
+                            "y": 0,
+                            "z": 3.086446609406726
+                        },
+                        {
+                            "x": -1.6735533905932738,
+                            "y": 0,
+                            "z": 3.44
+                        },
+                        {
+                            "x": -1.3199999999999998,
+                            "y": 0,
+                            "z": 3.793553390593274
+                        },
+                        {
+                            "x": -0.9664466094067262,
+                            "y": 0,
+                            "z": 3.44
+                        }
+                    ],
+                    "stepBegin": 0,
+                    "scale": {
+                        "x": 2.5,
+                        "y": 2.5,
+                        "z": 2.5
+                    }
+                }
+            ],
+            "materials": [
+                "UnityAssetStore/Wooden_Toys_Bundle/ToyBlocks/meshes/Materials/blue_1x1"
+            ],
+            "salientMaterials": [
+                "wood"
+            ]
+        },
+        {
+            "id": "0a7b68ab-53dc-4576-9475-c2a3ab8e7c4b",
+            "type": "sofa_1",
+            "info": [
+                "huge",
+                "massive",
+                "brown",
+                "sofa",
+                "huge massive brown sofa"
+            ],
+            "mass": 100,
+            "dimensions": {
+                "x": 2.5,
+                "y": 1.1,
+                "z": 1.1
+            },
+            "receptacle": true,
+            "stackTarget": true,
+            "shows": [
+                {
+                    "rotation": {
+                        "x": 0,
+                        "y": 270,
+                        "z": 0
+                    },
+                    "position": {
+                        "x": -1.93,
+                        "y": 0,
+                        "z": -1.3050000000000002
+                    },
+                    "bounding_box": [
+                        {
+                            "x": -0.8300000000000003,
+                            "y": 0,
+                            "z": -3.83
+                        },
+                        {
+                            "x": -3.0300000000000002,
+                            "y": 0,
+                            "z": -3.83
+                        },
+                        {
+                            "x": -3.0299999999999994,
+                            "y": 0,
+                            "z": 1.1700000000000002
+                        },
+                        {
+                            "x": -0.8299999999999994,
+                            "y": 0,
+                            "z": 1.1699999999999997
+                        }
+                    ],
+                    "stepBegin": 0,
+                    "scale": {
+                        "x": 1,
+                        "y": 1,
+                        "z": 1
+                    }
+                }
+            ]
+        },
+        {
+            "id": "trophy",
+            "type": "trophy",
+            "shows": [
+                {
+                    "stepBegin": 0,
+                    "position": {
+                        "x": 3.6507676871202435,
+                        "y": 0.04,
+                        "z": -2.8909221489007275
+                    },
+                    "rotation": {
+                        "x": 0,
+                        "y": 0,
+                        "z": 0
+                    }
+                }
+            ]
+        },
+        {
+            "id": "suitcase_small",
+            "type": "suitcase_1",
+            "salientMaterials": [
+                "plastic"
+            ],
+            "materials": [
+                "AI2-THOR/Materials/Plastics/BlackPlastic"
+            ],
+            "shows": [
+                {
+                    "stepBegin": 0,
+                    "position": {
+                        "x": 0.9392775105474707,
+                        "y": 0,
+                        "z": 0.4142940373247619
+                    },
+                    "rotation": {
+                        "x": 0,
+                        "y": 0,
+                        "z": 0
+                    },
+                    "scale": {
+                        "x": 0.5,
+                        "y": 0.5,
+                        "z": 0.5
+                    }
+                }
+            ]
+        },
+        {
+            "id": "sturdy_box_med",
+            "type": "chest_1",
+            "salientMaterials": [
+                "wood"
+            ],
+            "materials": [
+                "AI2-THOR/Materials/Wood/WornWood"
+            ],
+            "shows": [
+                {
+                    "stepBegin": 0,
+                    "position": {
+                        "x": -1.5,
+                        "y": 0,
+                        "z": 0
+                    },
+                    "rotation": {
+                        "x": 0,
+                        "y": 180,
+                        "z": 0
+                    },
+                    "scale": {
+                        "x": 0.5,
+                        "y": 0.5,
+                        "z": 0.5
+                    }
+                }
+            ]
+        }
+    ],
+    "goal": {
+        "category": "retrieval",
+        "description": "Find and pick up the trophy.",
+        "last_step": 3000,
+        "metadata": {
+            "target": {
+                "id": "trophy",
+                "image": null
+            }
+        }
+    },
+    "answer": {}
+}

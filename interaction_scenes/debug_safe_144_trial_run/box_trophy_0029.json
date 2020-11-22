@@ -1,0 +1,174 @@
+{
+    "name": "retrieval_goal-0030.json",
+    "ceilingMaterial": "AI2-THOR/Materials/Ceramics/TexturesCom_BrickRound0044_1_seamless_S",
+    "floorMaterial": "AI2-THOR/Materials/Ceramics/WhiteCountertop",
+    "wallMaterial": "AI2-THOR/Materials/Ceramics/TexturesCom_BrickRound0044_1_seamless_S",
+    "performerStart": {
+        "position": {
+            "x": 0.76,
+            "y": 0,
+            "z": -3.57
+        },
+        "rotation": {
+            "y": 0
+        }
+    },
+    "objects": [
+        {
+            "id": "c01cca79-5324-48f4-95f3-e48a196574b8",
+            "type": "crayon_blue",
+            "info": [
+                "tiny",
+                "light",
+                "wax",
+                "blue",
+                "crayon",
+                "tiny light wax blue crayon"
+            ],
+            "mass": 0.125,
+            "dimensions": {
+                "x": 0.01,
+                "y": 0.085,
+                "z": 0.01
+            },
+            "moveable": true,
+            "pickupable": true,
+            "shows": [
+                {
+                    "rotation": {
+                        "x": 0,
+                        "y": 135,
+                        "z": 0
+                    },
+                    "position": {
+                        "x": -4.29,
+                        "y": 0.01,
+                        "z": 2.0
+                    },
+                    "bounding_box": [
+                        {
+                            "x": -4.304142135623731,
+                            "y": 0,
+                            "z": 1.9999999999999998
+                        },
+                        {
+                            "x": -4.29,
+                            "y": 0,
+                            "z": 2.0141421356237306
+                        },
+                        {
+                            "x": -4.2758578643762695,
+                            "y": 0,
+                            "z": 2.0
+                        },
+                        {
+                            "x": -4.29,
+                            "y": 0,
+                            "z": 1.985857864376269
+                        }
+                    ],
+                    "stepBegin": 0,
+                    "scale": {
+                        "x": 1,
+                        "y": 1,
+                        "z": 1
+                    }
+                }
+            ],
+            "salientMaterials": [
+                "wax"
+            ]
+        },
+        {
+            "id": "trophy",
+            "type": "trophy",
+            "shows": [
+                {
+                    "stepBegin": 0,
+                    "position": {
+                        "x": -2.0302877880921666,
+                        "y": 0.04,
+                        "z": -0.7643957087790385
+                    },
+                    "rotation": {
+                        "x": 0,
+                        "y": 0,
+                        "z": 0
+                    }
+                }
+            ]
+        },
+        {
+            "id": "treasure_chest_small",
+            "type": "chest_2",
+            "salientMaterials": [
+                "metal"
+            ],
+            "materials": [
+                "AI2-THOR/Materials/Metals/BrownMetal 1"
+            ],
+            "shows": [
+                {
+                    "stepBegin": 0,
+                    "position": {
+                        "x": 2.9492418517648584,
+                        "y": 0,
+                        "z": 2.29557181029402
+                    },
+                    "rotation": {
+                        "x": 0,
+                        "y": 180,
+                        "z": 0
+                    },
+                    "scale": {
+                        "x": 0.3,
+                        "y": 0.3,
+                        "z": 0.3
+                    }
+                }
+            ]
+        },
+        {
+            "id": "suitcase_large",
+            "type": "suitcase_1",
+            "salientMaterials": [
+                "plastic"
+            ],
+            "materials": [
+                "UnityAssetStore/Kindergarten_Interior/Models/Materials/color 1"
+            ],
+            "shows": [
+                {
+                    "stepBegin": 0,
+                    "position": {
+                        "x": 1.5,
+                        "y": 0,
+                        "z": -1.5
+                    },
+                    "rotation": {
+                        "x": 0,
+                        "y": 0,
+                        "z": 0
+                    },
+                    "scale": {
+                        "x": 2,
+                        "y": 2,
+                        "z": 2
+                    }
+                }
+            ]
+        }
+    ],
+    "goal": {
+        "category": "retrieval",
+        "description": "Find and pick up the trophy.",
+        "last_step": 3000,
+        "metadata": {
+            "target": {
+                "id": "trophy",
+                "image": null
+            }
+        }
+    },
+    "answer": {}
+}

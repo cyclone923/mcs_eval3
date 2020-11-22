@@ -1,0 +1,448 @@
+{
+    "name": "retrieval_goal-0103.json",
+    "ceilingMaterial": "AI2-THOR/Materials/Wood/WoodFloorsCross",
+    "floorMaterial": "AI2-THOR/Materials/Fabrics/CarpetDark",
+    "wallMaterial": "AI2-THOR/Materials/Wood/WoodFloorsCross",
+    "performerStart": {
+        "position": {
+            "x": 0.61,
+            "y": 0,
+            "z": 0.6
+        },
+        "rotation": {
+            "y": 0
+        }
+    },
+    "objects": [
+        {
+            "id": "7528ee67-344a-4104-8688-78f9e6171597",
+            "type": "cup_2",
+            "info": [
+                "tiny",
+                "light",
+                "red",
+                "plastic",
+                "cup",
+                "tiny light red plastic cup"
+            ],
+            "mass": 0.25,
+            "dimensions": {
+                "x": 0.105,
+                "y": 0.135,
+                "z": 0.104
+            },
+            "moveable": true,
+            "pickupable": true,
+            "stackTarget": true,
+            "shows": [
+                {
+                    "rotation": {
+                        "x": 0.0,
+                        "y": 0.0,
+                        "z": 0.0
+                    },
+                    "position": {
+                        "x": 0.0,
+                        "y": -0.055499999999999994,
+                        "z": -0.18125
+                    },
+                    "bounding_box": [
+                        {
+                            "x": 1.274,
+                            "y": 0,
+                            "z": -3.015
+                        },
+                        {
+                            "x": 1.0659999999999998,
+                            "y": 0,
+                            "z": -3.015
+                        },
+                        {
+                            "x": 1.0659999999999998,
+                            "y": 0,
+                            "z": -2.805
+                        },
+                        {
+                            "x": 1.274,
+                            "y": 0,
+                            "z": -2.805
+                        }
+                    ],
+                    "stepBegin": 0,
+                    "scale": {
+                        "x": 1,
+                        "y": 1,
+                        "z": 1
+                    }
+                }
+            ],
+            "materials": [
+                "UnityAssetStore/Kindergarten_Interior/Models/Materials/color 1"
+            ],
+            "salientMaterials": [
+                "plastic"
+            ],
+            "locationParent": "fb138ac3-0c72-4c2c-abd7-c13885221e4e"
+        },
+        {
+            "id": "fb138ac3-0c72-4c2c-abd7-c13885221e4e",
+            "type": "box_2",
+            "info": [
+                "small",
+                "light",
+                "paper",
+                "brown",
+                "box",
+                "small light paper brown box"
+            ],
+            "mass": 0.5,
+            "dimensions": {
+                "x": 0.77875,
+                "y": 0.28575,
+                "z": 0.70875
+            },
+            "moveable": true,
+            "pickupable": true,
+            "receptacle": true,
+            "openable": true,
+            "shows": [
+                {
+                    "rotation": {
+                        "x": 0,
+                        "y": 315,
+                        "z": 0
+                    },
+                    "position": {
+                        "x": 1.74875,
+                        "y": 0.15000000000000002,
+                        "z": 3.93
+                    },
+                    "bounding_box": [
+                        {
+                            "x": 2.79182133701499,
+                            "y": 0,
+                            "z": 3.7005025253169412
+                        },
+                        {
+                            "x": 1.7894974746830583,
+                            "y": 0,
+                            "z": 2.6981786629850104
+                        },
+                        {
+                            "x": 0.6881786629850104,
+                            "y": 0,
+                            "z": 3.7994974746830588
+                        },
+                        {
+                            "x": 1.6905025253169417,
+                            "y": 0,
+                            "z": 4.80182133701499
+                        }
+                    ],
+                    "stepBegin": 0,
+                    "scale": {
+                        "x": 1.25,
+                        "y": 0.75,
+                        "z": 1.25
+                    }
+                }
+            ],
+            "salientMaterials": [
+                "paper"
+            ]
+        },
+        {
+            "id": "e902b412-be75-4d6e-ac6e-3767e7461d76",
+            "type": "block_blank_wood_cube",
+            "info": [
+                "tiny",
+                "light",
+                "blue",
+                "wood",
+                "blank block",
+                "cube",
+                "tiny light blue wood blank block cube"
+            ],
+            "mass": 1.33,
+            "dimensions": {
+                "x": 0.1,
+                "y": 0.2,
+                "z": 0.1
+            },
+            "moveable": true,
+            "pickupable": true,
+            "stackTarget": true,
+            "shows": [
+                {
+                    "rotation": {
+                        "x": 0,
+                        "y": 270,
+                        "z": 0
+                    },
+                    "position": {
+                        "x": -3.84,
+                        "y": 0,
+                        "z": -2.64
+                    },
+                    "bounding_box": [
+                        {
+                            "x": -3.7399999999999998,
+                            "y": 0,
+                            "z": -2.74
+                        },
+                        {
+                            "x": -3.94,
+                            "y": 0,
+                            "z": -2.74
+                        },
+                        {
+                            "x": -3.94,
+                            "y": 0,
+                            "z": -2.54
+                        },
+                        {
+                            "x": -3.7399999999999998,
+                            "y": 0,
+                            "z": -2.54
+                        }
+                    ],
+                    "stepBegin": 0,
+                    "scale": {
+                        "x": 1,
+                        "y": 2,
+                        "z": 1
+                    }
+                }
+            ],
+            "materials": [
+                "UnityAssetStore/Wooden_Toys_Bundle/ToyBlocks/meshes/Materials/blue_1x1"
+            ],
+            "salientMaterials": [
+                "wood"
+            ]
+        },
+        {
+            "id": "f7cf8d27-d3ed-4a6b-aa7b-a194b9a9f10d",
+            "type": "box_3",
+            "info": [
+                "tiny",
+                "light",
+                "paper",
+                "brown",
+                "box",
+                "tiny light paper brown box"
+            ],
+            "mass": 0.25,
+            "dimensions": {
+                "x": 0.356,
+                "y": 0.25,
+                "z": 0.2515
+            },
+            "moveable": true,
+            "pickupable": true,
+            "receptacle": true,
+            "openable": true,
+            "shows": [
+                {
+                    "rotation": {
+                        "x": 0,
+                        "y": 270,
+                        "z": 0
+                    },
+                    "position": {
+                        "x": -3.324,
+                        "y": 0.15,
+                        "z": -0.7225
+                    },
+                    "bounding_box": [
+                        {
+                            "x": -3.0685,
+                            "y": 0,
+                            "z": -1.1560000000000001
+                        },
+                        {
+                            "x": -3.5715,
+                            "y": 0,
+                            "z": -1.1560000000000001
+                        },
+                        {
+                            "x": -3.5715,
+                            "y": 0,
+                            "z": -0.444
+                        },
+                        {
+                            "x": -3.0685,
+                            "y": 0,
+                            "z": -0.4440000000000001
+                        }
+                    ],
+                    "stepBegin": 0,
+                    "scale": {
+                        "x": 0.5,
+                        "y": 0.5,
+                        "z": 0.5
+                    }
+                }
+            ],
+            "salientMaterials": [
+                "paper"
+            ]
+        },
+        {
+            "id": "0ce29986-226a-4fe5-a36c-6e5340ff3a26",
+            "type": "apple_2",
+            "info": [
+                "tiny",
+                "light",
+                "food",
+                "green",
+                "apple",
+                "tiny light food green apple"
+            ],
+            "mass": 0.5,
+            "dimensions": {
+                "x": 0.117,
+                "y": 0.121,
+                "z": 0.116
+            },
+            "moveable": true,
+            "pickupable": true,
+            "shows": [
+                {
+                    "rotation": {
+                        "x": 0,
+                        "y": 180,
+                        "z": 0
+                    },
+                    "position": {
+                        "x": 0.36,
+                        "y": 0.03,
+                        "z": -1.14
+                    },
+                    "bounding_box": [
+                        {
+                            "x": 0.24299999999999997,
+                            "y": 0,
+                            "z": -1.256
+                        },
+                        {
+                            "x": 0.24300000000000002,
+                            "y": 0,
+                            "z": -1.0239999999999998
+                        },
+                        {
+                            "x": 0.477,
+                            "y": 0,
+                            "z": -1.0239999999999998
+                        },
+                        {
+                            "x": 0.477,
+                            "y": 0,
+                            "z": -1.256
+                        }
+                    ],
+                    "stepBegin": 0,
+                    "scale": {
+                        "x": 1,
+                        "y": 1,
+                        "z": 1
+                    }
+                }
+            ],
+            "salientMaterials": [
+                "food"
+            ]
+        },
+        {
+            "id": "trophy",
+            "type": "trophy",
+            "shows": [
+                {
+                    "stepBegin": 0,
+                    "position": {
+                        "x": -1.630124952539683,
+                        "y": 0.08,
+                        "z": -4.025732548049543
+                    },
+                    "rotation": {
+                        "x": 90,
+                        "y": 180,
+                        "z": 0
+                    }
+                }
+            ]
+        },
+        {
+            "id": "sturdy_box_small",
+            "type": "chest_1",
+            "salientMaterials": [
+                "plastic"
+            ],
+            "materials": [
+                "UnityAssetStore/Kindergarten_Interior/Models/Materials/color 3"
+            ],
+            "shows": [
+                {
+                    "stepBegin": 0,
+                    "position": {
+                        "x": 2.9193966762544026,
+                        "y": 0,
+                        "z": -1.1871713107745094
+                    },
+                    "rotation": {
+                        "x": 0,
+                        "y": 180,
+                        "z": 0
+                    },
+                    "scale": {
+                        "x": 0.35,
+                        "y": 0.35,
+                        "z": 0.35
+                    }
+                }
+            ]
+        },
+        {
+            "id": "suitcase_large",
+            "type": "suitcase_1",
+            "salientMaterials": [
+                "plastic"
+            ],
+            "materials": [
+                "UnityAssetStore/Kindergarten_Interior/Models/Materials/color 1"
+            ],
+            "shows": [
+                {
+                    "stepBegin": 0,
+                    "position": {
+                        "x": 1.5,
+                        "y": 0,
+                        "z": -1.5
+                    },
+                    "rotation": {
+                        "x": 0,
+                        "y": 0,
+                        "z": 0
+                    },
+                    "scale": {
+                        "x": 2,
+                        "y": 2,
+                        "z": 2
+                    }
+                }
+            ]
+        }
+    ],
+    "goal": {
+        "category": "retrieval",
+        "description": "Find and pick up the trophy.",
+        "last_step": 3000,
+        "metadata": {
+            "target": {
+                "id": "trophy",
+                "image": null
+            }
+        }
+    },
+    "answer": {}
+}

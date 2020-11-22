@@ -1,0 +1,178 @@
+{
+    "name": "retrieval_goal-0102.json",
+    "ceilingMaterial": "AI2-THOR/Materials/Wood/DarkWoodSmooth2",
+    "floorMaterial": "AI2-THOR/Materials/Metals/Metal",
+    "wallMaterial": "AI2-THOR/Materials/Wood/DarkWoodSmooth2",
+    "performerStart": {
+        "position": {
+            "x": 1.03,
+            "y": 0,
+            "z": -4.66
+        },
+        "rotation": {
+            "y": 0
+        }
+    },
+    "objects": [
+        {
+            "id": "665bec2f-ab11-4a94-b0be-867680858bf5",
+            "type": "bowl_3",
+            "info": [
+                "tiny",
+                "light",
+                "yellow",
+                "plastic",
+                "bowl",
+                "tiny light yellow plastic bowl"
+            ],
+            "mass": 0.25,
+            "dimensions": {
+                "x": 0.175,
+                "y": 0.116,
+                "z": 0.171
+            },
+            "moveable": true,
+            "pickupable": true,
+            "stackTarget": true,
+            "shows": [
+                {
+                    "rotation": {
+                        "x": 0,
+                        "y": 0,
+                        "z": 0
+                    },
+                    "position": {
+                        "x": 3.04,
+                        "y": 0.005,
+                        "z": -3.2180000000000004
+                    },
+                    "bounding_box": [
+                        {
+                            "x": 3.215,
+                            "y": 0,
+                            "z": -3.0490000000000004
+                        },
+                        {
+                            "x": 3.215,
+                            "y": 0,
+                            "z": -3.391
+                        },
+                        {
+                            "x": 2.865,
+                            "y": 0,
+                            "z": -3.391
+                        },
+                        {
+                            "x": 2.865,
+                            "y": 0,
+                            "z": -3.0490000000000004
+                        }
+                    ],
+                    "stepBegin": 0,
+                    "scale": {
+                        "x": 1,
+                        "y": 1,
+                        "z": 1
+                    }
+                }
+            ],
+            "materials": [
+                "UnityAssetStore/Kindergarten_Interior/Models/Materials/color 4"
+            ],
+            "salientMaterials": [
+                "plastic"
+            ]
+        },
+        {
+            "id": "trophy",
+            "type": "trophy",
+            "shows": [
+                {
+                    "stepBegin": 0,
+                    "position": {
+                        "x": -3.933643460837266,
+                        "y": 0.08,
+                        "z": 1.0848858949724711
+                    },
+                    "rotation": {
+                        "x": 90,
+                        "y": 180,
+                        "z": 0
+                    }
+                }
+            ]
+        },
+        {
+            "id": "sturdy_box_small",
+            "type": "chest_1",
+            "salientMaterials": [
+                "plastic"
+            ],
+            "materials": [
+                "UnityAssetStore/Kindergarten_Interior/Models/Materials/color 3"
+            ],
+            "shows": [
+                {
+                    "stepBegin": 0,
+                    "position": {
+                        "x": -1.9125848718536451,
+                        "y": 0,
+                        "z": -4.738624357568041
+                    },
+                    "rotation": {
+                        "x": 0,
+                        "y": 180,
+                        "z": 0
+                    },
+                    "scale": {
+                        "x": 0.35,
+                        "y": 0.35,
+                        "z": 0.35
+                    }
+                }
+            ]
+        },
+        {
+            "id": "suitcase_med",
+            "type": "suitcase_1",
+            "salientMaterials": [
+                "metal"
+            ],
+            "materials": [
+                "AI2-THOR/Materials/Metals/WhiteMetal"
+            ],
+            "shows": [
+                {
+                    "stepBegin": 0,
+                    "position": {
+                        "x": 1.5,
+                        "y": 0,
+                        "z": 0
+                    },
+                    "rotation": {
+                        "x": 0,
+                        "y": 0,
+                        "z": 0
+                    },
+                    "scale": {
+                        "x": 1.25,
+                        "y": 1.25,
+                        "z": 1.25
+                    }
+                }
+            ]
+        }
+    ],
+    "goal": {
+        "category": "retrieval",
+        "description": "Find and pick up the trophy.",
+        "last_step": 3000,
+        "metadata": {
+            "target": {
+                "id": "trophy",
+                "image": null
+            }
+        }
+    },
+    "answer": {}
+}

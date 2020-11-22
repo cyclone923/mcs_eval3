@@ -1,0 +1,174 @@
+{
+    "name": "retrieval_goal-0112.json",
+    "ceilingMaterial": "AI2-THOR/Materials/Ceramics/RedBrick",
+    "floorMaterial": "AI2-THOR/Materials/Fabrics/Carpet2",
+    "wallMaterial": "AI2-THOR/Materials/Ceramics/RedBrick",
+    "performerStart": {
+        "position": {
+            "x": 2.44,
+            "y": 0,
+            "z": 2.64
+        },
+        "rotation": {
+            "y": 270
+        }
+    },
+    "objects": [
+        {
+            "id": "1ee15beb-7864-4152-a38f-a56ea763bb01",
+            "type": "crayon_blue",
+            "info": [
+                "tiny",
+                "light",
+                "wax",
+                "blue",
+                "crayon",
+                "tiny light wax blue crayon"
+            ],
+            "mass": 0.125,
+            "dimensions": {
+                "x": 0.01,
+                "y": 0.085,
+                "z": 0.01
+            },
+            "moveable": true,
+            "pickupable": true,
+            "shows": [
+                {
+                    "rotation": {
+                        "x": 0,
+                        "y": 270,
+                        "z": 0
+                    },
+                    "position": {
+                        "x": 1.39,
+                        "y": 0.01,
+                        "z": -4.01
+                    },
+                    "bounding_box": [
+                        {
+                            "x": 1.4,
+                            "y": 0,
+                            "z": -4.02
+                        },
+                        {
+                            "x": 1.38,
+                            "y": 0,
+                            "z": -4.02
+                        },
+                        {
+                            "x": 1.38,
+                            "y": 0,
+                            "z": -4.0
+                        },
+                        {
+                            "x": 1.4,
+                            "y": 0,
+                            "z": -4.0
+                        }
+                    ],
+                    "stepBegin": 0,
+                    "scale": {
+                        "x": 1,
+                        "y": 1,
+                        "z": 1
+                    }
+                }
+            ],
+            "salientMaterials": [
+                "wax"
+            ]
+        },
+        {
+            "id": "trophy",
+            "type": "trophy",
+            "shows": [
+                {
+                    "stepBegin": 0,
+                    "position": {
+                        "x": 4.313127170337012,
+                        "y": 0.08,
+                        "z": -4.188467133412242
+                    },
+                    "rotation": {
+                        "x": 90,
+                        "y": 180,
+                        "z": 0
+                    }
+                }
+            ]
+        },
+        {
+            "id": "suitcase_small",
+            "type": "suitcase_1",
+            "salientMaterials": [
+                "plastic"
+            ],
+            "materials": [
+                "AI2-THOR/Materials/Plastics/BlackPlastic"
+            ],
+            "shows": [
+                {
+                    "stepBegin": 0,
+                    "position": {
+                        "x": 2.727488896831847,
+                        "y": 0,
+                        "z": -3.003887771325914
+                    },
+                    "rotation": {
+                        "x": 0,
+                        "y": 0,
+                        "z": 0
+                    },
+                    "scale": {
+                        "x": 0.5,
+                        "y": 0.5,
+                        "z": 0.5
+                    }
+                }
+            ]
+        },
+        {
+            "id": "treasure_chest_large",
+            "type": "chest_2",
+            "salientMaterials": [
+                "wood"
+            ],
+            "materials": [
+                "AI2-THOR/Materials/Wood/DarkWoodSmooth2"
+            ],
+            "shows": [
+                {
+                    "stepBegin": 0,
+                    "position": {
+                        "x": 1,
+                        "y": 0,
+                        "z": 1.5
+                    },
+                    "rotation": {
+                        "x": 0,
+                        "y": 180,
+                        "z": 0
+                    },
+                    "scale": {
+                        "x": 1.1,
+                        "y": 1.1,
+                        "z": 1.1
+                    }
+                }
+            ]
+        }
+    ],
+    "goal": {
+        "category": "retrieval",
+        "description": "Find and pick up the trophy.",
+        "last_step": 3000,
+        "metadata": {
+            "target": {
+                "id": "trophy",
+                "image": null
+            }
+        }
+    },
+    "answer": {}
+}

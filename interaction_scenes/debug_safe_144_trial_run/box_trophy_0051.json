@@ -1,0 +1,251 @@
+{
+    "name": "retrieval_goal-0052.json",
+    "ceilingMaterial": "UnityAssetStore/Kindergarten_Interior/Models/Materials/color wood 4",
+    "floorMaterial": "AI2-THOR/Materials/Walls/RedDrywall",
+    "wallMaterial": "UnityAssetStore/Kindergarten_Interior/Models/Materials/color wood 4",
+    "performerStart": {
+        "position": {
+            "x": 3.12,
+            "y": 0,
+            "z": 3.0
+        },
+        "rotation": {
+            "y": 180
+        }
+    },
+    "objects": [
+        {
+            "id": "66912396-9f64-4721-a443-bef8e343d759",
+            "type": "sphere",
+            "info": [
+                "tiny",
+                "light",
+                "blue",
+                "rubber",
+                "ball",
+                "tiny light blue rubber ball"
+            ],
+            "mass": 0.125,
+            "dimensions": {
+                "x": 0.025,
+                "y": 0.025,
+                "z": 0.025
+            },
+            "moveable": true,
+            "pickupable": true,
+            "shows": [
+                {
+                    "rotation": {
+                        "x": 0.0,
+                        "y": 0.0,
+                        "z": 0.0
+                    },
+                    "position": {
+                        "x": 0.165,
+                        "y": 0.47,
+                        "z": -0.03
+                    },
+                    "bounding_box": [
+                        {
+                            "x": -2.66,
+                            "y": 0,
+                            "z": -0.14535533905932738
+                        },
+                        {
+                            "x": -2.6953553390593274,
+                            "y": 0,
+                            "z": -0.11
+                        },
+                        {
+                            "x": -2.66,
+                            "y": 0,
+                            "z": -0.07464466094067261
+                        },
+                        {
+                            "x": -2.624644660940673,
+                            "y": 0,
+                            "z": -0.11
+                        }
+                    ],
+                    "stepBegin": 0,
+                    "scale": {
+                        "x": 0.025,
+                        "y": 0.025,
+                        "z": 0.025
+                    }
+                }
+            ],
+            "materials": [
+                "AI2-THOR/Materials/Plastics/LightBlueRubber"
+            ],
+            "salientMaterials": [
+                "rubber"
+            ],
+            "locationParent": "3e3431fb-54e1-47b4-a629-668883382eee"
+        },
+        {
+            "id": "3e3431fb-54e1-47b4-a629-668883382eee",
+            "type": "changing_table",
+            "info": [
+                "huge",
+                "massive",
+                "brown",
+                "wood",
+                "wood",
+                "brown",
+                "changing table",
+                "huge massive brown wood wood brown changing table"
+            ],
+            "mass": 100,
+            "dimensions": {
+                "x": 1.1,
+                "y": 0.96,
+                "z": 0.89
+            },
+            "receptacle": true,
+            "openable": true,
+            "stackTarget": true,
+            "shows": [
+                {
+                    "rotation": {
+                        "x": 0,
+                        "y": 45,
+                        "z": 0
+                    },
+                    "position": {
+                        "x": -0.11,
+                        "y": 0,
+                        "z": 3.3150000000000004
+                    },
+                    "bounding_box": [
+                        {
+                            "x": 0.02849242404917518,
+                            "y": 0,
+                            "z": 4.877142494561229
+                        },
+                        {
+                            "x": 1.2871424945612295,
+                            "y": 0,
+                            "z": 3.618492424049175
+                        },
+                        {
+                            "x": -0.26849242404917517,
+                            "y": 0,
+                            "z": 2.062857505438771
+                        },
+                        {
+                            "x": -1.5271424945612297,
+                            "y": 0,
+                            "z": 3.3215075759508252
+                        }
+                    ],
+                    "stepBegin": 0,
+                    "scale": {
+                        "x": 1,
+                        "y": 1,
+                        "z": 1
+                    }
+                }
+            ],
+            "materials": [
+                "AI2-THOR/Materials/Wood/BedroomFloor1",
+                "UnityAssetStore/Baby_Room/Models/Materials/wood 1"
+            ],
+            "salientMaterials": [
+                "wood",
+                "wood"
+            ]
+        },
+        {
+            "id": "trophy",
+            "type": "trophy",
+            "shows": [
+                {
+                    "stepBegin": 0,
+                    "position": {
+                        "x": 4.18688281161098,
+                        "y": 0.08,
+                        "z": 2.0435567062983253
+                    },
+                    "rotation": {
+                        "x": 90,
+                        "y": 180,
+                        "z": 0
+                    }
+                }
+            ]
+        },
+        {
+            "id": "treasure_chest_small",
+            "type": "chest_2",
+            "salientMaterials": [
+                "metal"
+            ],
+            "materials": [
+                "AI2-THOR/Materials/Metals/BrownMetal 1"
+            ],
+            "shows": [
+                {
+                    "stepBegin": 0,
+                    "position": {
+                        "x": -1.3888829948661972,
+                        "y": 0,
+                        "z": 0.390470929996356
+                    },
+                    "rotation": {
+                        "x": 0,
+                        "y": 180,
+                        "z": 0
+                    },
+                    "scale": {
+                        "x": 0.3,
+                        "y": 0.3,
+                        "z": 0.3
+                    }
+                }
+            ]
+        },
+        {
+            "id": "suitcase_med",
+            "type": "suitcase_1",
+            "salientMaterials": [
+                "metal"
+            ],
+            "materials": [
+                "AI2-THOR/Materials/Metals/WhiteMetal"
+            ],
+            "shows": [
+                {
+                    "stepBegin": 0,
+                    "position": {
+                        "x": 1.5,
+                        "y": 0,
+                        "z": 0
+                    },
+                    "rotation": {
+                        "x": 0,
+                        "y": 0,
+                        "z": 0
+                    },
+                    "scale": {
+                        "x": 1.25,
+                        "y": 1.25,
+                        "z": 1.25
+                    }
+                }
+            ]
+        }
+    ],
+    "goal": {
+        "category": "retrieval",
+        "description": "Find and pick up the trophy.",
+        "last_step": 3000,
+        "metadata": {
+            "target": {
+                "id": "trophy",
+                "image": null
+            }
+        }
+    },
+    "answer": {}
+}

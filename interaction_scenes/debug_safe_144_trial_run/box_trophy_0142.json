@@ -1,0 +1,179 @@
+{
+    "name": "retrieval_goal-0143.json",
+    "ceilingMaterial": "AI2-THOR/Materials/Wood/LightWoodCounters 1",
+    "floorMaterial": "AI2-THOR/Materials/Wood/WoodGrain_Brown",
+    "wallMaterial": "AI2-THOR/Materials/Wood/LightWoodCounters 1",
+    "performerStart": {
+        "position": {
+            "x": 1.37,
+            "y": 0,
+            "z": -0.51
+        },
+        "rotation": {
+            "y": 0
+        }
+    },
+    "objects": [
+        {
+            "id": "a429b265-30bd-4e06-a7d1-e9e0d1ea044b",
+            "type": "sphere",
+            "info": [
+                "tiny",
+                "light",
+                "black",
+                "plastic",
+                "hollow",
+                "ball",
+                "tiny light black plastic hollow ball"
+            ],
+            "mass": 0.0625,
+            "dimensions": {
+                "x": 0.025,
+                "y": 0.025,
+                "z": 0.025
+            },
+            "moveable": true,
+            "pickupable": true,
+            "shows": [
+                {
+                    "rotation": {
+                        "x": 0,
+                        "y": 180,
+                        "z": 0
+                    },
+                    "position": {
+                        "x": -0.0,
+                        "y": 0.0125,
+                        "z": -3.31
+                    },
+                    "bounding_box": [
+                        {
+                            "x": -0.025000000000000005,
+                            "y": 0,
+                            "z": -3.335
+                        },
+                        {
+                            "x": -0.024999999999999998,
+                            "y": 0,
+                            "z": -3.285
+                        },
+                        {
+                            "x": 0.025000000000000005,
+                            "y": 0,
+                            "z": -3.285
+                        },
+                        {
+                            "x": 0.024999999999999998,
+                            "y": 0,
+                            "z": -3.335
+                        }
+                    ],
+                    "stepBegin": 0,
+                    "scale": {
+                        "x": 0.025,
+                        "y": 0.025,
+                        "z": 0.025
+                    }
+                }
+            ],
+            "materials": [
+                "AI2-THOR/Materials/Plastics/BlackPlastic"
+            ],
+            "salientMaterials": [
+                "plastic",
+                "hollow"
+            ]
+        },
+        {
+            "id": "trophy",
+            "type": "trophy",
+            "shows": [
+                {
+                    "stepBegin": 0,
+                    "position": {
+                        "x": -0.5197448155126336,
+                        "y": 0.04,
+                        "z": -1.6665821988171925
+                    },
+                    "rotation": {
+                        "x": 0,
+                        "y": 0,
+                        "z": 0
+                    }
+                }
+            ]
+        },
+        {
+            "id": "sturdy_box_small",
+            "type": "chest_1",
+            "salientMaterials": [
+                "plastic"
+            ],
+            "materials": [
+                "UnityAssetStore/Kindergarten_Interior/Models/Materials/color 3"
+            ],
+            "shows": [
+                {
+                    "stepBegin": 0,
+                    "position": {
+                        "x": -0.4728106424929637,
+                        "y": 0,
+                        "z": 2.9445776945571565
+                    },
+                    "rotation": {
+                        "x": 0,
+                        "y": 180,
+                        "z": 0
+                    },
+                    "scale": {
+                        "x": 0.35,
+                        "y": 0.35,
+                        "z": 0.35
+                    }
+                }
+            ]
+        },
+        {
+            "id": "treasure_chest_med",
+            "type": "chest_2",
+            "salientMaterials": [
+                "plastic"
+            ],
+            "materials": [
+                "UnityAssetStore/Kindergarten_Interior/Models/Materials/color 2"
+            ],
+            "shows": [
+                {
+                    "stepBegin": 0,
+                    "position": {
+                        "x": 0,
+                        "y": 0,
+                        "z": 1.5
+                    },
+                    "rotation": {
+                        "x": 0,
+                        "y": 180,
+                        "z": 0
+                    },
+                    "scale": {
+                        "x": 0.7,
+                        "y": 0.7,
+                        "z": 0.7
+                    }
+                }
+            ]
+        }
+    ],
+    "goal": {
+        "category": "retrieval",
+        "description": "Find and pick up the trophy.",
+        "last_step": 3000,
+        "metadata": {
+            "target": {
+                "id": "trophy",
+                "image": null
+            }
+        }
+    },
+    "answer": {}
+}

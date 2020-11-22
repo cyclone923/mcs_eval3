@@ -1,0 +1,179 @@
+{
+    "name": "retrieval_goal-0077.json",
+    "ceilingMaterial": "AI2-THOR/Materials/Walls/WallDrywallGrey",
+    "floorMaterial": "AI2-THOR/Materials/Fabrics/Carpet4",
+    "wallMaterial": "AI2-THOR/Materials/Walls/WallDrywallGrey",
+    "performerStart": {
+        "position": {
+            "x": 0.69,
+            "y": 0,
+            "z": -0.72
+        },
+        "rotation": {
+            "y": 315
+        }
+    },
+    "objects": [
+        {
+            "id": "973ff858-d79d-4e49-9cee-8cb015b8277e",
+            "type": "sphere",
+            "info": [
+                "small",
+                "light",
+                "red",
+                "plastic",
+                "hollow",
+                "ball",
+                "small light red plastic hollow ball"
+            ],
+            "mass": 1,
+            "dimensions": {
+                "x": 0.25,
+                "y": 0.25,
+                "z": 0.25
+            },
+            "moveable": true,
+            "pickupable": true,
+            "shows": [
+                {
+                    "rotation": {
+                        "x": 0,
+                        "y": 180,
+                        "z": 0
+                    },
+                    "position": {
+                        "x": 4.12,
+                        "y": 0.125,
+                        "z": -1.04
+                    },
+                    "bounding_box": [
+                        {
+                            "x": 3.87,
+                            "y": 0,
+                            "z": -1.29
+                        },
+                        {
+                            "x": 3.87,
+                            "y": 0,
+                            "z": -0.79
+                        },
+                        {
+                            "x": 4.37,
+                            "y": 0,
+                            "z": -0.79
+                        },
+                        {
+                            "x": 4.37,
+                            "y": 0,
+                            "z": -1.29
+                        }
+                    ],
+                    "stepBegin": 0,
+                    "scale": {
+                        "x": 0.25,
+                        "y": 0.25,
+                        "z": 0.25
+                    }
+                }
+            ],
+            "materials": [
+                "UnityAssetStore/Kindergarten_Interior/Models/Materials/color 1"
+            ],
+            "salientMaterials": [
+                "plastic",
+                "hollow"
+            ]
+        },
+        {
+            "id": "trophy",
+            "type": "trophy",
+            "shows": [
+                {
+                    "stepBegin": 0,
+                    "position": {
+                        "x": -1.7530094604225868,
+                        "y": 0.08,
+                        "z": 4.5459319617428555
+                    },
+                    "rotation": {
+                        "x": 90,
+                        "y": 180,
+                        "z": 0
+                    }
+                }
+            ]
+        },
+        {
+            "id": "sturdy_box_small",
+            "type": "chest_1",
+            "salientMaterials": [
+                "plastic"
+            ],
+            "materials": [
+                "UnityAssetStore/Kindergarten_Interior/Models/Materials/color 3"
+            ],
+            "shows": [
+                {
+                    "stepBegin": 0,
+                    "position": {
+                        "x": 4.0820461790690405,
+                        "y": 0,
+                        "z": 3.472822373228979
+                    },
+                    "rotation": {
+                        "x": 0,
+                        "y": 180,
+                        "z": 0
+                    },
+                    "scale": {
+                        "x": 0.35,
+                        "y": 0.35,
+                        "z": 0.35
+                    }
+                }
+            ]
+        },
+        {
+            "id": "treasure_chest_med",
+            "type": "chest_2",
+            "salientMaterials": [
+                "plastic"
+            ],
+            "materials": [
+                "UnityAssetStore/Kindergarten_Interior/Models/Materials/color 2"
+            ],
+            "shows": [
+                {
+                    "stepBegin": 0,
+                    "position": {
+                        "x": 0,
+                        "y": 0,
+                        "z": 1.5
+                    },
+                    "rotation": {
+                        "x": 0,
+                        "y": 180,
+                        "z": 0
+                    },
+                    "scale": {
+                        "x": 0.7,
+                        "y": 0.7,
+                        "z": 0.7
+                    }
+                }
+            ]
+        }
+    ],
+    "goal": {
+        "category": "retrieval",
+        "description": "Find and pick up the trophy.",
+        "last_step": 3000,
+        "metadata": {
+            "target": {
+                "id": "trophy",
+                "image": null
+            }
+        }
+    },
+    "answer": {}
+}

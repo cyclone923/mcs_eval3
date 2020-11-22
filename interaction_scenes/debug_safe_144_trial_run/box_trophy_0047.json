@@ -1,0 +1,178 @@
+{
+    "name": "retrieval_goal-0048.json",
+    "ceilingMaterial": "AI2-THOR/Materials/Wood/LightWoodCounters4",
+    "floorMaterial": "UnityAssetStore/Kindergarten_Interior/Models/Materials/color wood 2",
+    "wallMaterial": "AI2-THOR/Materials/Wood/LightWoodCounters4",
+    "performerStart": {
+        "position": {
+            "x": -3.18,
+            "y": 0,
+            "z": 3.81
+        },
+        "rotation": {
+            "y": 315
+        }
+    },
+    "objects": [
+        {
+            "id": "eb06790a-31f6-4835-9c5a-c6c8cd882407",
+            "type": "plate_1",
+            "info": [
+                "tiny",
+                "light",
+                "red",
+                "plastic",
+                "plate",
+                "tiny light red plastic plate"
+            ],
+            "mass": 0.25,
+            "dimensions": {
+                "x": 0.208,
+                "y": 0.117,
+                "z": 0.222
+            },
+            "moveable": true,
+            "pickupable": true,
+            "stackTarget": true,
+            "shows": [
+                {
+                    "rotation": {
+                        "x": 0,
+                        "y": 135,
+                        "z": 0
+                    },
+                    "position": {
+                        "x": 1.47,
+                        "y": 0.005,
+                        "z": -3.58
+                    },
+                    "bounding_box": [
+                        {
+                            "x": 1.1659440840897846,
+                            "y": 0,
+                            "z": -3.5898994949366116
+                        },
+                        {
+                            "x": 1.4798994949366118,
+                            "y": 0,
+                            "z": -3.275944084089785
+                        },
+                        {
+                            "x": 1.7740559159102154,
+                            "y": 0,
+                            "z": -3.5701005050633885
+                        },
+                        {
+                            "x": 1.4601005050633882,
+                            "y": 0,
+                            "z": -3.8840559159102153
+                        }
+                    ],
+                    "stepBegin": 0,
+                    "scale": {
+                        "x": 1,
+                        "y": 1,
+                        "z": 1
+                    }
+                }
+            ],
+            "materials": [
+                "UnityAssetStore/Kindergarten_Interior/Models/Materials/color 1"
+            ],
+            "salientMaterials": [
+                "plastic"
+            ]
+        },
+        {
+            "id": "trophy",
+            "type": "trophy",
+            "shows": [
+                {
+                    "stepBegin": 0,
+                    "position": {
+                        "x": 0.8463018077662499,
+                        "y": 0.08,
+                        "z": -0.9625419632891496
+                    },
+                    "rotation": {
+                        "x": 90,
+                        "y": 180,
+                        "z": 0
+                    }
+                }
+            ]
+        },
+        {
+            "id": "sturdy_box_small",
+            "type": "chest_1",
+            "salientMaterials": [
+                "plastic"
+            ],
+            "materials": [
+                "UnityAssetStore/Kindergarten_Interior/Models/Materials/color 3"
+            ],
+            "shows": [
+                {
+                    "stepBegin": 0,
+                    "position": {
+                        "x": -4.109880034511983,
+                        "y": 0,
+                        "z": 3.8505766176629876
+                    },
+                    "rotation": {
+                        "x": 0,
+                        "y": 180,
+                        "z": 0
+                    },
+                    "scale": {
+                        "x": 0.35,
+                        "y": 0.35,
+                        "z": 0.35
+                    }
+                }
+            ]
+        },
+        {
+            "id": "suitcase_large",
+            "type": "suitcase_1",
+            "salientMaterials": [
+                "plastic"
+            ],
+            "materials": [
+                "UnityAssetStore/Kindergarten_Interior/Models/Materials/color 1"
+            ],
+            "shows": [
+                {
+                    "stepBegin": 0,
+                    "position": {
+                        "x": 1.5,
+                        "y": 0,
+                        "z": -1.5
+                    },
+                    "rotation": {
+                        "x": 0,
+                        "y": 0,
+                        "z": 0
+                    },
+                    "scale": {
+                        "x": 2,
+                        "y": 2,
+                        "z": 2
+                    }
+                }
+            ]
+        }
+    ],
+    "goal": {
+        "category": "retrieval",
+        "description": "Find and pick up the trophy.",
+        "last_step": 3000,
+        "metadata": {
+            "target": {
+                "id": "trophy",
+                "image": null
+            }
+        }
+    },
+    "answer": {}
+}

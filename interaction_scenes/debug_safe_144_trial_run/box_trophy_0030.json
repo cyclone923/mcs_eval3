@@ -1,0 +1,178 @@
+{
+    "name": "retrieval_goal-0031.json",
+    "ceilingMaterial": "AI2-THOR/Materials/Ceramics/WhiteCountertop",
+    "floorMaterial": "AI2-THOR/Materials/Ceramics/ConcreteBoards1",
+    "wallMaterial": "AI2-THOR/Materials/Ceramics/WhiteCountertop",
+    "performerStart": {
+        "position": {
+            "x": 1.25,
+            "y": 0,
+            "z": 1.09
+        },
+        "rotation": {
+            "y": 180
+        }
+    },
+    "objects": [
+        {
+            "id": "52d4f4ac-e040-4be4-b3f7-a58ad179dcc4",
+            "type": "cup_6",
+            "info": [
+                "tiny",
+                "light",
+                "white",
+                "plastic",
+                "cup",
+                "tiny light white plastic cup"
+            ],
+            "mass": 0.25,
+            "dimensions": {
+                "x": 0.106,
+                "y": 0.098,
+                "z": 0.106
+            },
+            "moveable": true,
+            "pickupable": true,
+            "stackTarget": true,
+            "shows": [
+                {
+                    "rotation": {
+                        "x": 0,
+                        "y": 225,
+                        "z": 0
+                    },
+                    "position": {
+                        "x": 0.34,
+                        "y": 0.005,
+                        "z": -2.81
+                    },
+                    "bounding_box": [
+                        {
+                            "x": 0.34,
+                            "y": 0,
+                            "z": -2.959906637611548
+                        },
+                        {
+                            "x": 0.19009336238845193,
+                            "y": 0,
+                            "z": -2.81
+                        },
+                        {
+                            "x": 0.34,
+                            "y": 0,
+                            "z": -2.660093362388452
+                        },
+                        {
+                            "x": 0.4899066376115481,
+                            "y": 0,
+                            "z": -2.81
+                        }
+                    ],
+                    "stepBegin": 0,
+                    "scale": {
+                        "x": 1,
+                        "y": 1,
+                        "z": 1
+                    }
+                }
+            ],
+            "materials": [
+                "AI2-THOR/Materials/Plastics/WhitePlastic"
+            ],
+            "salientMaterials": [
+                "plastic"
+            ]
+        },
+        {
+            "id": "trophy",
+            "type": "trophy",
+            "shows": [
+                {
+                    "stepBegin": 0,
+                    "position": {
+                        "x": 3.851866684516951,
+                        "y": 0.08,
+                        "z": 3.203070610462566
+                    },
+                    "rotation": {
+                        "x": 90,
+                        "y": 180,
+                        "z": 0
+                    }
+                }
+            ]
+        },
+        {
+            "id": "treasure_chest_small",
+            "type": "chest_2",
+            "salientMaterials": [
+                "metal"
+            ],
+            "materials": [
+                "AI2-THOR/Materials/Metals/BrownMetal 1"
+            ],
+            "shows": [
+                {
+                    "stepBegin": 0,
+                    "position": {
+                        "x": 4.335303694003095,
+                        "y": 0,
+                        "z": 4.894585803806056
+                    },
+                    "rotation": {
+                        "x": 0,
+                        "y": 180,
+                        "z": 0
+                    },
+                    "scale": {
+                        "x": 0.3,
+                        "y": 0.3,
+                        "z": 0.3
+                    }
+                }
+            ]
+        },
+        {
+            "id": "sturdy_box_large",
+            "type": "chest_1",
+            "salientMaterials": [
+                "metal"
+            ],
+            "materials": [
+                "AI2-THOR/Materials/Metals/Metal"
+            ],
+            "shows": [
+                {
+                    "stepBegin": 0,
+                    "position": {
+                        "x": -1.5,
+                        "y": 0,
+                        "z": 1
+                    },
+                    "rotation": {
+                        "x": 0,
+                        "y": 180,
+                        "z": 0
+                    },
+                    "scale": {
+                        "x": 0.65,
+                        "y": 0.65,
+                        "z": 0.65
+                    }
+                }
+            ]
+        }
+    ],
+    "goal": {
+        "category": "retrieval",
+        "description": "Find and pick up the trophy.",
+        "last_step": 3000,
+        "metadata": {
+            "target": {
+                "id": "trophy",
+                "image": null
+            }
+        }
+    },
+    "answer": {}
+}

@@ -1,0 +1,180 @@
+{
+    "name": "retrieval_goal-0011.json",
+    "ceilingMaterial": "AI2-THOR/Materials/Ceramics/TexturesCom_BrickRound0044_1_seamless_S",
+    "floorMaterial": "AI2-THOR/Materials/Fabrics/HotelCarpet3",
+    "wallMaterial": "AI2-THOR/Materials/Ceramics/TexturesCom_BrickRound0044_1_seamless_S",
+    "performerStart": {
+        "position": {
+            "x": 0.24,
+            "y": 0,
+            "z": -4.27
+        },
+        "rotation": {
+            "y": 0
+        }
+    },
+    "objects": [
+        {
+            "id": "0339b9d7-d785-477b-8958-08e6e8fc9adb",
+            "type": "block_yellow_number_1",
+            "info": [
+                "tiny",
+                "light",
+                "yellow",
+                "brown",
+                "wood",
+                "number block",
+                "cube",
+                "tiny light yellow brown wood number block cube"
+            ],
+            "mass": 0.66,
+            "dimensions": {
+                "x": 0.1,
+                "y": 0.1,
+                "z": 0.1
+            },
+            "moveable": true,
+            "pickupable": true,
+            "stackTarget": true,
+            "shows": [
+                {
+                    "rotation": {
+                        "x": 0,
+                        "y": 45,
+                        "z": 0
+                    },
+                    "position": {
+                        "x": -1.61,
+                        "y": 0,
+                        "z": 3.79
+                    },
+                    "bounding_box": [
+                        {
+                            "x": -1.61,
+                            "y": 0,
+                            "z": 3.9314213562373093
+                        },
+                        {
+                            "x": -1.4685786437626904,
+                            "y": 0,
+                            "z": 3.79
+                        },
+                        {
+                            "x": -1.61,
+                            "y": 0,
+                            "z": 3.648578643762691
+                        },
+                        {
+                            "x": -1.7514213562373098,
+                            "y": 0,
+                            "z": 3.79
+                        }
+                    ],
+                    "stepBegin": 0,
+                    "scale": {
+                        "x": 1,
+                        "y": 1,
+                        "z": 1
+                    }
+                }
+            ],
+            "materials": [
+                "UnityAssetStore/KD_NumberBlocks/Assets/Textures/Yellow/TOYBlocks_NumberBlock_2_Yellow_1K/NumberBlockYellow_2"
+            ],
+            "salientMaterials": [
+                "wood"
+            ]
+        },
+        {
+            "id": "trophy",
+            "type": "trophy",
+            "shows": [
+                {
+                    "stepBegin": 0,
+                    "position": {
+                        "x": -2.4976990897456575,
+                        "y": 0.08,
+                        "z": 2.850481917271498
+                    },
+                    "rotation": {
+                        "x": 90,
+                        "y": 180,
+                        "z": 0
+                    }
+                }
+            ]
+        },
+        {
+            "id": "treasure_chest_small",
+            "type": "chest_2",
+            "salientMaterials": [
+                "metal"
+            ],
+            "materials": [
+                "AI2-THOR/Materials/Metals/BrownMetal 1"
+            ],
+            "shows": [
+                {
+                    "stepBegin": 0,
+                    "position": {
+                        "x": -2.5096703098672766,
+                        "y": 0,
+                        "z": 4.767456892672698
+                    },
+                    "rotation": {
+                        "x": 0,
+                        "y": 180,
+                        "z": 0
+                    },
+                    "scale": {
+                        "x": 0.3,
+                        "y": 0.3,
+                        "z": 0.3
+                    }
+                }
+            ]
+        },
+        {
+            "id": "sturdy_box_large",
+            "type": "chest_1",
+            "salientMaterials": [
+                "metal"
+            ],
+            "materials": [
+                "AI2-THOR/Materials/Metals/Metal"
+            ],
+            "shows": [
+                {
+                    "stepBegin": 0,
+                    "position": {
+                        "x": -1.5,
+                        "y": 0,
+                        "z": 1
+                    },
+                    "rotation": {
+                        "x": 0,
+                        "y": 180,
+                        "z": 0
+                    },
+                    "scale": {
+                        "x": 0.65,
+                        "y": 0.65,
+                        "z": 0.65
+                    }
+                }
+            ]
+        }
+    ],
+    "goal": {
+        "category": "retrieval",
+        "description": "Find and pick up the trophy.",
+        "last_step": 3000,
+        "metadata": {
+            "target": {
+                "id": "trophy",
+                "image": null
+            }
+        }
+    },
+    "answer": {}
+}

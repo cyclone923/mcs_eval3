@@ -1,0 +1,177 @@
+{
+    "name": "retrieval_goal-0024.json",
+    "ceilingMaterial": "AI2-THOR/Materials/Walls/YellowDrywall",
+    "floorMaterial": "AI2-THOR/Materials/Metals/Brass 1",
+    "wallMaterial": "AI2-THOR/Materials/Walls/YellowDrywall",
+    "performerStart": {
+        "position": {
+            "x": -4.02,
+            "y": 0,
+            "z": -3.18
+        },
+        "rotation": {
+            "y": 45
+        }
+    },
+    "objects": [
+        {
+            "id": "7538ce3f-307b-4026-946b-4c0b9503ebbf",
+            "type": "sphere",
+            "info": [
+                "tiny",
+                "light",
+                "blue",
+                "rubber",
+                "ball",
+                "tiny light blue rubber ball"
+            ],
+            "mass": 0.5,
+            "dimensions": {
+                "x": 0.1,
+                "y": 0.1,
+                "z": 0.1
+            },
+            "moveable": true,
+            "pickupable": true,
+            "shows": [
+                {
+                    "rotation": {
+                        "x": 0,
+                        "y": 225,
+                        "z": 0
+                    },
+                    "position": {
+                        "x": 1.27,
+                        "y": 0.05,
+                        "z": -0.79
+                    },
+                    "bounding_box": [
+                        {
+                            "x": 1.27,
+                            "y": 0,
+                            "z": -0.9314213562373095
+                        },
+                        {
+                            "x": 1.1285786437626903,
+                            "y": 0,
+                            "z": -0.79
+                        },
+                        {
+                            "x": 1.27,
+                            "y": 0,
+                            "z": -0.6485786437626906
+                        },
+                        {
+                            "x": 1.4114213562373097,
+                            "y": 0,
+                            "z": -0.79
+                        }
+                    ],
+                    "stepBegin": 0,
+                    "scale": {
+                        "x": 0.1,
+                        "y": 0.1,
+                        "z": 0.1
+                    }
+                }
+            ],
+            "materials": [
+                "AI2-THOR/Materials/Plastics/LightBlueRubber"
+            ],
+            "salientMaterials": [
+                "rubber"
+            ]
+        },
+        {
+            "id": "trophy",
+            "type": "trophy",
+            "shows": [
+                {
+                    "stepBegin": 0,
+                    "position": {
+                        "x": 0.45786961229435796,
+                        "y": 0.08,
+                        "z": 0.20224414148728354
+                    },
+                    "rotation": {
+                        "x": 90,
+                        "y": 180,
+                        "z": 0
+                    }
+                }
+            ]
+        },
+        {
+            "id": "suitcase_small",
+            "type": "suitcase_1",
+            "salientMaterials": [
+                "plastic"
+            ],
+            "materials": [
+                "AI2-THOR/Materials/Plastics/BlackPlastic"
+            ],
+            "shows": [
+                {
+                    "stepBegin": 0,
+                    "position": {
+                        "x": 3.7078615945678663,
+                        "y": 0,
+                        "z": -0.7287517374959362
+                    },
+                    "rotation": {
+                        "x": 0,
+                        "y": 0,
+                        "z": 0
+                    },
+                    "scale": {
+                        "x": 0.5,
+                        "y": 0.5,
+                        "z": 0.5
+                    }
+                }
+            ]
+        },
+        {
+            "id": "sturdy_box_med",
+            "type": "chest_1",
+            "salientMaterials": [
+                "wood"
+            ],
+            "materials": [
+                "AI2-THOR/Materials/Wood/WornWood"
+            ],
+            "shows": [
+                {
+                    "stepBegin": 0,
+                    "position": {
+                        "x": -1.5,
+                        "y": 0,
+                        "z": 0
+                    },
+                    "rotation": {
+                        "x": 0,
+                        "y": 180,
+                        "z": 0
+                    },
+                    "scale": {
+                        "x": 0.5,
+                        "y": 0.5,
+                        "z": 0.5
+                    }
+                }
+            ]
+        }
+    ],
+    "goal": {
+        "category": "retrieval",
+        "description": "Find and pick up the trophy.",
+        "last_step": 3000,
+        "metadata": {
+            "target": {
+                "id": "trophy",
+                "image": null
+            }
+        }
+    },
+    "answer": {}
+}

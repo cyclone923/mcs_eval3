@@ -1,0 +1,177 @@
+{
+    "name": "retrieval_goal-0039.json",
+    "ceilingMaterial": "AI2-THOR/Materials/Wood/WhiteWood",
+    "floorMaterial": "AI2-THOR/Materials/Wood/WoodGrain_Brown",
+    "wallMaterial": "AI2-THOR/Materials/Wood/WhiteWood",
+    "performerStart": {
+        "position": {
+            "x": 3.76,
+            "y": 0,
+            "z": -4.3
+        },
+        "rotation": {
+            "y": 90
+        }
+    },
+    "objects": [
+        {
+            "id": "13ae555d-a683-4e50-b6a4-88257f159682",
+            "type": "sphere",
+            "info": [
+                "small",
+                "light",
+                "grey",
+                "metal",
+                "ball",
+                "small light grey metal ball"
+            ],
+            "mass": 4,
+            "dimensions": {
+                "x": 0.25,
+                "y": 0.25,
+                "z": 0.25
+            },
+            "moveable": true,
+            "pickupable": true,
+            "shows": [
+                {
+                    "rotation": {
+                        "x": 0,
+                        "y": 135,
+                        "z": 0
+                    },
+                    "position": {
+                        "x": 2.26,
+                        "y": 0.125,
+                        "z": 1.89
+                    },
+                    "bounding_box": [
+                        {
+                            "x": 1.9064466094067258,
+                            "y": 0,
+                            "z": 1.8899999999999997
+                        },
+                        {
+                            "x": 2.26,
+                            "y": 0,
+                            "z": 2.2435533905932736
+                        },
+                        {
+                            "x": 2.6135533905932737,
+                            "y": 0,
+                            "z": 1.8899999999999997
+                        },
+                        {
+                            "x": 2.26,
+                            "y": 0,
+                            "z": 1.5364466094067262
+                        }
+                    ],
+                    "stepBegin": 0,
+                    "scale": {
+                        "x": 0.25,
+                        "y": 0.25,
+                        "z": 0.25
+                    }
+                }
+            ],
+            "materials": [
+                "UnityAssetStore/Baby_Room/Models/Materials/cabinet metal"
+            ],
+            "salientMaterials": [
+                "metal"
+            ]
+        },
+        {
+            "id": "trophy",
+            "type": "trophy",
+            "shows": [
+                {
+                    "stepBegin": 0,
+                    "position": {
+                        "x": -3.624788654646104,
+                        "y": 0.08,
+                        "z": 0.1655904561513566
+                    },
+                    "rotation": {
+                        "x": 90,
+                        "y": 180,
+                        "z": 0
+                    }
+                }
+            ]
+        },
+        {
+            "id": "treasure_chest_small",
+            "type": "chest_2",
+            "salientMaterials": [
+                "metal"
+            ],
+            "materials": [
+                "AI2-THOR/Materials/Metals/BrownMetal 1"
+            ],
+            "shows": [
+                {
+                    "stepBegin": 0,
+                    "position": {
+                        "x": -2.1930398173702956,
+                        "y": 0,
+                        "z": -4.171049434560849
+                    },
+                    "rotation": {
+                        "x": 0,
+                        "y": 180,
+                        "z": 0
+                    },
+                    "scale": {
+                        "x": 0.3,
+                        "y": 0.3,
+                        "z": 0.3
+                    }
+                }
+            ]
+        },
+        {
+            "id": "sturdy_box_large",
+            "type": "chest_1",
+            "salientMaterials": [
+                "metal"
+            ],
+            "materials": [
+                "AI2-THOR/Materials/Metals/Metal"
+            ],
+            "shows": [
+                {
+                    "stepBegin": 0,
+                    "position": {
+                        "x": -1.5,
+                        "y": 0,
+                        "z": 1
+                    },
+                    "rotation": {
+                        "x": 0,
+                        "y": 180,
+                        "z": 0
+                    },
+                    "scale": {
+                        "x": 0.65,
+                        "y": 0.65,
+                        "z": 0.65
+                    }
+                }
+            ]
+        }
+    ],
+    "goal": {
+        "category": "retrieval",
+        "description": "Find and pick up the trophy.",
+        "last_step": 3000,
+        "metadata": {
+            "target": {
+                "id": "trophy",
+                "image": null
+            }
+        }
+    },
+    "answer": {}
+}

@@ -1,0 +1,177 @@
+{
+    "name": "retrieval_goal-0047.json",
+    "ceilingMaterial": "AI2-THOR/Materials/Walls/DrywallOrange",
+    "floorMaterial": "UnityAssetStore/Kindergarten_Interior/Models/Materials/color wood 2",
+    "wallMaterial": "AI2-THOR/Materials/Walls/DrywallOrange",
+    "performerStart": {
+        "position": {
+            "x": -2.28,
+            "y": 0,
+            "z": 0.56
+        },
+        "rotation": {
+            "y": 270
+        }
+    },
+    "objects": [
+        {
+            "id": "08e4b65d-1a5e-4839-8bbb-583510d268f2",
+            "type": "duck_on_wheels",
+            "info": [
+                "small",
+                "light",
+                "brown",
+                "wood",
+                "duck",
+                "small light brown wood duck"
+            ],
+            "mass": 4,
+            "dimensions": {
+                "x": 0.42,
+                "y": 0.34,
+                "z": 0.13
+            },
+            "moveable": true,
+            "pickupable": true,
+            "shows": [
+                {
+                    "rotation": {
+                        "x": 0,
+                        "y": 270,
+                        "z": 0
+                    },
+                    "position": {
+                        "x": -2.98,
+                        "y": 0.01,
+                        "z": 2.63
+                    },
+                    "bounding_box": [
+                        {
+                            "x": -2.85,
+                            "y": 0,
+                            "z": 2.21
+                        },
+                        {
+                            "x": -3.11,
+                            "y": 0,
+                            "z": 2.21
+                        },
+                        {
+                            "x": -3.11,
+                            "y": 0,
+                            "z": 3.05
+                        },
+                        {
+                            "x": -2.85,
+                            "y": 0,
+                            "z": 3.05
+                        }
+                    ],
+                    "stepBegin": 0,
+                    "scale": {
+                        "x": 2,
+                        "y": 2,
+                        "z": 2
+                    }
+                }
+            ],
+            "materials": [
+                "UnityAssetStore/Wooden_Toys_Bundle/ToyBlocks/meshes/Materials/wood_1x1"
+            ],
+            "salientMaterials": [
+                "wood"
+            ]
+        },
+        {
+            "id": "trophy",
+            "type": "trophy",
+            "shows": [
+                {
+                    "stepBegin": 0,
+                    "position": {
+                        "x": 4.609538743710482,
+                        "y": 0.04,
+                        "z": -2.991228938065611
+                    },
+                    "rotation": {
+                        "x": 0,
+                        "y": 0,
+                        "z": 0
+                    }
+                }
+            ]
+        },
+        {
+            "id": "sturdy_box_small",
+            "type": "chest_1",
+            "salientMaterials": [
+                "plastic"
+            ],
+            "materials": [
+                "UnityAssetStore/Kindergarten_Interior/Models/Materials/color 3"
+            ],
+            "shows": [
+                {
+                    "stepBegin": 0,
+                    "position": {
+                        "x": 4.628485437173232,
+                        "y": 0,
+                        "z": -0.9957812362775611
+                    },
+                    "rotation": {
+                        "x": 0,
+                        "y": 180,
+                        "z": 0
+                    },
+                    "scale": {
+                        "x": 0.35,
+                        "y": 0.35,
+                        "z": 0.35
+                    }
+                }
+            ]
+        },
+        {
+            "id": "treasure_chest_med",
+            "type": "chest_2",
+            "salientMaterials": [
+                "plastic"
+            ],
+            "materials": [
+                "UnityAssetStore/Kindergarten_Interior/Models/Materials/color 2"
+            ],
+            "shows": [
+                {
+                    "stepBegin": 0,
+                    "position": {
+                        "x": 0,
+                        "y": 0,
+                        "z": 1.5
+                    },
+                    "rotation": {
+                        "x": 0,
+                        "y": 180,
+                        "z": 0
+                    },
+                    "scale": {
+                        "x": 0.7,
+                        "y": 0.7,
+                        "z": 0.7
+                    }
+                }
+            ]
+        }
+    ],
+    "goal": {
+        "category": "retrieval",
+        "description": "Find and pick up the trophy.",
+        "last_step": 3000,
+        "metadata": {
+            "target": {
+                "id": "trophy",
+                "image": null
+            }
+        }
+    },
+    "answer": {}
+}

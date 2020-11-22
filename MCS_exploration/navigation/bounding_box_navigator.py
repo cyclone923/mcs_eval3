@@ -65,7 +65,7 @@ class BoundingBoxNavigator:
 			self.agentH = rotation / 360 * (2 * math.pi)
 			cover_floor.update_seen(self.agentX, self.agentY, agent.game_state, rotation, 42.5,
 								self.scene_obstacles_dict.values())
-		self.current_nav_steps += 1
+			self.current_nav_steps += 1
 		return agent.game_state.event.return_status != "SUCCESSFUL"
 
 	def clear_obstacle_dict(self):

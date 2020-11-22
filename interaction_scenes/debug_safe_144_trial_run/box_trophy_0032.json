@@ -1,0 +1,177 @@
+{
+    "name": "retrieval_goal-0033.json",
+    "ceilingMaterial": "UnityAssetStore/Baby_Room/Models/Materials/cabinet metal",
+    "floorMaterial": "AI2-THOR/Materials/Fabrics/RugPattern224",
+    "wallMaterial": "UnityAssetStore/Baby_Room/Models/Materials/cabinet metal",
+    "performerStart": {
+        "position": {
+            "x": -3.19,
+            "y": 0,
+            "z": 1.65
+        },
+        "rotation": {
+            "y": 315
+        }
+    },
+    "objects": [
+        {
+            "id": "139df5c6-5acc-4d96-9881-a00ca5060778",
+            "type": "racecar_red",
+            "info": [
+                "tiny",
+                "light",
+                "blue",
+                "wood",
+                "racecar",
+                "tiny light blue wood racecar"
+            ],
+            "mass": 2,
+            "dimensions": {
+                "x": 0.105,
+                "y": 0.09,
+                "z": 0.225
+            },
+            "moveable": true,
+            "pickupable": true,
+            "shows": [
+                {
+                    "rotation": {
+                        "x": 0,
+                        "y": 135,
+                        "z": 0
+                    },
+                    "position": {
+                        "x": 1.02,
+                        "y": 0.01,
+                        "z": -1.99
+                    },
+                    "bounding_box": [
+                        {
+                            "x": 0.7866547622084393,
+                            "y": 0,
+                            "z": -2.074852813742386
+                        },
+                        {
+                            "x": 1.1048528137423856,
+                            "y": 0,
+                            "z": -1.7566547622084394
+                        },
+                        {
+                            "x": 1.2533452377915606,
+                            "y": 0,
+                            "z": -1.9051471862576144
+                        },
+                        {
+                            "x": 0.9351471862576143,
+                            "y": 0,
+                            "z": -2.223345237791561
+                        }
+                    ],
+                    "stepBegin": 0,
+                    "scale": {
+                        "x": 1,
+                        "y": 1,
+                        "z": 1
+                    }
+                }
+            ],
+            "materials": [
+                "UnityAssetStore/Wooden_Toys_Bundle/ToyBlocks/meshes/Materials/blue_1x1"
+            ],
+            "salientMaterials": [
+                "wood"
+            ]
+        },
+        {
+            "id": "trophy",
+            "type": "trophy",
+            "shows": [
+                {
+                    "stepBegin": 0,
+                    "position": {
+                        "x": -4.406134258333606,
+                        "y": 0.04,
+                        "z": -2.648571743877816
+                    },
+                    "rotation": {
+                        "x": 0,
+                        "y": 0,
+                        "z": 0
+                    }
+                }
+            ]
+        },
+        {
+            "id": "suitcase_small",
+            "type": "suitcase_1",
+            "salientMaterials": [
+                "plastic"
+            ],
+            "materials": [
+                "AI2-THOR/Materials/Plastics/BlackPlastic"
+            ],
+            "shows": [
+                {
+                    "stepBegin": 0,
+                    "position": {
+                        "x": 0.39513929262554814,
+                        "y": 0,
+                        "z": -0.006564668025276887
+                    },
+                    "rotation": {
+                        "x": 0,
+                        "y": 0,
+                        "z": 0
+                    },
+                    "scale": {
+                        "x": 0.5,
+                        "y": 0.5,
+                        "z": 0.5
+                    }
+                }
+            ]
+        },
+        {
+            "id": "sturdy_box_large",
+            "type": "chest_1",
+            "salientMaterials": [
+                "metal"
+            ],
+            "materials": [
+                "AI2-THOR/Materials/Metals/Metal"
+            ],
+            "shows": [
+                {
+                    "stepBegin": 0,
+                    "position": {
+                        "x": -1.5,
+                        "y": 0,
+                        "z": 1
+                    },
+                    "rotation": {
+                        "x": 0,
+                        "y": 180,
+                        "z": 0
+                    },
+                    "scale": {
+                        "x": 0.65,
+                        "y": 0.65,
+                        "z": 0.65
+                    }
+                }
+            ]
+        }
+    ],
+    "goal": {
+        "category": "retrieval",
+        "description": "Find and pick up the trophy.",
+        "last_step": 3000,
+        "metadata": {
+            "target": {
+                "id": "trophy",
+                "image": null
+            }
+        }
+    },
+    "answer": {}
+}

@@ -93,7 +93,7 @@ class DiscreteActionPlanner:
             self.obstacles = MultiPolygon()
 
     def planning(self, start_x, start_y, goal_x, goal_y, max_exp = 100):
-        print(len(self.obstacles))
+        #print(len(self.obstacles))
         poly = prep(self.obstacles)
 
         # if len(self.existing_plan) > 1:

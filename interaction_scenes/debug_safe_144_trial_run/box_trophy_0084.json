@@ -1,0 +1,246 @@
+{
+    "name": "retrieval_goal-0085.json",
+    "ceilingMaterial": "AI2-THOR/Materials/Walls/YellowDrywall",
+    "floorMaterial": "AI2-THOR/Materials/Ceramics/GREYGRANITE",
+    "wallMaterial": "AI2-THOR/Materials/Walls/YellowDrywall",
+    "performerStart": {
+        "position": {
+            "x": -2.47,
+            "y": 0,
+            "z": -2.52
+        },
+        "rotation": {
+            "y": 135
+        }
+    },
+    "objects": [
+        {
+            "id": "b7effd97-51d9-4739-b125-b3bf1614dbe0",
+            "type": "block_blank_wood_cylinder",
+            "info": [
+                "tiny",
+                "light",
+                "brown",
+                "wood",
+                "blank block",
+                "cylinder",
+                "tiny light brown wood blank block cylinder"
+            ],
+            "mass": 2.66,
+            "dimensions": {
+                "x": 0.2,
+                "y": 0.1,
+                "z": 0.2
+            },
+            "moveable": true,
+            "pickupable": true,
+            "shows": [
+                {
+                    "rotation": {
+                        "x": 0.0,
+                        "y": 0.0,
+                        "z": 0.0
+                    },
+                    "position": {
+                        "x": 0.0,
+                        "y": -0.055499999999999994,
+                        "z": -0.10874999999999999
+                    },
+                    "bounding_box": [
+                        {
+                            "x": 1.9271572875253808,
+                            "y": 0,
+                            "z": -3.97
+                        },
+                        {
+                            "x": 2.21,
+                            "y": 0,
+                            "z": -3.687157287525381
+                        },
+                        {
+                            "x": 2.4928427124746193,
+                            "y": 0,
+                            "z": -3.97
+                        },
+                        {
+                            "x": 2.21,
+                            "y": 0,
+                            "z": -4.252842712474619
+                        }
+                    ],
+                    "stepBegin": 0,
+                    "scale": {
+                        "x": 2,
+                        "y": 1,
+                        "z": 2
+                    }
+                }
+            ],
+            "materials": [
+                "UnityAssetStore/Wooden_Toys_Bundle/ToyBlocks/meshes/Materials/wood_1x1"
+            ],
+            "salientMaterials": [
+                "wood"
+            ],
+            "locationParent": "669a9c6d-037f-4cf5-9a76-39d3f0255f83"
+        },
+        {
+            "id": "669a9c6d-037f-4cf5-9a76-39d3f0255f83",
+            "type": "box_2",
+            "info": [
+                "tiny",
+                "light",
+                "paper",
+                "brown",
+                "box",
+                "tiny light paper brown box"
+            ],
+            "mass": 0.25,
+            "dimensions": {
+                "x": 0.46725,
+                "y": 0.28575,
+                "z": 0.42524999999999996
+            },
+            "moveable": true,
+            "pickupable": true,
+            "receptacle": true,
+            "openable": true,
+            "shows": [
+                {
+                    "rotation": {
+                        "x": 0,
+                        "y": 0,
+                        "z": 0
+                    },
+                    "position": {
+                        "x": 3.1452500000000003,
+                        "y": 0.15000000000000002,
+                        "z": 0.998
+                    },
+                    "bounding_box": [
+                        {
+                            "x": 3.60725,
+                            "y": 0,
+                            "z": 1.31525
+                        },
+                        {
+                            "x": 3.60725,
+                            "y": 0,
+                            "z": 0.46475000000000005
+                        },
+                        {
+                            "x": 2.67275,
+                            "y": 0,
+                            "z": 0.46475000000000005
+                        },
+                        {
+                            "x": 2.67275,
+                            "y": 0,
+                            "z": 1.31525
+                        }
+                    ],
+                    "stepBegin": 0,
+                    "scale": {
+                        "x": 0.75,
+                        "y": 0.75,
+                        "z": 0.75
+                    }
+                }
+            ],
+            "salientMaterials": [
+                "paper"
+            ]
+        },
+        {
+            "id": "trophy",
+            "type": "trophy",
+            "shows": [
+                {
+                    "stepBegin": 0,
+                    "position": {
+                        "x": -3.592244925314274,
+                        "y": 0.08,
+                        "z": -1.6081052172560675
+                    },
+                    "rotation": {
+                        "x": 90,
+                        "y": 180,
+                        "z": 0
+                    }
+                }
+            ]
+        },
+        {
+            "id": "sturdy_box_small",
+            "type": "chest_1",
+            "salientMaterials": [
+                "plastic"
+            ],
+            "materials": [
+                "UnityAssetStore/Kindergarten_Interior/Models/Materials/color 3"
+            ],
+            "shows": [
+                {
+                    "stepBegin": 0,
+                    "position": {
+                        "x": -2.3185546782660404,
+                        "y": 0,
+                        "z": 0.8818674070996568
+                    },
+                    "rotation": {
+                        "x": 0,
+                        "y": 180,
+                        "z": 0
+                    },
+                    "scale": {
+                        "x": 0.35,
+                        "y": 0.35,
+                        "z": 0.35
+                    }
+                }
+            ]
+        },
+        {
+            "id": "suitcase_large",
+            "type": "suitcase_1",
+            "salientMaterials": [
+                "plastic"
+            ],
+            "materials": [
+                "UnityAssetStore/Kindergarten_Interior/Models/Materials/color 1"
+            ],
+            "shows": [
+                {
+                    "stepBegin": 0,
+                    "position": {
+                        "x": 1.5,
+                        "y": 0,
+                        "z": -1.5
+                    },
+                    "rotation": {
+                        "x": 0,
+                        "y": 0,
+                        "z": 0
+                    },
+                    "scale": {
+                        "x": 2,
+                        "y": 2,
+                        "z": 2
+                    }
+                }
+            ]
+        }
+    ],
+    "goal": {
+        "category": "retrieval",
+        "description": "Find and pick up the trophy.",
+        "last_step": 3000,
+        "metadata": {
+            "target": {
+                "id": "trophy",
+                "image": null
+            }
+        }
+    },
+    "answer": {}
+}

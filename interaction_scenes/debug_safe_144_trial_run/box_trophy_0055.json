@@ -1,0 +1,174 @@
+{
+    "name": "retrieval_goal-0056.json",
+    "ceilingMaterial": "AI2-THOR/Materials/Wood/DarkWoodSmooth2",
+    "floorMaterial": "AI2-THOR/Materials/Walls/Drywall4Tiled",
+    "wallMaterial": "AI2-THOR/Materials/Wood/DarkWoodSmooth2",
+    "performerStart": {
+        "position": {
+            "x": -1.18,
+            "y": 0,
+            "z": 3.86
+        },
+        "rotation": {
+            "y": 90
+        }
+    },
+    "objects": [
+        {
+            "id": "9d96e910-92e8-4628-af8f-15471c9a9902",
+            "type": "apple_1",
+            "info": [
+                "tiny",
+                "light",
+                "food",
+                "red",
+                "apple",
+                "tiny light food red apple"
+            ],
+            "mass": 0.5,
+            "dimensions": {
+                "x": 0.111,
+                "y": 0.12,
+                "z": 0.122
+            },
+            "moveable": true,
+            "pickupable": true,
+            "shows": [
+                {
+                    "rotation": {
+                        "x": 0,
+                        "y": 315,
+                        "z": 0
+                    },
+                    "position": {
+                        "x": -2.34,
+                        "y": 0.03,
+                        "z": 1.77
+                    },
+                    "bounding_box": [
+                        {
+                            "x": -2.1752441199835344,
+                            "y": 0,
+                            "z": 1.777778174593052
+                        },
+                        {
+                            "x": -2.347778174593052,
+                            "y": 0,
+                            "z": 1.6052441199835346
+                        },
+                        {
+                            "x": -2.5047558800164653,
+                            "y": 0,
+                            "z": 1.762221825406948
+                        },
+                        {
+                            "x": -2.332221825406948,
+                            "y": 0,
+                            "z": 1.9347558800164655
+                        }
+                    ],
+                    "stepBegin": 0,
+                    "scale": {
+                        "x": 1,
+                        "y": 1,
+                        "z": 1
+                    }
+                }
+            ],
+            "salientMaterials": [
+                "food"
+            ]
+        },
+        {
+            "id": "trophy",
+            "type": "trophy",
+            "shows": [
+                {
+                    "stepBegin": 0,
+                    "position": {
+                        "x": 2.287618904715644,
+                        "y": 0.08,
+                        "z": -0.4180714246796011
+                    },
+                    "rotation": {
+                        "x": 90,
+                        "y": 180,
+                        "z": 0
+                    }
+                }
+            ]
+        },
+        {
+            "id": "suitcase_small",
+            "type": "suitcase_1",
+            "salientMaterials": [
+                "plastic"
+            ],
+            "materials": [
+                "AI2-THOR/Materials/Plastics/BlackPlastic"
+            ],
+            "shows": [
+                {
+                    "stepBegin": 0,
+                    "position": {
+                        "x": -2.0226512946192923,
+                        "y": 0,
+                        "z": 4.202731171562355
+                    },
+                    "rotation": {
+                        "x": 0,
+                        "y": 0,
+                        "z": 0
+                    },
+                    "scale": {
+                        "x": 0.5,
+                        "y": 0.5,
+                        "z": 0.5
+                    }
+                }
+            ]
+        },
+        {
+            "id": "suitcase_med",
+            "type": "suitcase_1",
+            "salientMaterials": [
+                "metal"
+            ],
+            "materials": [
+                "AI2-THOR/Materials/Metals/WhiteMetal"
+            ],
+            "shows": [
+                {
+                    "stepBegin": 0,
+                    "position": {
+                        "x": 1.5,
+                        "y": 0,
+                        "z": 0
+                    },
+                    "rotation": {
+                        "x": 0,
+                        "y": 0,
+                        "z": 0
+                    },
+                    "scale": {
+                        "x": 1.25,
+                        "y": 1.25,
+                        "z": 1.25
+                    }
+                }
+            ]
+        }
+    ],
+    "goal": {
+        "category": "retrieval",
+        "description": "Find and pick up the trophy.",
+        "last_step": 3000,
+        "metadata": {
+            "target": {
+                "id": "trophy",
+                "image": null
+            }
+        }
+    },
+    "answer": {}
+}

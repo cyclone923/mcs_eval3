@@ -1,0 +1,177 @@
+{
+    "name": "retrieval_goal-0080.json",
+    "ceilingMaterial": "AI2-THOR/Materials/Walls/RedDrywall",
+    "floorMaterial": "AI2-THOR/Materials/Ceramics/TexturesCom_BrickRound0044_1_seamless_S",
+    "wallMaterial": "AI2-THOR/Materials/Walls/RedDrywall",
+    "performerStart": {
+        "position": {
+            "x": -4.8,
+            "y": 0,
+            "z": -1.89
+        },
+        "rotation": {
+            "y": 90
+        }
+    },
+    "objects": [
+        {
+            "id": "9843919c-f51d-43f0-bb32-2c4fda324a68",
+            "type": "sphere",
+            "info": [
+                "tiny",
+                "light",
+                "brown",
+                "wood",
+                "ball",
+                "tiny light brown wood ball"
+            ],
+            "mass": 0.125,
+            "dimensions": {
+                "x": 0.025,
+                "y": 0.025,
+                "z": 0.025
+            },
+            "moveable": true,
+            "pickupable": true,
+            "shows": [
+                {
+                    "rotation": {
+                        "x": 0,
+                        "y": 270,
+                        "z": 0
+                    },
+                    "position": {
+                        "x": 2.9,
+                        "y": 0.0125,
+                        "z": -3.49
+                    },
+                    "bounding_box": [
+                        {
+                            "x": 2.925,
+                            "y": 0,
+                            "z": -3.515
+                        },
+                        {
+                            "x": 2.875,
+                            "y": 0,
+                            "z": -3.515
+                        },
+                        {
+                            "x": 2.875,
+                            "y": 0,
+                            "z": -3.4650000000000003
+                        },
+                        {
+                            "x": 2.925,
+                            "y": 0,
+                            "z": -3.4650000000000003
+                        }
+                    ],
+                    "stepBegin": 0,
+                    "scale": {
+                        "x": 0.025,
+                        "y": 0.025,
+                        "z": 0.025
+                    }
+                }
+            ],
+            "materials": [
+                "AI2-THOR/Materials/Wood/LightWoodCounters4"
+            ],
+            "salientMaterials": [
+                "wood"
+            ]
+        },
+        {
+            "id": "trophy",
+            "type": "trophy",
+            "shows": [
+                {
+                    "stepBegin": 0,
+                    "position": {
+                        "x": -0.7613223397664894,
+                        "y": 0.08,
+                        "z": -2.2215997014989752
+                    },
+                    "rotation": {
+                        "x": 90,
+                        "y": 180,
+                        "z": 0
+                    }
+                }
+            ]
+        },
+        {
+            "id": "suitcase_small",
+            "type": "suitcase_1",
+            "salientMaterials": [
+                "plastic"
+            ],
+            "materials": [
+                "AI2-THOR/Materials/Plastics/BlackPlastic"
+            ],
+            "shows": [
+                {
+                    "stepBegin": 0,
+                    "position": {
+                        "x": -1.569684079729031,
+                        "y": 0,
+                        "z": -0.7864974097925526
+                    },
+                    "rotation": {
+                        "x": 0,
+                        "y": 0,
+                        "z": 0
+                    },
+                    "scale": {
+                        "x": 0.5,
+                        "y": 0.5,
+                        "z": 0.5
+                    }
+                }
+            ]
+        },
+        {
+            "id": "suitcase_large",
+            "type": "suitcase_1",
+            "salientMaterials": [
+                "plastic"
+            ],
+            "materials": [
+                "UnityAssetStore/Kindergarten_Interior/Models/Materials/color 1"
+            ],
+            "shows": [
+                {
+                    "stepBegin": 0,
+                    "position": {
+                        "x": 1.5,
+                        "y": 0,
+                        "z": -1.5
+                    },
+                    "rotation": {
+                        "x": 0,
+                        "y": 0,
+                        "z": 0
+                    },
+                    "scale": {
+                        "x": 2,
+                        "y": 2,
+                        "z": 2
+                    }
+                }
+            ]
+        }
+    ],
+    "goal": {
+        "category": "retrieval",
+        "description": "Find and pick up the trophy.",
+        "last_step": 3000,
+        "metadata": {
+            "target": {
+                "id": "trophy",
+                "image": null
+            }
+        }
+    },
+    "answer": {}
+}

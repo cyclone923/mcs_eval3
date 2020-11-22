@@ -1,0 +1,180 @@
+{
+    "name": "retrieval_goal-0041.json",
+    "ceilingMaterial": "UnityAssetStore/Baby_Room/Models/Materials/cabinet metal",
+    "floorMaterial": "AI2-THOR/Materials/Metals/Brass 1",
+    "wallMaterial": "UnityAssetStore/Baby_Room/Models/Materials/cabinet metal",
+    "performerStart": {
+        "position": {
+            "x": -4.09,
+            "y": 0,
+            "z": 4.27
+        },
+        "rotation": {
+            "y": 180
+        }
+    },
+    "objects": [
+        {
+            "id": "5a9d7b5a-edf1-4e03-9171-273dccc7ce89",
+            "type": "block_yellow_number_1",
+            "info": [
+                "tiny",
+                "light",
+                "blue",
+                "brown",
+                "wood",
+                "letter block",
+                "cube",
+                "tiny light blue brown wood letter block cube"
+            ],
+            "mass": 0.66,
+            "dimensions": {
+                "x": 0.1,
+                "y": 0.1,
+                "z": 0.1
+            },
+            "moveable": true,
+            "pickupable": true,
+            "stackTarget": true,
+            "shows": [
+                {
+                    "rotation": {
+                        "x": 0,
+                        "y": 180,
+                        "z": 0
+                    },
+                    "position": {
+                        "x": -2.48,
+                        "y": 0,
+                        "z": -2.52
+                    },
+                    "bounding_box": [
+                        {
+                            "x": -2.58,
+                            "y": 0,
+                            "z": -2.62
+                        },
+                        {
+                            "x": -2.58,
+                            "y": 0,
+                            "z": -2.42
+                        },
+                        {
+                            "x": -2.38,
+                            "y": 0,
+                            "z": -2.42
+                        },
+                        {
+                            "x": -2.38,
+                            "y": 0,
+                            "z": -2.62
+                        }
+                    ],
+                    "stepBegin": 0,
+                    "scale": {
+                        "x": 1,
+                        "y": 1,
+                        "z": 1
+                    }
+                }
+            ],
+            "materials": [
+                "UnityAssetStore/KD_AlphabetBlocks/Assets/Textures/Blue/TOYBlocks_AlphabetBlock_C_Blue_1K/ToyBlockBlueC"
+            ],
+            "salientMaterials": [
+                "wood"
+            ]
+        },
+        {
+            "id": "trophy",
+            "type": "trophy",
+            "shows": [
+                {
+                    "stepBegin": 0,
+                    "position": {
+                        "x": -4.541898475789418,
+                        "y": 0.04,
+                        "z": 4.852029216316483
+                    },
+                    "rotation": {
+                        "x": 0,
+                        "y": 0,
+                        "z": 0
+                    }
+                }
+            ]
+        },
+        {
+            "id": "suitcase_small",
+            "type": "suitcase_1",
+            "salientMaterials": [
+                "plastic"
+            ],
+            "materials": [
+                "AI2-THOR/Materials/Plastics/BlackPlastic"
+            ],
+            "shows": [
+                {
+                    "stepBegin": 0,
+                    "position": {
+                        "x": 2.1082522721563057,
+                        "y": 0,
+                        "z": -4.512850115585571
+                    },
+                    "rotation": {
+                        "x": 0,
+                        "y": 0,
+                        "z": 0
+                    },
+                    "scale": {
+                        "x": 0.5,
+                        "y": 0.5,
+                        "z": 0.5
+                    }
+                }
+            ]
+        },
+        {
+            "id": "treasure_chest_med",
+            "type": "chest_2",
+            "salientMaterials": [
+                "plastic"
+            ],
+            "materials": [
+                "UnityAssetStore/Kindergarten_Interior/Models/Materials/color 2"
+            ],
+            "shows": [
+                {
+                    "stepBegin": 0,
+                    "position": {
+                        "x": 0,
+                        "y": 0,
+                        "z": 1.5
+                    },
+                    "rotation": {
+                        "x": 0,
+                        "y": 180,
+                        "z": 0
+                    },
+                    "scale": {
+                        "x": 0.7,
+                        "y": 0.7,
+                        "z": 0.7
+                    }
+                }
+            ]
+        }
+    ],
+    "goal": {
+        "category": "retrieval",
+        "description": "Find and pick up the trophy.",
+        "last_step": 3000,
+        "metadata": {
+            "target": {
+                "id": "trophy",
+                "image": null
+            }
+        }
+    },
+    "answer": {}
+}

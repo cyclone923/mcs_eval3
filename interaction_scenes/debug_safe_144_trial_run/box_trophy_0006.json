@@ -1,0 +1,245 @@
+{
+    "name": "retrieval_goal-0007.json",
+    "ceilingMaterial": "AI2-THOR/Materials/Ceramics/GREYGRANITE",
+    "floorMaterial": "AI2-THOR/Materials/Ceramics/RedBrick",
+    "wallMaterial": "AI2-THOR/Materials/Ceramics/GREYGRANITE",
+    "performerStart": {
+        "position": {
+            "x": -3.66,
+            "y": 0,
+            "z": -1.58
+        },
+        "rotation": {
+            "y": 0
+        }
+    },
+    "objects": [
+        {
+            "id": "654ca8c4-37e0-4e3f-90cf-1ba39c631bd5",
+            "type": "sphere",
+            "info": [
+                "tiny",
+                "light",
+                "blue",
+                "rubber",
+                "ball",
+                "tiny light blue rubber ball"
+            ],
+            "mass": 0.25,
+            "dimensions": {
+                "x": 0.05,
+                "y": 0.05,
+                "z": 0.05
+            },
+            "moveable": true,
+            "pickupable": true,
+            "shows": [
+                {
+                    "rotation": {
+                        "x": 0.0,
+                        "y": 0.0,
+                        "z": 0.0
+                    },
+                    "position": {
+                        "x": 0.0,
+                        "y": -0.055499999999999994,
+                        "z": -0.18125
+                    },
+                    "bounding_box": [
+                        {
+                            "x": 4.47,
+                            "y": 0,
+                            "z": -4.619289321881346
+                        },
+                        {
+                            "x": 4.540710678118654,
+                            "y": 0,
+                            "z": -4.69
+                        },
+                        {
+                            "x": 4.47,
+                            "y": 0,
+                            "z": -4.760710678118655
+                        },
+                        {
+                            "x": 4.399289321881345,
+                            "y": 0,
+                            "z": -4.69
+                        }
+                    ],
+                    "stepBegin": 0,
+                    "scale": {
+                        "x": 0.05,
+                        "y": 0.05,
+                        "z": 0.05
+                    }
+                }
+            ],
+            "materials": [
+                "AI2-THOR/Materials/Plastics/LightBlueRubber"
+            ],
+            "salientMaterials": [
+                "rubber"
+            ],
+            "locationParent": "435a1cee-17ee-4774-b744-f209cac40490"
+        },
+        {
+            "id": "435a1cee-17ee-4774-b744-f209cac40490",
+            "type": "box_2",
+            "info": [
+                "small",
+                "light",
+                "paper",
+                "brown",
+                "box",
+                "small light paper brown box"
+            ],
+            "mass": 0.5,
+            "dimensions": {
+                "x": 0.77875,
+                "y": 0.28575,
+                "z": 0.70875
+            },
+            "moveable": true,
+            "pickupable": true,
+            "receptacle": true,
+            "openable": true,
+            "shows": [
+                {
+                    "rotation": {
+                        "x": 0,
+                        "y": 135,
+                        "z": 0
+                    },
+                    "position": {
+                        "x": -1.21125,
+                        "y": 0.15000000000000002,
+                        "z": -3.1599999999999997
+                    },
+                    "bounding_box": [
+                        {
+                            "x": -2.2718213370149893,
+                            "y": 0,
+                            "z": -3.290502525316941
+                        },
+                        {
+                            "x": -1.2694974746830583,
+                            "y": 0,
+                            "z": -2.2881786629850103
+                        },
+                        {
+                            "x": -0.1681786629850105,
+                            "y": 0,
+                            "z": -3.3894974746830586
+                        },
+                        {
+                            "x": -1.1705025253169419,
+                            "y": 0,
+                            "z": -4.3918213370149894
+                        }
+                    ],
+                    "stepBegin": 0,
+                    "scale": {
+                        "x": 1.25,
+                        "y": 0.75,
+                        "z": 1.25
+                    }
+                }
+            ],
+            "salientMaterials": [
+                "paper"
+            ]
+        },
+        {
+            "id": "trophy",
+            "type": "trophy",
+            "shows": [
+                {
+                    "stepBegin": 0,
+                    "position": {
+                        "x": -0.564505855149747,
+                        "y": 0.04,
+                        "z": 1.3941870306905244
+                    },
+                    "rotation": {
+                        "x": 0,
+                        "y": 0,
+                        "z": 0
+                    }
+                }
+            ]
+        },
+        {
+            "id": "suitcase_small",
+            "type": "suitcase_1",
+            "salientMaterials": [
+                "plastic"
+            ],
+            "materials": [
+                "AI2-THOR/Materials/Plastics/BlackPlastic"
+            ],
+            "shows": [
+                {
+                    "stepBegin": 0,
+                    "position": {
+                        "x": -4.111799798794521,
+                        "y": 0,
+                        "z": -3.4003514476306727
+                    },
+                    "rotation": {
+                        "x": 0,
+                        "y": 0,
+                        "z": 0
+                    },
+                    "scale": {
+                        "x": 0.5,
+                        "y": 0.5,
+                        "z": 0.5
+                    }
+                }
+            ]
+        },
+        {
+            "id": "treasure_chest_large",
+            "type": "chest_2",
+            "salientMaterials": [
+                "wood"
+            ],
+            "materials": [
+                "AI2-THOR/Materials/Wood/DarkWoodSmooth2"
+            ],
+            "shows": [
+                {
+                    "stepBegin": 0,
+                    "position": {
+                        "x": 1,
+                        "y": 0,
+                        "z": 1.5
+                    },
+                    "rotation": {
+                        "x": 0,
+                        "y": 180,
+                        "z": 0
+                    },
+                    "scale": {
+                        "x": 1.1,
+                        "y": 1.1,
+                        "z": 1.1
+                    }
+                }
+            ]
+        }
+    ],
+    "goal": {
+        "category": "retrieval",
+        "description": "Find and pick up the trophy.",
+        "last_step": 3000,
+        "metadata": {
+            "target": {
+                "id": "trophy",
+                "image": null
+            }
+        }
+    },
+    "answer": {}
+}
