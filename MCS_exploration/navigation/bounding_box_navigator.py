@@ -39,7 +39,7 @@ class BoundingBoxNavigator:
 		heading = math.atan2(dX, dY)
 
 
-		rotation_degree = heading / (2 * math.pi) * 360 - agent.game_state.event.rotation
+		rotation_degree = heading / (2 * math.pi) * 360 - agent.game_state.rotation
 		
 		if np.abs(rotation_degree) > 360:
 			rotation_degree = np.sign(rotation_degree) * (np.abs(rotation_degree) - 360)
@@ -59,13 +59,12 @@ class BoundingBoxNavigator:
 		
 		for act in action_list:
 			agent.game_state.step(act)
-			rotation = agent.game_state.event.rotation
-			self.agentX = agent.game_state.event.position['x']
-			self.agentY = agent.game_state.event.position['z']
+			rotation = agent.game_state.rotation
+			self.agentX = agent.game_state.position['x']
+			self.agentY = agent.game_state.position['z']
 			self.agentH = rotation / 360 * (2 * math.pi)
 			cover_floor.update_seen(self.agentX, self.agentY, agent.game_state, rotation, 42.5,
 								self.scene_obstacles_dict.values())
-		#print(agent.game_state.event.return_status, agent.game_state.event.return_status != "SUCCESSFUL")
 		self.current_nav_steps += 1
 		return agent.game_state.event.return_status != "SUCCESSFUL"
 
@@ -163,9 +162,9 @@ class BoundingBoxNavigator:
 	def go_to_goal(self, goal_pose, agent, success_distance):
 
 		self.current_nav_steps = 0
-		self.agentX = agent.game_state.event.position['x']
-		self.agentY = agent.game_state.event.position['z']
-		self.agentH = agent.game_state.event.rotation / 360 * (2 * math.pi)
+		self.agentX = agent.game_state.position['x']
+		self.agentY = agent.game_state.position['z']
+		self.agentH = agent.game_state.rotation / 360 * (2 * math.pi)
 		self.epsilon = success_distance
 
 		gx, gy = goal_pose[0], goal_pose[1]

@@ -107,6 +107,10 @@ class GameState(object):
         self.global_obstacles = []
         self.current_frame_obstacles = []
         self.objs = 0
+        self.oracle_position = None
+        self.position = None
+        self.rotation = None
+        self.head_tilt = None
 
     def occupancy_map_init(self):
         #rows = int(self.map_width//self.grid_size)
@@ -184,6 +188,7 @@ class GameState(object):
             Oracle data being used (eval 2)
             '''
 
+            '''
             for key,value in self.event.goal.metadata.items():
                 if key == "target" or key == "target_1" or key == "target_2":
                     self.goals.append(self.event.goal.metadata[key]["id"])
@@ -197,7 +202,7 @@ class GameState(object):
                     self.discovered_objects[-1]['explored'] = 0
                     self.discovered_objects[-1]['openable'] = None
                     #self.discovered_objects[-1]['agent_position'] = None
-
+            '''
             '''
             Oracle data being used (eval 3 )
             '''
@@ -232,6 +237,7 @@ class GameState(object):
             '''
             self.position = {'x': self.pose_estimate[0][0], 'y': 0.465, 'z':self.pose_estimate[1][0]}
             self.rotation = math.degrees(self.pose_estimate[2][0])
+            self.head_tilt = self.event.head_tilt
             self.step_output = self.event
             bounding_boxes,current_frame_occupancy_points = convert_observation(self,self.number_actions,self.position,self.rotation) 
             self.create_current_frame_obstacles(current_frame_occupancy_points)
@@ -298,6 +304,9 @@ class GameState(object):
         #print ("action time", action_time)
         # lastActionSuccess = self.event.return_status
 
+        '''
+        Oracle data for eval 2
+
         for obj in self.event.object_list :
             # if obj.uuid == "trophy":
             #     if not obj.visible:
@@ -314,19 +323,19 @@ class GameState(object):
                 self.discovered_objects[-1]['explored'] = 0
                 self.discovered_objects[-1]['locationParent'] = None
                 self.discovered_objects[-1]['openable'] = None
-
+        
         #print ("self event goal", self.event.goal.__dict__)
         #print ("self objects" , self.event.object_list[0])
+        '''
         #exit()
         agent_movement = np.array([vel, ang_rate],dtype=np.float64).reshape(2, 1)
         if self.event.return_status != "OBSTRUCTED":
             self.pose_estimate = self.motion_model(self.pose_estimate,agent_movement) 
         else :
             print ("return status from step " , self.event.return_status)
-        #agent_pos = self.event.position
-        #rotation = self.event.rotation
         self.position = {'x': self.pose_estimate[0][0], 'y': 0.465, 'z':self.pose_estimate[1][0]}
         self.rotation = math.degrees(self.pose_estimate[2][0])
+        self.head_tilt = self.event.head_tilt
         self.step_output = self.event
         start_time = time.time()
         #bounding_boxes = convert_observation(self,self.number_actions,self.position,self.rotation) 
@@ -394,7 +403,7 @@ class GameState(object):
                     self.global_obstacles[i].is_goal =  curr_frame_obstacle.is_goal
                     if self.global_obstacles[i].is_goal :
                         self.goal_id = self.global_obstacles[i].id
-                        self.goals_found = True
+                        #self.goals_found = True
                     flag = 1
                     break
             if flag == 0 :
@@ -403,7 +412,7 @@ class GameState(object):
                 self.global_obstacles[-1].id = self.objs
                 if self.global_obstacles[-1].is_goal == True :
                     self.goal_id = self.objs
-                    self.goals_found = True
+                    #self.goals_found = True
                 self.objs += 1
 
     def merge_global_obstacles(self):

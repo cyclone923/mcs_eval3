@@ -112,51 +112,6 @@ class SequenceGenerator(object):
             if self.agent.game_state.goals_found :
                 return
 
-            '''
-            flag = 0
-            object_id_to_search = ""
-            for key,value in self.agent.game_state.discovered_explored.items():
-                for key_2,value_2 in value.items():
-                    if key_2 == 0:# and key not in self.unexplored_objects:
-                        #self.unexplored_objects[key] = value
-                        graph_pos_x =  math.floor(value_2['x']/constants.AGENT_STEP_SIZE) 
-                        graph_pos_z =  math.floor(value_2['z']/constants.AGENT_STEP_SIZE) 
-                        if math.sqrt((abs(pose[0] -graph_pos_x))**2+(abs(pose[1]-graph_pos_z))**2) < 10:
-                            print ("objects nearby to explore ")    
-                            flag = 1
-                            optimal_plan, optimal_path = self.agent.gt_graph.get_shortest_path(
-                                    pose, (graph_pos_x,graph_pos_z,pose[2]))
-                            object_id_to_search = key
-                            plan = optimal_plan
-                            path = optimal_path
-                            break
-                if flag == 1 :
-                    break
-
-            while len(plan) > 0:
-                action = plan[0]
-                self.agent.step(action)
-                number_actions += 1
-                self.event = self.game_state.event
-                plan = plan[1:]
-                path.pop()
-                pose = game_util.get_pose(self.game_state.event)[:3]
-                #print ("pose_reached while going to object=" , pose)
-
-            if flag == 1:
-                action = {"action":"OpenObject", "objectId":object_id_to_search}
-                #action = "OpenObject, objectId=%s" % object_id_to_search
-            
-                self.agent.step(action)
-                number_actions += 1
-                self.event = self.game_state.event
-                print ("return status of open object aciton:",self.agent.game_state.event.return_status)
-                print ("agent pose : ", pose, ",  object location", graph_pos_x,graph_pos_z)
-        
-                #while (self.agent.event.return_status != "SUCCESSFUL" ) or trials < 10 :
-                #    trials += 1
-            '''
-
             unexplored = self.graph.get_unseen()
             print (len(unexplored))
             end_time = time.time()
@@ -179,12 +134,11 @@ class SequenceGenerator(object):
 
         cover_floor.explore_initial_point(self.event.position['x'],self.event.position['z'],self.agent,self.agent.nav.scene_obstacles_dict.values())
         exploration_routine = cover_floor.flood_fill(0,0, cover_floor.check_validity)
-        pose = game_util.get_pose(self.game_state.event)[:3]
+        pose = game_util.get_pose(self.game_state)[:3]
 
         #print ("done exploring point and now going to random points")
         #print ("current pose ", pose)
-
-        self.explore_all_objects()
+        #self.explore_all_objects()
 
         if self.agent.game_state.goals_found:
             #print ("Object found returning to main ")
@@ -276,11 +230,11 @@ class SequenceGenerator(object):
             if nav_success == False :
                 continue
 
-            self.event = self.agent.game_state.event
+            #self.event = self.agent.game_state.event
             if self.agent.game_state.goals_found:
                 self.go_to_goal_and_pick()
                 return
-            cover_floor.explore_point(self.event.position['x'], self.event.position['z'], self.agent,
+            cover_floor.explore_point(self.agent.game_state.position['x'], self.agent.game_state.position['z'], self.agent,
                                       self.agent.nav.scene_obstacles_dict.values())
             if self.agent.game_state.goals_found :
                 self.go_to_goal_and_pick()
@@ -295,7 +249,7 @@ class SequenceGenerator(object):
 
         all_explored = False
         while (all_explored == False):
-            current_pos = self.agent.game_state.event.position
+            current_pos = self.agent.game_state.position
             min_distance = math.inf
             flag = 0
             for object in self.agent.game_state.discovered_objects :
