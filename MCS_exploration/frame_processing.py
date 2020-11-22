@@ -23,7 +23,7 @@ Image -> Point cloud conversion
 def convert_observation(env,frame_idx, agent_pos, rotation):
     start_time = time.time()
     all_points, obj_masks = convert_output_dead_reckoning(env,agent_pos, rotation)
-    env.occupancy_map, polygons,object_occupancy_grids = point_cloud_to_polygon(all_points,env.occupancy_map,env.grid_size,env.displacement,env.step_output.object_mask_list[-1])
+    env.occupancy_map, polygons,object_occupancy_grids = point_cloud_to_polygon(all_points,env.occupancy_map,env.grid_size,env.displacement,env.obj_mask)
     return polygons, object_occupancy_grids
 
 def convert_output_dead_reckoning(env,agent_pos, rotation ):

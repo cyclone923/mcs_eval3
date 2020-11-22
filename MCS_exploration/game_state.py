@@ -97,9 +97,9 @@ class GameState(object):
         self.goal_calculated_points = None
         self.grid_size = 0.1 
         #self.grid_size = 1 
-        self.map_width = 12
-        self.map_length = 12                                                                     
-        self.displacement = 5.5
+        self.map_width = 24
+        self.map_length = 24                                                                     
+        self.displacement = 12
         self.occupancy_map = self.occupancy_map_init() #* unexplored
         self.object_mask = None
         self.goal_id = None
@@ -204,9 +204,16 @@ class GameState(object):
                     #self.discovered_objects[-1]['agent_position'] = None
             '''
             '''
+            Need to change below statements to 0,0,0 for local coordinates
+            and obj_mask should either come from level 2 or Jay's code
+            '''
+            position = self.event.position
+            current_angle = math.radians(self.event.rotation)
+            #self.pose_estimate =np.array([float(position['x']),float(position['z']),current_angle]).reshape(3, 1)
+
+            '''
             Oracle data being used (eval 3 )
             '''
-
             for elem in self.event.object_list:
                 if self.event.goal.metadata['target']['id'] == elem.uuid :
                     self.goal_object = elem
@@ -218,23 +225,25 @@ class GameState(object):
             for i in range(0, 8):
                 x, z = dimensions[i]['x'], dimensions[i]['z']
                 if (x, z) not in bd_point:
-                    bd_point.add((x, z))
+                    bd_point.add((x-position['x'], z-position['z']))
+                    #bd_point.add((x, z))
 
             poly = MultiPoint(sorted(bd_point)).convex_hull
             x_list, z_list = poly.exterior.coords.xy
             self.goal_bounding_box = ObstaclePolygon(x_list, z_list)
 
+            '''
+            Level 2 code :
+                if  at level 2 or oracle :
+                    do the following
+            '''
+            self.obj_mask = self.event.object_mask_list[-1]
+        
 
             '''
-            Need to change below statements to 0,0,0 for local coordinates
-            '''
-            position = self.event.position
-            current_angle = math.radians(self.event.rotation)
-            self.pose_estimate = np.array([float(position['x']),float(position['z']),current_angle]).reshape(3, 1)
-            '''
             Local coordinate system init 
-            #self.pose_estimate = np.array([0,0,0]).reshape(3,1)
             '''
+            self.pose_estimate = np.array([0,0,0]).reshape(3,1)
             self.position = {'x': self.pose_estimate[0][0], 'y': 0.465, 'z':self.pose_estimate[1][0]}
             self.rotation = math.degrees(self.pose_estimate[2][0])
             self.head_tilt = self.event.head_tilt
@@ -333,6 +342,12 @@ class GameState(object):
             self.pose_estimate = self.motion_model(self.pose_estimate,agent_movement) 
         else :
             print ("return status from step " , self.event.return_status)
+        '''
+        Level 2 code :
+            if  at level 2 or oracle :
+                do the following
+        '''
+        self.obj_mask = self.event.object_mask_list[-1]
         self.position = {'x': self.pose_estimate[0][0], 'y': 0.465, 'z':self.pose_estimate[1][0]}
         self.rotation = math.degrees(self.pose_estimate[2][0])
         self.head_tilt = self.event.head_tilt

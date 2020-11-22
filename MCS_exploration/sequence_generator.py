@@ -265,8 +265,8 @@ class SequenceGenerator(object):
         goal_object_centre[2] = target_obj.centre_z
         #goal_pixel_coords = np.where(self.agent.game_state.object_mask==self.agent.game_state.goal_id )
         
-        theta = - NavigatorResNet.get_polar_direction(goal_object_centre, self.agent.game_state.event) * 180/math.pi
-        omega = FaceTurnerResNet.get_head_tilt(goal_object_centre, self.agent.game_state.event) - self.agent.game_state.event.head_tilt
+        theta = - NavigatorResNet.get_polar_direction(goal_object_centre, self.agent.game_state) * 180/math.pi
+        omega = FaceTurnerResNet.get_head_tilt(goal_object_centre, self.agent.game_state) - self.agent.game_state.head_tilt
 
         n = int(abs(theta) // 10)
         m = int(abs(omega) // 10)
