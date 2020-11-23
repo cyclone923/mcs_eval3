@@ -46,7 +46,7 @@
         
     4. Run the demo test
         ```Shell
-        python inference.py
+        python vision/instSeg/inference.py
         cd ../../
         ```
 
