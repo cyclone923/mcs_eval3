@@ -17,6 +17,11 @@ from MCS_exploration.frame_processing import *
 from shapely.geometry import Point, MultiPoint
 from MCS_exploration.obstacle import Obstacle
 import copy
+from vision.instSeg.inference import MaskAndClassPredictor
+from vision.instSeg.data.config_mcsVideo3_inter import MCSVIDEO_INTER_CLASSES_BG, MCSVIDEO_INTER_CLASSES_FG
+
+TROPHY_INDEX = MCSVIDEO_INTER_CLASSES_FG.index('trophy') + 1
+BOX_INDEX = MCSVIDEO_INTER_CLASSES_FG.index('box') + 1
 
 
 import constants
@@ -111,6 +116,7 @@ class GameState(object):
         self.position = None
         self.rotation = None
         self.head_tilt = None
+        self.mask_predictor = MaskAndClassPredictor(cuda=False)
 
     def occupancy_map_init(self):
         #rows = int(self.map_width//self.grid_size)
@@ -375,6 +381,10 @@ class GameState(object):
         #print ("global list len", len(self.global_obstacles))
         #print ("bb len", len(self.get_obstacles()))
 
+        trophy_location = self.prediction_level1()
+        if trophy_location != None :
+            print ("trophy found at ", trophy_location)
+
         SHOW_ANIMATION = False
 
         if SHOW_ANIMATION:
@@ -474,6 +484,23 @@ class GameState(object):
             self.current_frame_obstacles[goal_index].is_goal = True
 
         #print ("current frame obstacles size", len(self.current_frame_obstacles))
+
+  
+    def prediction_level1(self):
+        rgbI = np.array(self.step_output.image_list[-1])
+        bgrI = rgbI[:, :, [2,1,0]]
+        depthI = np.uint8(self.step_output.depth_map_list[-1] / self.step_output.camera_clipping_planes[1] * 255)
+
+        ret = self.mask_predictor.step(bgrI, depthI)
+        cls = np.argmax(ret['obj_class_score'], axis=1)
+        print(cls)
+        n_th_obj = None
+        if TROPHY_INDEX in cls:
+            n_th_obj = np.where(cls == TROPHY_INDEX)[0]
+            print("find trophy in {}th fg object".format(n_th_obj))
+
+        # self.debug_out(bgrI, depthI, ret)
+        return n_th_obj
 
 
     def motion_model(self, x, u):
