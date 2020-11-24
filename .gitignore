@@ -37,3 +37,6 @@ results/
 
 #ignore all .DS_store
 **/.DS_Store
+
+#ignore model file 
+**/*resnet*
