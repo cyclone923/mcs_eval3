@@ -7,15 +7,25 @@ Modified from Chengxi's McsEnv wrapper
 
 from pathlib import Path
 import os
+import platform
 import machine_common_sense as mcs
 import pickle
+
+
 
 class McsEnv:
     def __init__(self, base, scenes, filter=None):
         base = Path(base)
         scenes = Path(scenes)
-        os.environ['MCS_CONFIG_FILE_PATH'] = str(base/'mcs_config.yaml')
-        app = base/'MCS-AI2-THOR-Unity-App-v0.3.3.x86_64'
+        os.environ['MCS_CONFIG_FILE_PATH'] = str(base / 'mcs_config.yaml')
+
+        if platform.system() == "Linux":
+            app = os.path.join(base, "MCS-AI2-THOR-Unity-App-v0.3.3.x86_64")
+        elif platform.system() == "Darwin":
+            app = os.path.join(base, "MCSai2thor.app/Contents/MacOS/MCSai2thor")
+        else:
+            app = None
+
         self.controller = mcs.create_controller(str(app), depth_maps=True,
                                                 object_masks=True)
         self.read_scenes(scenes, filter)
@@ -33,6 +43,7 @@ class McsEnv:
         for action in scene_config['goal']['action_list']:
             step_output = self.controller.step(action=action[0])
             yield step_output
+
 
 if __name__ == '__main__':
     env = McsEnv(base='data/thor', scenes='data/thor/scenes')

@@ -34,7 +34,7 @@
     
     2. Compile deformable convolutional layers (from [DCNv2](https://github.com/CharlesShang/DCNv2/tree/pytorch_1.0)). Make sure you have the latest CUDA toolkit installed from [NVidia's Website](https://developer.nvidia.com/cuda-toolkit).
         ```Shell
-        cd tracker/instSeg/external/DCNv2
+        cd vision/instSeg/external/DCNv2
         python setup.py build develop
         cd ../../
         ```
@@ -46,7 +46,7 @@
         
     4. Run the demo test
         ```Shell
-        python inference.py
+        python vision/instSeg/inference.py
         cd ../../
         ```
 
