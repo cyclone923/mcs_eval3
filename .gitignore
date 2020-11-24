@@ -34,3 +34,6 @@ results/
 
 #ignore __pycache__
 **/__pycache__
+
+#ignore all .DS_store
+**/.DS_Store
