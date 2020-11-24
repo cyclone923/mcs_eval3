@@ -34,13 +34,14 @@ class SequenceGenerator(object):
         # print('New episode. Scene %s' % self.scene_name)
         self.agent.reset(self.scene_name, config_filename=config_filename, event=event)
 
+        self.position = self.agent.game_state.position
         self.event = self.agent.game_state.event
         #print ("beginning of explore scene view")
 
         #rotation = self.agent.game_state.event.rotation / 180 * math.pi
-        cover_floor.update_seen(self.event.position['x'],self.event.position['z'],self.agent.game_state,self.event.rotation,self.event.camera_field_of_view,self.agent.nav.scene_obstacles_dict.values())
+        cover_floor.update_seen(self.position['x'],self.position['z'],self.agent.game_state,self.agent.game_state.rotation,self.event.camera_field_of_view,self.agent.nav.scene_obstacles_dict.values())
 
-        cover_floor.explore_initial_point(self.event.position['x'],self.event.position['z'],self.agent,self.agent.nav.scene_obstacles_dict.values())
+        cover_floor.explore_initial_point(self.agent.game_state.position['x'],self.agent.game_state.position['z'],self.agent,self.agent.nav.scene_obstacles_dict.values())
         exploration_routine = cover_floor.flood_fill(0,0, cover_floor.check_validity)
         pose = game_util.get_pose(self.game_state)[:3]
 
@@ -49,7 +50,7 @@ class SequenceGenerator(object):
         #self.explore_all_objects()
 
         if self.agent.game_state.goals_found:
-            #print ("Object found returning to main ")
+            print ("Object found returning to main ")
             self.go_to_goal_and_pick()
             return
     
@@ -197,7 +198,7 @@ class SequenceGenerator(object):
 
     def go_to_goal_and_pick(self):
 
-        #print ("object goal ID = " , self.agent.game_state.goal_id)
+        print ("object goal ID = " , self.agent.game_state.goal_id)
 
         target_obj = self.get_target_obj(self.agent.game_state.goal_id)
         object_nearest_point = self.get_best_object_point(target_obj, 1000, self.nearest )

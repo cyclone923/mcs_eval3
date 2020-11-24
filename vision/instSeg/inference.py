@@ -124,7 +124,7 @@ if __name__=='__main__':
     bgrI   = cv2.imread('./vision/instSeg/demo/original-24-0.jpg')
     depthI = smisc.imread('./vision/instSeg/demo/depth-24-0.png', mode='P')
 
-    model = MaskAndClassPredictor(cuda=True)
+    model = MaskAndClassPredictor(cuda=False)
     ret   = model.step(bgrI, depthI)
 
     fig, ax = plt.subplots(2,2)

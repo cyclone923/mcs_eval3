@@ -1,5 +1,6 @@
 import numpy as np
 from scipy.spatial.transform import Rotation
+#from MCS_exploration.obstacle import Obstacle
 
 import matplotlib
 #matplotlib.use('Agg')
@@ -24,6 +25,9 @@ def convert_observation(env,frame_idx, agent_pos, rotation):
     start_time = time.time()
     all_points, obj_masks = convert_output_dead_reckoning(env,agent_pos, rotation)
     env.occupancy_map, polygons,object_occupancy_grids = point_cloud_to_polygon(all_points,env.occupancy_map,env.grid_size,env.displacement,env.obj_mask)
+    if env.trophy_location != None :
+        #print ("trophy location not none in observation", env.trophy_location)
+        update_goal_bounding_box(all_points, env)
     return polygons, object_occupancy_grids
 
 def convert_output_dead_reckoning(env,agent_pos, rotation ):
@@ -188,20 +192,25 @@ def point_cloud_to_polygon(points,occupancy_map,grid_size, displacement, obj_mas
 
     object_occupancy_grids_row_view = {}
     np_occ_map = np.zeros(occupancy_map.shape)
-    arr_mask = np.array(obj_masks)
-    obj_masks = arr_mask.reshape(-1, arr_mask.shape[-1])
-    sample = 2
+    #arr_mask = np.array(obj_masks)
+    #print ("arr masks beginning shape", arr_mask.shape)
+    #obj_masks = arr_mask.reshape(-1, arr_mask.shape[-1])
+    obj_masks = obj_masks.flatten()
+    sample = 1
     points = points[::sample]
     obj_masks_new = obj_masks[::sample]
     obj_masks = obj_masks_new[:]
     new_points = np.where((points[:,1] > 0.05) & (points[:,1] <= 3))#,1,0).reshape(points.shape[0],1)
     points = points[new_points[0]]
     obj_masks = obj_masks[new_points[0]]
-    ar_row_view = obj_masks.view('|S%d' % (obj_masks.itemsize * obj_masks.shape[1]))
-    unique_row_view = np.unique(ar_row_view)
+    #ar_row_view = obj_masks.view('|S%d' % (obj_masks.itemsize * obj_masks.shape[1]))
+    #unique_row_view = np.unique(ar_row_view)
+    unique_row_view = np.unique(obj_masks)
+    #exit()
 
     for elem in unique_row_view :
-        obj_coords = np.where(ar_row_view==elem)
+        #obj_coords = np.where(ar_row_view==elem)
+        obj_coords = np.where(obj_masks==elem)
         obj_points = points[obj_coords[0]]
         obj_points = np.delete(obj_points, 1, 1)
         obj_points = np.int_((obj_points+displacement)/grid_size)
@@ -239,3 +248,20 @@ def polygon_simplify(all_polygons,scale=0.0):
         simplified_polygon = MultiPolygon(simplified_polygon)
 
     return simplified_polygon
+
+
+def update_goal_bounding_box(points, env):
+    new_points = np.where((points[:,1] > 0.05) & (points[:,1] <= 3))#,1,0).reshape(points.shape[0],1)
+    points = points[new_points[0]]
+    env.trophy_mask = env.trophy_mask[new_points[0]]
+    #print ("in update goal bounding box")
+    trophy_pixel_coords = np.where(env.trophy_mask >= 0.7)
+    #print ("number of pixels with pts greater than 0.9", len(trophy_pixel_coords[0]))
+    trophy_points = points[trophy_pixel_coords[0]]
+    trophy_points = np.delete(trophy_points,1,1)
+    trophy_points = np.int_((trophy_points+env.displacement)/env.grid_size)
+    #print ("size of trophy points ", trophy_points.shape)
+    trophy_pts_str = trophy_points.view('|S%d' % (trophy_points.itemsize * trophy_points.shape[1]))
+    #obj_points_str = obj_points.view('|S%d' % (obj_points.itemsize * obj_points.shape[1]))
+    _,unique_indices,unique_counts = np.unique(trophy_pts_str,return_index=True,return_counts=True)
+    env.trophy_occupancy_map_points = trophy_points[unique_indices]
