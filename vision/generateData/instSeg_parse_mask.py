@@ -24,7 +24,7 @@ todo:: modification::
 
 cfg.bg_classes      = ['floor', 'ceiling', 'wall']
 cfg.ignore_fg       = ['shelf']
-cfg.object_classes  = ['trophy', 'box']
+cfg.object_classes  = ['trophy', 'box', 'occluder_pole', 'occluder_wall']
 #object_list = ['changing table', 'duck', 'drawer', 'box', 'bowl', \
 #               'sofa chair', 'pacifier', 'number block cube', 'crayon', 'ball', \
 #               'blank block cube', 'chair', 'plate', 'sofa', 'stool', \
@@ -58,7 +58,8 @@ def parse_label_info(mask_clrI, uuid_list, shape_list, result_dir='', sname='-du
             rpl_sem_dict[clr], rpl_inst_dict[clr] = cfg.sem_lut['others_bg'], 0
         else:
             rpl_sem_dict[clr] = cfg.sem_lut['others_bg']
-            for key in cfg.sem_lut:
+            # check for FG objects in priority
+            for key in (cfg.object_classes + cfg.bg_classes):
                 if key in i.uuid:
                     rpl_sem_dict[clr] = cfg.sem_lut[key]
                     break
