@@ -9,8 +9,8 @@ from cover_floor import *
 import math
 import time
 from shapely.geometry import Point, Polygon
-from tasks.point_goal_navigation.navigator import NavigatorResNet
-from tasks.search_object_in_receptacle.face_turner import FaceTurnerResNet
+#from tasks.point_goal_navigation.navigator import NavigatorResNet
+#from tasks.search_object_in_receptacle.face_turner import FaceTurnerResNet
 from MCS_exploration.frame_processing import *
 from MCS_exploration.navigation.visibility_road_map import ObstaclePolygon,IncrementalVisibilityRoadMap
 from shapely.geometry import Point, MultiPoint
@@ -265,8 +265,8 @@ class SequenceGenerator(object):
         goal_object_centre[2] = target_obj.centre_z
         #goal_pixel_coords = np.where(self.agent.game_state.object_mask==self.agent.game_state.goal_id )
         
-        theta = - NavigatorResNet.get_polar_direction(goal_object_centre, self.agent.game_state) * 180/math.pi
-        omega = FaceTurnerResNet.get_head_tilt(goal_object_centre, self.agent.game_state) - self.agent.game_state.head_tilt
+        theta = - get_polar_direction(goal_object_centre, self.agent.game_state) * 180/math.pi
+        omega = get_head_tilt(goal_object_centre, self.agent.game_state) - self.agent.game_state.head_tilt
 
         n = int(abs(theta) // 10)
         m = int(abs(omega) // 10)

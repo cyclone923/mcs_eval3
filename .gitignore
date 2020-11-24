@@ -31,3 +31,6 @@ results/
 
 #ignore any json files 
 **/*.json
+
+#ignore __pycache__
+**/__pycache__

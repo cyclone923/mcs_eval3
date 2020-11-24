@@ -1,4 +1,3 @@
-
 import constants
 import networkx as nx
 import math
@@ -7,6 +6,7 @@ from shapely.geometry import Point, Polygon
 from navigation.fov import FieldOfView
 import  numpy as np
 import matplotlib.pyplot as plt
+import quaternion
 
 testing = 0
 
@@ -485,12 +485,58 @@ def get_point_between_points(p1, p2, radius):
 
     return new_pt
 
+def get_polar_direction(goal, game_state):
+    delta_x_3d = goal[0] - game_state.position['x']
+    delta_y_3d = goal[1] - game_state.position['y']
+    delta_z_3d = goal[2] - game_state.position['z']
+    delta_x_unit_3d, delta_y_unit_3d, delta_z_unit_3d = normalize_3d_rotation(delta_x_3d, delta_y_3d, delta_z_3d)
+    # the agent is originally looking at z axis
+    # rotate_state = degrees of rotating right
+
+    theta = 2 * np.pi * game_state.rotation / 360 
+    souce_rotation = quat_from_angle_axis(theta)
+    direction_vec_unit = [delta_x_unit_3d, delta_y_unit_3d, delta_z_unit_3d]
+    direction_vec_unit_agent = quaternion_rotate_vector(souce_rotation.inverse(), direction_vec_unit)
+    dir_3d = np.arctan2(-direction_vec_unit_agent[0], direction_vec_unit_agent[2])
+
+    return dir_3d
+
+def get_head_tilt(goal, game_state):
+    distance_to_goal = distance_to_goal_calc(goal, game_state) + 1e-6
+    delta_y = game_state.position['y'] - goal[1]
+    return np.arctan(delta_y/distance_to_goal) * 360 / (2 * np.pi)
+
+def distance_to_goal_calc(goal, game_state):
+    distance = ( 
+                    (game_state.position['x'] - goal[0]) ** 2 + \
+                    (game_state.position['z'] - goal[2]) ** 2
+    ) ** 0.5 
+
+    return distance
+
+def normalize_3d_rotation(delta_x, delta_y, delta_z):
+    if delta_x == 0 and delta_y == 0 and delta_z ==0:
+        return 0, 0, 0
+    norm = (delta_x ** 2 + delta_y ** 2 + delta_z ** 2) ** 0.5 
+    return delta_x / norm, delta_y / norm, delta_z / norm
+
+def quaternion_rotate_vector(quat, v): 
+    vq = np.quaternion(0, 0, 0, 0)
+    vq.imag = v 
+    return (quat * vq * quat.inverse()).imag
+
+def quat_from_angle_axis(theta, axis=np.array([0,1,0])):
+    axis = axis.astype(np.float)
+    axis /= np.linalg.norm(axis)
+    return quaternion.from_rotation_vector(theta * axis)
+
+
 '''
 def get_visible_points_v2(x,y,direction,camera_field_of_view,radius):
-    
-    #camera_field_of_view = 90
-    #direction = 0.5
-    direction = (direction+3) %4
+
+#camera_field_of_view = 90
+#direction = 0.5
+direction = (direction+3) %4
     #print ("dircetion = ", direction)
     rotation = direction * 90
     z = y

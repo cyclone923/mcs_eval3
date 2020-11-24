@@ -61,7 +61,8 @@ def depth_to_points(depth, camera_clipping_planes,
     pos_to_list = lambda x: [x['x'], x['y'], x['z']]
     pos = pos_to_list(pos_dict)
     # Apply rotation, offset by camera position to get global coords
-    global_pts = np.matmul(local_pts, rot.as_matrix()) + pos
+    #global_pts = np.matmul(local_pts, rot.as_matrix()) + pos
+    global_pts = np.matmul(local_pts, rot.as_dcm()) + pos
     # Flatten to a list of points
     flat_list_pts = global_pts.reshape(-1, global_pts.shape[-1])
     return flat_list_pts
