@@ -142,10 +142,7 @@ def generate_data(scenes_files):
                     # Remove any object which doesn't have a valid mask.
                     print('Empty Mask found. It will be ignored for scene processing')
                     objs.remove(obj)
-                    try:
-                        del obj_masks[obj_i]
-                    except:
-                        pass
+                    del obj_masks[obj_i]
                 else:
                     (top_left_x, top_left_y), (bottom_right_x, bottom_right_y) = get_mask_box(obj_mask)
                     obj_image = frame.image.crop((top_left_y, top_left_x, bottom_right_y, bottom_right_x))
@@ -213,13 +210,13 @@ def make_parser():
     parser = ArgumentParser()
     parser.add_argument('--scenes-path', required=True, type=Path)
     parser.add_argument('--dataset-path', required=False, type=Path,
-                        default=os.path.join(os.getcwd(), 'object_datset.p'))
+                        default=os.path.join(os.getcwd(), 'object_dataset.p'))
     parser.add_argument('--appearance-dataset-path', required=False, type=Path)
     parser.add_argument('--batch-size', required=False, type=int, default=32)
     parser.add_argument('--results-dir', required=False, type=Path, default=os.path.join(os.getcwd(), 'results'))
     parser.add_argument('--run', required=False, type=int, default=1)
     parser.add_argument('--lr', required=False, type=float, default=0.001)
-    parser.add_argument('--epochs', required=False, type=int, default=10)
+    parser.add_argument('--epochs', required=False, type=int, default=50)
     parser.add_argument('--checkpoint-interval', required=False, type=int, default=1)
     parser.add_argument('--log-interval', required=False, type=int, default=1)
     parser.add_argument('--opr', choices=['generate_dataset', 'train', 'demo'], default='demo',
@@ -247,7 +244,7 @@ if __name__ == '__main__':
 
     elif args.opr == 'train':
         # flush every 1 minutes
-        summary_writer = SummaryWriter(os.path.join(args.results_dir, 'logs'), flush_secs=60 * 1)
+        summary_writer = SummaryWriter(log_path, flush_secs=60 * 1)
 
         object_dataset = ObjectDataset(pickle.load(open(args.dataset_path, 'rb')))
         dataloader = DataLoader(object_dataset, batch_size=args.batch_size, shuffle=True, num_workers=1)
