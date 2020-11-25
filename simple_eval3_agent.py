@@ -23,6 +23,8 @@ class Evaluation3_Agent:
 
         self.exploration_agent = ExploreAgent(self.controller, self.level)
 
+        #initilize VOE agent here also
+
         random.seed(seed)
 
 
@@ -31,8 +33,10 @@ class Evaluation3_Agent:
         scene_config, status = mcs.load_config_json_file(one_scene)
         goal_type = scene_config['goal']['category']
         if goal_type == "intuitive physics":
+            #implement your run_scene() function as an interce
             pass
         elif goal_type == "agents":
+            # implement your run_scene() function as an interce
             pass
         elif goal_type == "retrieval":
             self.exploration_agent.run_scene(scene_config)
