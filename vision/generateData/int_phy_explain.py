@@ -1,6 +1,4 @@
-from gym_ai2thor.envs.mcs_env import McsEnv
-from int_phy.scene_state import SceneState
-from int_phy.checker import ApearanceModel, LocomotionModel
+from vision.mcs_base import McsEnv
 from vision.generateData.frame_collector import Frame_collector
 
 
@@ -11,9 +9,6 @@ scene_dir  = "instSeg/" + "intphy_scenes/" + scene_name
 start_scene_number = 65
 collector = Frame_collector(scene_dir=scene_dir, start_scene_number=start_scene_number)
 env = McsEnv(task=task, scene_type=scene_name, start_scene_number=start_scene_number, frame_collector=collector)
-
-appearance_checker = ApearanceModel()
-locomotion_checker = LocomotionModel()
 
 for scene in range(len(env.all_scenes) - start_scene_number):
     env.reset(random_init=False)

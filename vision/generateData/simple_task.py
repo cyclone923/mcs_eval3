@@ -1,4 +1,4 @@
-from gym_ai2thor.envs.mcs_env import McsEnv
+from vision.mcs_base import McsEnv
 from meta_controller.meta_controller import MetaController
 import sys
 from vision.generateData.frame_collector import Frame_collector
