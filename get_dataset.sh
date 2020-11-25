@@ -37,3 +37,9 @@ mv TRAINING_SINGLE_OBJECT eval3_dataset
 
 rm training-single-object.zip
 rm training-object-preference.zip
+
+mkdir -p different_scenes
+cp eval3_dataset/TRAINING_OBJECT_PREFERENCE/preference_0001_01.json different_scenes
+cp interaction_scenes/transferral/transferral_goal-0001.json different_scenes
+cp evaluation3Training/object_permanence/eval3TrainingObjectPermanence_0001_01.json different_scenes
+

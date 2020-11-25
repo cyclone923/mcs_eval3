@@ -56,23 +56,19 @@ class Navigator():
 	def process_state(self, roadmap):
 		gx, gz, _ = self.goal
 		dis_to_goal = math.sqrt((self.agent.agent_x - gx) ** 2 + (self.agent.agent_z - gz) ** 2)
-		with open('ob.txt', 'w') as f:
-			for obstacle_key, obstacle in self.agent.scene_obstacles.items():
 
-				f.write(str(obstacle.x_list) + "\n")
-				f.write(str(obstacle.y_list) + "\n")
-				f.write( "\n")
+		for obstacle_key, obstacle in self.agent.scene_obstacles.items():
 
-				if obstacle_key not in self.scene_obstacles_in_roadmap:
-					self.scene_obstacles_in_roadmap[obstacle_key] = 0
+			if obstacle_key not in self.scene_obstacles_in_roadmap:
+				self.scene_obstacles_in_roadmap[obstacle_key] = 0
 
-				if self.scene_obstacles_in_roadmap[obstacle_key] == 0:
-					if self.can_add_obstacle(obstacle, (gx, gz)):
-						self.scene_obstacles_in_roadmap[obstacle_key] = 1
-						roadmap.addObstacle(obstacle)
-					else:
-						assert self.goal_bonding_box is None or self.goal_bonding_box is obstacle
-						self.goal_bonding_box = obstacle
+			if self.scene_obstacles_in_roadmap[obstacle_key] == 0:
+				if self.can_add_obstacle(obstacle, (gx, gz)):
+					self.scene_obstacles_in_roadmap[obstacle_key] = 1
+					roadmap.addObstacle(obstacle)
+				else:
+					assert self.goal_bonding_box is None or self.goal_bonding_box is obstacle
+					self.goal_bonding_box = obstacle
 
 		return dis_to_goal < self.success_distance
 
