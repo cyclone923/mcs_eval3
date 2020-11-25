@@ -208,10 +208,13 @@ def train_appearance_matching(dataloader, model, optimizer, epochs: int, writer,
 
 def make_parser():
     parser = ArgumentParser()
-    parser.add_argument('--scenes-path', required=True, type=Path)
-    parser.add_argument('--dataset-path', required=False, type=Path,
-                        default=os.path.join(os.getcwd(), 'object_dataset.p'))
-    parser.add_argument('--appearance-dataset-path', required=False, type=Path)
+    parser.add_argument('--test-scenes-path', required=True, type=Path)
+    parser.add_argument('--train-scenes-path', required=True, type=Path)
+
+    parser.add_argument('--train-dataset-path', required=False, type=Path,
+                        default=os.path.join(os.getcwd(), 'train_object_dataset.p'))
+    parser.add_argument('--test-dataset-path', required=False, type=Path,
+                        default=os.path.join(os.getcwd(), 'test_object_dataset.p'))
     parser.add_argument('--batch-size', required=False, type=int, default=32)
     parser.add_argument('--results-dir', required=False, type=Path, default=os.path.join(os.getcwd(), 'results'))
     parser.add_argument('--run', required=False, type=int, default=1)
@@ -238,15 +241,19 @@ if __name__ == '__main__':
 
     # Determine the operation to be performed
     if args.opr == 'generate_dataset':
-        all_scenes = list(args.scenes_path.glob('*.pkl.gz'))
-        data = generate_data(all_scenes)
-        pickle.dump(data, open(args.dataset_path, 'wb'))
+        train_scenes = list(args.train_scenes_path.glob('*.pkl.gz'))
+        data = generate_data(train_scenes)
+        pickle.dump(data, open(args.train_dataset_path, 'wb'))
+
+        test_scenes = list(args.test_scenes_path.glob('*.pkl.gz'))
+        data = generate_data(test_scenes)
+        pickle.dump(data, open(args.test_dataset_path, 'wb'))
 
     elif args.opr == 'train':
         # flush every 1 minutes
         summary_writer = SummaryWriter(log_path, flush_secs=60 * 1)
 
-        object_dataset = ObjectDataset(pickle.load(open(args.dataset_path, 'rb')))
+        object_dataset = ObjectDataset(pickle.load(open(args.train_dataset_path, 'rb')))
         dataloader = DataLoader(object_dataset, batch_size=args.batch_size, shuffle=True, num_workers=1)
         model = AppearanceMatchModel(object_dataset.labels)
         optimizer = Adam(model.parameters(), lr=args.lr)
@@ -256,12 +263,12 @@ if __name__ == '__main__':
                                   checkpoint_path, args.checkpoint_interval, args.log_interval)
 
     elif args.opr == 'demo':
-        all_scenes = list(args.scenes_path.glob('*.pkl.gz'))
+        all_scenes = list(args.test_scenes_path.glob('*.pkl.gz'))
         print(f'Found {len(all_scenes)} scenes')
 
         # Todo: Don't load dataset over here. It's only required for label count
-        object_dataset = ObjectDataset(pickle.load(open(args.dataset_path, 'rb')))
-        model = AppearanceMatchModel(object_dataset.labels)
+        train_object_dataset = ObjectDataset(pickle.load(open(args.train_dataset_path, 'rb')))
+        model = AppearanceMatchModel(train_object_dataset.labels)
         model.load_state_dict(torch.load(model_path, map_location=torch.device('cpu')))
         model = model.to(args.device)
 
