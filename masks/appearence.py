@@ -13,6 +13,7 @@ from torch.utils.data import Dataset, DataLoader
 from torch.optim import Adam
 from torch.utils.tensorboard import SummaryWriter
 import torch.nn as nn
+from tqdm import tqdm
 
 
 def obj_image_to_tensor(obj_image):
@@ -43,12 +44,12 @@ class AppearanceMatchModel(nn.Module):
         return feature, self.shape_classifier(feature)
 
 
-def object_appearance_match(appearance_model, frame, objects_info):
+def object_appearance_match(appearance_model, frame, objects_info, device='cpu'):
     for obj_key in objects_info:
 
         top_x, top_y, bottom_x, bottom_y = objects_info[obj_key]['bounding_box']
         obj_current_image = frame.image.crop((top_y, top_x, bottom_y, bottom_x))
-        obj_current_image = obj_image_to_tensor(obj_current_image)
+        obj_current_image = obj_image_to_tensor(obj_current_image).to(device)
         obj_current_image = obj_current_image.unsqueeze(0)
 
         _, object_shape_logit = appearance_model(obj_current_image)
@@ -72,13 +73,13 @@ def object_appearance_match(appearance_model, frame, objects_info):
     return objects_info
 
 
-def process_video(video_data, appearance_model, save_path=None, save_mp4=False):
+def process_video(video_data, appearance_model, save_path=None, save_mp4=False, device='cpu'):
     track_info = {}
     processed_frames = []
     for frame_num, frame in enumerate(video_data):
         track_info = track_objects(frame, track_info)
         track_info['objects'] = object_appearance_match(appearance_model, frame,
-                                                        track_info['objects'])
+                                                        track_info['objects'], device)
 
         img = draw_bounding_boxes(frame.image, track_info['objects'])
         img = draw_appearance_bars(img, track_info['objects'])
@@ -115,7 +116,7 @@ class ObjectDataset(Dataset):
         return sorted([k for k in self._labels])
 
     def __len__(self):
-        return len(self.data)
+        return len(self.data['images'])
 
     def __getitem__(self, idx):
         if torch.is_tensor(idx):
@@ -126,8 +127,8 @@ class ObjectDataset(Dataset):
 
 
 def generate_data(scenes_files):
-    data = {'images': [], 'shapes': []}
-    for scene_file in sorted(scenes_files):
+    data = {'images': [], 'shapes': [], 'materials': [], 'textures': []}
+    for scene_file in tqdm(sorted(scenes_files)):
         with gzip.open(scene_file, 'rb') as fd:
             scene_data = pickle.load(fd)
 
@@ -136,12 +137,15 @@ def generate_data(scenes_files):
             objs = frame.obj_data
             obj_masks = split_obj_masks(frame.obj_mask, len(objs))
 
-            for obj, obj_mask in zip(objs, obj_masks):
+            for obj_i, (obj, obj_mask) in enumerate(zip(objs, obj_masks)):
                 if True not in obj_mask:
                     # Remove any object which doesn't have a valid mask.
                     print('Empty Mask found. It will be ignored for scene processing')
                     objs.remove(obj)
-                    obj_masks.remove(obj_mask)
+                    try:
+                        del obj_masks[obj_i]
+                    except:
+                        pass
                 else:
                     (top_left_x, top_left_y), (bottom_right_x, bottom_right_y) = get_mask_box(obj_mask)
                     obj_image = frame.image.crop((top_left_y, top_left_x, bottom_right_y, bottom_right_x))
@@ -152,9 +156,13 @@ def generate_data(scenes_files):
                     obj_image = np.array(obj_image).reshape(3, 50, 50)  # Because channels comes first for Conv2d
                     data['images'].append(np.array(obj_image))
                     data['shapes'].append(obj.shape)
+                    data['materials'].append(obj.material_list)
+                    data['textures'].append(obj.texture_color_list)
 
     for x in data:
         data[x] = np.array(data[x])
+
+    print('Len of Dataset:', len(data['images']))
     return data
 
 
@@ -257,11 +265,13 @@ if __name__ == '__main__':
         # Todo: Don't load dataset over here. It's only required for label count
         object_dataset = ObjectDataset(pickle.load(open(args.dataset_path, 'rb')))
         model = AppearanceMatchModel(object_dataset.labels)
-        model.state_dict(torch.load(model_path))
+        model.load_state_dict(torch.load(model_path, map_location=torch.device('cpu')))
+        model = model.to(args.device)
 
         for scene_file in all_scenes:
             with gzip.open(scene_file, 'rb') as fd:
                 scene_data = pickle.load(fd)
 
             print(f'{scene_file.name}')
-            process_video(scene_data, model, os.path.join(os.getcwd(), scene_file.name), save_mp4=True)
+            process_video(scene_data, model, os.path.join(os.getcwd(), scene_file.name), save_mp4=True,
+                          device=args.device)
