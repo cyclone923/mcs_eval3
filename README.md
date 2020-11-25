@@ -37,7 +37,7 @@ bash setup_torch.sh
 Set up the unity application
 
 ```
-bash setup_unity
+bash setup_unity.sh
 ```
 
 ### To run everything from the project root
