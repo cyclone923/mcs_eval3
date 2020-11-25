@@ -1,12 +1,13 @@
 import machine_common_sense as mcs
 import yaml
 import os
+import random
 from exploration.controller_agent import ExploreAgent
 
 
 class Evaluation3_Agent:
 
-    def __init__(self, level):
+    def __init__(self, level, seed=0):
         with open("./unity_path.yaml", 'r') as config_file:
             config = yaml.safe_load(config_file)
 
@@ -18,6 +19,8 @@ class Evaluation3_Agent:
 
         self.exploration_agent = ExploreAgent(self.controller, self.level)
 
+        random.seed(seed)
+
 
 
     def run_scene(self, one_scene):
@@ -27,8 +30,11 @@ class Evaluation3_Agent:
             pass
         elif goal_type == "agents":
             pass
-        elif goal_type == "transferral":
+        elif goal_type == "retrieval":
             self.exploration_agent.run_scene(scene_config)
+        else:
+            print("Current goal type: {}".format(goal_type))
+            raise ValueError("Goal type {} not clear! It should be either: , 'intuitive physics', 'agents' or 'retrieval'")
 
 
 if __name__ == "__main__":
