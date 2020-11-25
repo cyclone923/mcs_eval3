@@ -2,12 +2,12 @@ from exploration.roadmap.visibility_road_map import ObstaclePolygon
 from exploration.util import pre_process, depth_to_points
 import numpy as np
 import sys
-from vision.instSeg.inference import MaskAndClassPredictor
+# from vision.instSeg.inference import MaskAndClassPredictor
 import matplotlib.pyplot as plt
-from vision.instSeg.data.config_mcsVideo3_inter import MCSVIDEO_INTER_CLASSES_BG, MCSVIDEO_INTER_CLASSES_FG
+# from vision.instSeg.data.config_mcsVideo3_inter import MCSVIDEO_INTER_CLASSES_BG, MCSVIDEO_INTER_CLASSES_FG
 
-TROPHY_INDEX = MCSVIDEO_INTER_CLASSES_FG.index('trophy') + 1
-BOX_INDEX = MCSVIDEO_INTER_CLASSES_FG.index('box') + 1
+# TROPHY_INDEX = MCSVIDEO_INTER_CLASSES_FG.index('trophy') + 1
+# BOX_INDEX = MCSVIDEO_INTER_CLASSES_FG.index('box') + 1
 
 np.set_printoptions(threshold=sys.maxsize, linewidth=sys.maxsize)
 
@@ -48,7 +48,7 @@ class ObstacleBuffer:
         self.scene_obstacles_dict = None
         if self.level != 'oracle':
             self.occupancy_map = OccupancyMap()
-            self.mask_predictor = MaskAndClassPredictor(cuda=False)
+            # self.mask_predictor = MaskAndClassPredictor(cuda=False)
 
     def reset(self):
         self.scene_obstacles_dict = {}

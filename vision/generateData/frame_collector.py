@@ -1,6 +1,6 @@
 import os
 import numpy as np
-from tracker.generateData.instSeg_parse_mask import parse_label_info, save_depth_image
+from vision.generateData.instSeg_parse_mask import parse_label_info, save_depth_image
 
 class Frame_collector:
 
@@ -16,7 +16,7 @@ class Frame_collector:
         #                     'blank block cube', 'chair', 'plate', 'sofa', 'stool', \
         #                     'racecar', 'blank block cylinder', 'cup', 'apple', 'table']
         self.shape_keys  = ['trophy', 'box']
-        self.uuid_keys = ['floor', 'wall', 'ceiling']
+        self.uuid_keys = ['floor', 'ceiling', 'occluder_pole', 'occluder_wall', 'wall']
 
         self.shap_new_keys   = []
         self.stru_new_keys   = []
@@ -41,7 +41,6 @@ class Frame_collector:
             self.step += 1
         else:
             pass
-
         # for checking the FG objects and BG objects
         for i in step_output.object_list:
             if i.shape not in (self.shape_keys+self.shap_new_keys):
