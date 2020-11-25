@@ -51,7 +51,7 @@ def draw_appearance_bars(base_image, frame_objects_info):
     for obj_key, obj_info in frame_objects_info.items():
         if obj_info['visible']:
             objects.append(str(obj_key))
-            apperance_match.append(obj_info['appearance'])
+            apperance_match.append(obj_info['appearance']['prob'])
 
     fig = plt.figure(figsize=(base_image.size[0] / 100, base_image.size[1] / 100), dpi=100)
     ax = fig.add_subplot(111)

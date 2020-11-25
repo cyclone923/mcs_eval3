@@ -7,7 +7,7 @@ from pathlib import Path
 
 import numpy as np
 
-from utils import draw_bounding_boxes, split_obj_masks, get_obj_position,get_mask_box
+from utils import draw_bounding_boxes, split_obj_masks, get_obj_position, get_mask_box
 
 
 def l2_distance(src_pos, dest_pos):
@@ -20,19 +20,20 @@ def track_objects(frame, track_info={}):
     if 'objects' not in track_info:
         track_info['objects'] = {}
 
-    objs = frame.obj_data
-    obj_masks = split_obj_masks(frame.obj_mask, len(objs))
+    # Note : Assumption of sequential order
+    objs = frame.obj_mask.max() + 1
+    obj_masks = split_obj_masks(frame.obj_mask, objs)
 
     # Remove any object which doesn't have a valid mask.
-    for frame_obj, frame_obj_mask in zip(objs, obj_masks):
+    for frame_obj_mask in obj_masks:
         if True not in frame_obj_mask:
             raise Warning('Empty Mask found. It will be ignored for scene processing')
-            objs.remove(frame_obj)
+            objs -= 1
             obj_masks.remove(frame_obj_mask)
 
     # process objects
     resolved_objs = []
-    for frame_obj, frame_obj_mask in zip(objs, obj_masks):
+    for frame_obj_mask in obj_masks:
         frame_obj_position = get_obj_position(frame_obj_mask)
         track_to_exist_obj = []
         for exist_obj_key, exist_obj in track_info['objects'].items():
@@ -67,8 +68,8 @@ def track_objects(frame, track_info={}):
             obj['visible'] = False
 
     visible_obj_tracked = len([o for o in track_info['objects'].values() if o['visible']])
-    assert len(objs) == visible_obj_tracked, \
-        ' no. of objects are not matching, {} {}'.format(len(objs), visible_obj_tracked)
+    assert objs == visible_obj_tracked, \
+        ' no. of objects are not matching, {} {}'.format(objs, visible_obj_tracked)
 
     return track_info
 
