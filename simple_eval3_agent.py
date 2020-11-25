@@ -7,7 +7,7 @@ from exploration.controller_agent import ExploreAgent
 
 class Evaluation3_Agent:
 
-    def __init__(self, level, seed=0):
+    def __init__(self, seed=0):
         with open("./unity_path.yaml", 'r') as config_file:
             config = yaml.safe_load(config_file)
 
@@ -15,7 +15,11 @@ class Evaluation3_Agent:
             os.path.join(config['unity_path'])
         )
 
-        self.level = level
+        with open("./mcs_config.yaml", 'r') as config_file:
+            config = yaml.safe_load(config_file)
+        self.level = config['metadata']
+
+        assert self.level in ['oracle', 'level1', 'level2']
 
         self.exploration_agent = ExploreAgent(self.controller, self.level)
 
@@ -39,7 +43,7 @@ class Evaluation3_Agent:
 
 if __name__ == "__main__":
 
-    agent = Evaluation3_Agent('oracle')
+    agent = Evaluation3_Agent()
 
     goal_dir = "different_scenes"
     all_scenes = [os.path.join(goal_dir, one_scene) for one_scene in sorted(os.listdir(goal_dir))]
