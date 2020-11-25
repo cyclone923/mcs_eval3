@@ -2,6 +2,4 @@ scipy==1.2.0
 scikit-image==0.17.2
 descartes
 ray==1.0.1
-torch==1.5.1+cu92 -f https://download.pytorch.org/whl/torch_stable.html
-torchvision==0.6.1+cu92 -f https://download.pytorch.org/whl/torch_stable.html
 git+https://github.com/NextCenturyCorporation/MCS@latest#egg=machine_common_sense
