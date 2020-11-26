@@ -6,3 +6,6 @@
 */*/*.pyc
 */*/*/*.pyc
 */*/*/*/*.pyc
+unity_app
+SCENE_HISTORY/TRAINING_OBJECT_PREFERENCE/*
+unity*
