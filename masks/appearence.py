@@ -125,7 +125,6 @@ class ObjectDataset(Dataset):
         return {'images': self.data['images'][idx],
                 'shapes': int(self.data['shapes'][idx])}
 
-
 def generate_data(scenes_files):
     data = {'images': [], 'shapes': [], 'materials': [], 'textures': []}
     for scene_file in tqdm(sorted(scenes_files)):
