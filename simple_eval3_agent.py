@@ -37,8 +37,7 @@ class Evaluation3_Agent:
         scene_config, status = mcs.load_config_json_file(one_scene)
         goal_type = scene_config['goal']['category']
         if goal_type == "intuitive physics":
-            pass
-            #self.voe_agent.run_scene(scene_config)
+            self.voe_agent.run_scene(scene_config)
         elif goal_type == "agents":
             self.agency_voe_agent.run_scene(scene_config)
         elif goal_type == "retrieval":
