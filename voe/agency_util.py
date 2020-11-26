@@ -270,13 +270,13 @@ def calc_path(m, start, goal):
     m[start[1]][start[0]] = 1
     m[goal[1]][goal[0]] = 1
     grid = Grid(matrix=m)
-    print(start,goal)
+    #print(start,goal)
     start = grid.node(start[0], start[1])
     end = grid.node(goal[0], goal[1])
     finder = AStarFinder(diagonal_movement=DiagonalMovement.always)
     path, runs = finder.find_path(start, end, grid)
-    print('operations:', runs, 'path length:', len(path))
-    print(grid.grid_str(path=path, start=start, end=end))
+    #print('operations:', runs, 'path length:', len(path))
+    #print(grid.grid_str(path=path, start=start, end=end))
     return path
 
 def px_to_arena(p, im):
@@ -357,7 +357,7 @@ def find_and_rm_jerk_walls(g_rgb, g_mask, structural_mask_c_s, a, o_1, o_2, h):
     agent_mask_color = g_mask[y_, x_, ::-1]
     # need at least 1 agent and 1 object
     if a["c"] != tuple(agent_mask_color):
-        print("possible wall with same mask color as agent!")
+        #print("possible wall with same mask color as agent!")
         # mask using inRange
         m = cv2.inRange(g_rgb, np.array(agent_color-10), np.array(agent_color+10))
         _obj_im, _ = apply_color_mask(np.copy(g_rgb), np.copy(g_mask), agent_mask_color, show=False)

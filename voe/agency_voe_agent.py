@@ -11,11 +11,20 @@ from voe.agency_util import *
 
 class AgencyVoeAgent:
 
-    def __init__(self, controller, level):
+    def __init__(self, controller, level, debug=False):
         self.controller = controller
         self.level = level
+        self.debug = debug
         
     def run_scene(self, config):
+
+        # quick and dirty way to toggle debug printing to screen
+        if not self.debug:
+            def silence_print(*args,**kwargs):
+                return True
+
+            print = silence_print
+
         M_wall, M_gnd = get_homographies()
 
         def step(cam_im, mask_im, info, first_frame=False):
