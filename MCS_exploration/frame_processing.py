@@ -62,6 +62,7 @@ def depth_to_points(depth, camera_clipping_planes,
     # Use rotation & tilt to calculate rotation matrix.
     #rot = Rotation.from_euler('yx', (rotation, tilt), degrees=True)
     rot = Rotation.from_euler('yx', (360 - rotation,360- tilt), degrees=True)
+    #rot = Rotation.from_euler('yx', (rotation,360- tilt), degrees=True)
     pos_to_list = lambda x: [x['x'], x['y'], x['z']]
     pos = pos_to_list(pos_dict)
     # Apply rotation, offset by camera position to get global coords
@@ -192,10 +193,9 @@ def point_cloud_to_polygon(points,occupancy_map,grid_size, displacement, obj_mas
 
     object_occupancy_grids_row_view = {}
     np_occ_map = np.zeros(occupancy_map.shape)
-    #arr_mask = np.array(obj_masks)
-    #print ("arr masks beginning shape", arr_mask.shape)
-    #obj_masks = arr_mask.reshape(-1, arr_mask.shape[-1])
-    obj_masks = obj_masks.flatten()
+    arr_mask = np.array(obj_masks)
+    obj_masks = arr_mask.reshape(-1, arr_mask.shape[-1])
+    #obj_masks = obj_masks.flatten()
     sample = 1
     points = points[::sample]
     obj_masks_new = obj_masks[::sample]
@@ -203,14 +203,14 @@ def point_cloud_to_polygon(points,occupancy_map,grid_size, displacement, obj_mas
     new_points = np.where((points[:,1] > 0.05) & (points[:,1] <= 3))#,1,0).reshape(points.shape[0],1)
     points = points[new_points[0]]
     obj_masks = obj_masks[new_points[0]]
-    #ar_row_view = obj_masks.view('|S%d' % (obj_masks.itemsize * obj_masks.shape[1]))
-    #unique_row_view = np.unique(ar_row_view)
-    unique_row_view = np.unique(obj_masks)
+    ar_row_view = obj_masks.view('|S%d' % (obj_masks.itemsize * obj_masks.shape[1]))
+    unique_row_view = np.unique(ar_row_view)
+    #unique_row_view = np.unique(obj_masks)
     #exit()
 
     for elem in unique_row_view :
-        #obj_coords = np.where(ar_row_view==elem)
-        obj_coords = np.where(obj_masks==elem)
+        obj_coords = np.where(ar_row_view==elem)
+        #obj_coords = np.where(obj_masks==elem)
         obj_points = points[obj_coords[0]]
         obj_points = np.delete(obj_points, 1, 1)
         obj_points = np.int_((obj_points+displacement)/grid_size)

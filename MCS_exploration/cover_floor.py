@@ -357,8 +357,8 @@ def explore_point(x, y, agent, obstacles):
     camera_field_of_view = agent.game_state.event.camera_field_of_view
     #action = {'action':'RotateLook', 'horizon':1}
     #agent.game_state.step(action)
-    #action = {'action':'RotateLeft'}
-    action = {'action':'RotateRight'}
+    action = {'action':'RotateLeft'}
+    #action = {'action':'RotateRight'}
     for _ in range (directions):
         agent.game_state.step(action)
         rotation = agent.game_state.rotation

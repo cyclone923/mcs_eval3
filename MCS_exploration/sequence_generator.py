@@ -39,7 +39,7 @@ class SequenceGenerator(object):
         #print ("beginning of explore scene view")
 
         #rotation = self.agent.game_state.event.rotation / 180 * math.pi
-        cover_floor.update_seen(self.position['x'],self.position['z'],self.agent.game_state,self.agent.game_state.rotation,self.event.camera_field_of_view,self.agent.nav.scene_obstacles_dict.values())
+        cover_floor.update_seen(self.agent.game_state.position['x'],self.agent.game_state.position['z'],self.agent.game_state,self.agent.game_state.rotation,self.event.camera_field_of_view,self.agent.nav.scene_obstacles_dict.values())
 
         cover_floor.explore_initial_point(self.agent.game_state.position['x'],self.agent.game_state.position['z'],self.agent,self.agent.nav.scene_obstacles_dict.values())
         exploration_routine = cover_floor.flood_fill(0,0, cover_floor.check_validity)
@@ -219,7 +219,7 @@ class SequenceGenerator(object):
             success_distance -= 0.03
             nav_success = self.agent.nav.go_to_goal(object_nearest_point, self.agent, success_distance) 
             #self.update_goal_centre()
-            self.face_object()
+            self.face_object(target_obj)
             x,y = self.get_obj_pixels(target_obj)
             #print (x,y)
             if x == None and y == None :
