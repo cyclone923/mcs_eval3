@@ -284,7 +284,8 @@ def intersect(a, b, c, d):
         return x, y
     raise ValueError
 
-def check_validity(x,z,q):
+def check_validity(x,z,q,x_z_range):
+    xMin,xMax,zMin,zMax = x_z_range
     if x < xMin :
         return False
     elif x >= xMax :
@@ -297,7 +298,8 @@ def check_validity(x,z,q):
         return False
     return True
 
-def flood_fill(x,y, check_validity):
+def flood_fill(x,y, check_validity,x_z_range):
+#def flood_fill(x,y, check_validity):
     #//here check_validity is a function that given coordinates of the point tells you whether
     #//the point should be colored or not
     #Queue q
@@ -306,6 +308,7 @@ def flood_fill(x,y, check_validity):
     q.append((x,y))
     curr_q.append((x,y))
     i = 1
+    x_z_range = [i/constants.AGENT_STEP_SIZE for i in x_z_range]
     while (len(curr_q) != 0):
         #(x1,y1) = curr_q.pop()
         (x1,y1) = curr_q[0]
@@ -313,19 +316,23 @@ def flood_fill(x,y, check_validity):
         #print (x1,y1)
         #color(x1,y1)
 
-        if (check_validity(x1+move_step_size,y1,q)):
+        if (check_validity(x1+move_step_size,y1,q,x_z_range)):
+        #if (check_validity(x1+move_step_size,y1,q)):
             q.append((x1+move_step_size,y1))
             curr_q.append((x1+move_step_size,y1))
             i += 1
-        if (check_validity(x1,y1+move_step_size,q)):
+        if (check_validity(x1,y1+move_step_size,q,x_z_range)):
+        #if (check_validity(x1,y1+move_step_size,q)):
             q.append((x1,y1+move_step_size))
             curr_q.append((x1,y1+move_step_size))
             i += 1
-        if (check_validity(x1-move_step_size,y1,q)):
+        if (check_validity(x1-move_step_size,y1,q,x_z_range)):
+        #if (check_validity(x1-move_step_size,y1,q)):
             q.append((x1-move_step_size,y1))
             curr_q.append((x1-move_step_size,y1))
             i += 1
-        if (check_validity(x1,y1-move_step_size,q)):
+        if (check_validity(x1,y1-move_step_size,q,x_z_range)):
+        #if (check_validity(x1,y1-move_step_size,q)):
             q.append((x1,y1-move_step_size))
             curr_q.append((x1,y1-move_step_size))
             i += 1
@@ -342,6 +349,7 @@ def explore_initial_point(x,y, agent,obstacles):
     explore_point(x,y,agent,obstacles)
     if agent.game_state.goals_found == True:
         return
+    return
     directions = 30 // 10
     action = {'action': 'LookDown'}
     for _ in range(directions):

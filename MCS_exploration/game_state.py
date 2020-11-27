@@ -377,7 +377,7 @@ class GameState(object):
         obj_id = 10000
         if self.trophy_location != None :
             self.trophy_obstacle = Obstacle(obj_id,self.trophy_occupancy_map_points ,self.occupancy_map.shape,self.grid_size,self.displacement)
-            #print ("intersection between ground truth bb and as seen from image predictions" , self.trophy_obstacle.get_bounding_box().intersection(self.goal_bounding_box).area)
+            #print ("intersection1between ground truth bb and as seen from image predictions" , self.trophy_obstacle.get_bounding_box().intersection(self.goal_bounding_box).area)
             #print ("total area of ground truth bb", self.goal_bounding_box.area)
             #print ("total area of mask based trophy", self.trophy_obstacle.get_bounding_box().area)
             #print ("exterior coords", self.trophy_obstacle.get_bounding_box().exterior.coords.xy)
@@ -401,7 +401,7 @@ class GameState(object):
         if self.trophy_location != None :
             SHOW_ANIMATION = True
         else :
-            SHOW_ANIMATION = True
+            SHOW_ANIMATION = False
             
 
         #print (self.global_obstacles)
@@ -514,8 +514,9 @@ class GameState(object):
             i += 1
             obj_id += 1
 
-        if goal_index != -1:
-            self.current_frame_obstacles[goal_index].is_goal = True
+        #This is enabled when we do not want to recognize trophy(disabled only for testing containers)
+        #if goal_index != -1:
+        #    self.current_frame_obstacles[goal_index].is_goal = True
 
         #print ("current frame obstacles size", len(self.current_frame_obstacles))
 

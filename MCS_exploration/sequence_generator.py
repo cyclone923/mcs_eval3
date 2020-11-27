@@ -14,6 +14,9 @@ from shapely.geometry import Point, Polygon
 from MCS_exploration.frame_processing import *
 from MCS_exploration.navigation.visibility_road_map import ObstaclePolygon,IncrementalVisibilityRoadMap
 from shapely.geometry import Point, MultiPoint
+import operator
+from functools import reduce
+
 
 
 class SequenceGenerator(object):
@@ -42,8 +45,25 @@ class SequenceGenerator(object):
         cover_floor.update_seen(self.agent.game_state.position['x'],self.agent.game_state.position['z'],self.agent.game_state,self.agent.game_state.rotation,self.event.camera_field_of_view,self.agent.nav.scene_obstacles_dict.values())
 
         cover_floor.explore_initial_point(self.agent.game_state.position['x'],self.agent.game_state.position['z'],self.agent,self.agent.nav.scene_obstacles_dict.values())
-        exploration_routine = cover_floor.flood_fill(0,0, cover_floor.check_validity)
+        #exploration_routine = cover_floor.flood_fill(0,0, cover_floor.check_validity)
+
+        x_z_range,rotation = self.get_rotated_boundaries()
+    
+        exploration_routine = cover_floor.flood_fill(0,0, cover_floor.check_validity,x_z_range)
+        exploration_routine = self.rotate_exploration_points(exploration_routine,rotation)
         pose = game_util.get_pose(self.game_state)[:3]
+
+        SHOW_ANIMATION = False
+        if SHOW_ANIMATION:
+            plt.cla()
+            plt.xlim((-100, 100))
+            plt.ylim((-100, 100))
+            plt.gca().set_xlim((-100, 100))
+            plt.gca().set_ylim((-100, 100))
+    
+            for elem in exploration_routine :
+                plt.plot(elem[0],elem[1],'x' )
+            plt.show()
 
         #print ("done exploring point and now going to random points")
         #print ("current pose ", pose)
@@ -354,3 +374,80 @@ class SequenceGenerator(object):
         for obstacle in self.agent.game_state.global_obstacles[2:] :
             self.go_to_object_and_open(obstacle)
 
+    def get_outermost_map_sorted_coords(self):
+        all_coords = []
+        for obstacle in self.agent.game_state.global_obstacles :
+            current_coords= obstacle.get_convex_polygon_coords()
+            for x,y in zip(current_coords[0], current_coords[1]):
+                all_coords.append((x,y))
+
+        sorted_by_x = sorted(all_coords,key=lambda x: x[0], reverse=True)
+        sorted_by_y = sorted(all_coords,key=lambda x: x[1], reverse=True)
+        return sorted_by_x, sorted_by_y
+
+    def get_rotated_boundaries(self):
+        sorted_by_x,sorted_by_y = self.get_outermost_map_sorted_coords()
+        outermost_orig = []
+        outermost_orig.append(sorted_by_y[-1])
+        outermost_orig.append(sorted_by_x[0])
+        outermost_orig.append(sorted_by_y[0])
+        outermost_orig.append(sorted_by_x[-1])
+        
+
+        outermost_pts = []
+        outermost_pts.append((0,0))
+        outermost_pts.append((sorted_by_x[0][0]-sorted_by_y[-1][0],sorted_by_x[0][1]-sorted_by_y[-1][1]))
+        outermost_pts.append((sorted_by_y[0][0]-sorted_by_y[-1][0],sorted_by_y[0][1]-sorted_by_y[-1][1]))
+        outermost_pts.append((sorted_by_x[-1][0]-sorted_by_y[-1][0],sorted_by_x[-1][1]-sorted_by_y[-1][1]))
+
+        center = tuple(map(operator.truediv, reduce(lambda x, y: map(operator.add, x, y), outermost_pts), [len(outermost_pts)] * 2))
+        sorted_coords  = sorted(outermost_pts, key=lambda coord: (-135 - math.degrees(math.atan2(*tuple(map(operator.sub, coord, center))[::-1]))) % 360)
+    
+        x1,y1 = sorted_coords[-2]
+
+        rotation = math.atan2((y1), (x1 ))
+
+        rotated_coords = []
+        for elem in outermost_pts : 
+            rotated_x = elem[0] *math.cos(rotation) - elem[1] * math.sin(rotation)
+            rotated_y = elem[0] *math.sin(rotation) + elem[1] * math.cos(rotation)
+        
+            rotated_coords.append((rotated_x,rotated_y))
+        #for point in 
+        #rotated_coords.insert(0,outermost_orig[0])
+        final_adjusted_coords = []
+        for elem in rotated_coords :
+            final_adjusted_coords.append((elem[0] + outermost_orig[0][0],elem[1]+outermost_orig[0][1]))
+
+        sorted_by_x = sorted(final_adjusted_coords,key=lambda x: x[0], reverse=True)
+        sorted_by_y = sorted(final_adjusted_coords,key=lambda x: x[1], reverse=True)
+        xMax = sorted_by_x[0][0]
+        xMin = sorted_by_x[-1][0]
+        yMax = sorted_by_y[0][1]
+        yMin = sorted_by_y[-1][1]
+        return [xMin,xMax,yMin,yMax],rotation
+
+    def rotate_exploration_points(self, exploration_routine , angle_rotated_by):
+
+        sorted_by_x,sorted_by_y = self.get_outermost_map_sorted_coords()
+
+        bottom_point_x = sorted_by_y[-1][0]/constants.AGENT_STEP_SIZE
+        bottom_point_y = sorted_by_y[-1][1]/constants.AGENT_STEP_SIZE
+        
+        rotation = -angle_rotated_by#[to rotate the points in the opposite direction they were originally rotated in]
+        rotated_search_points = []
+        for elem in exploration_routine:
+            elem_new = [0] *2
+            elem_new[0] = elem[0] - bottom_point_x 
+            elem_new[1] = elem[1] - bottom_point_y
+            
+            rotated_x = elem_new[0] *math.cos(rotation) - elem_new[1] * math.sin(rotation)
+            rotated_y = elem_new[0] *math.sin(rotation) + elem_new[1] * math.cos(rotation)
+
+            rotated_x += bottom_point_x
+            rotated_y += bottom_point_y
+
+            rotated_search_points.append((rotated_x,rotated_y))
+
+        exploration_routine = rotated_search_points[:]
+        return exploration_routine
