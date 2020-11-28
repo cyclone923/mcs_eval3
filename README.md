@@ -1,7 +1,5 @@
 # MCS Evaluation3: Usage README
 
-## Download
-
 Here are the instructions for downloading and setting up environment for MCS evaluation 3.
 
 ### Python Library
@@ -21,23 +19,25 @@ conda activate mcs_eval3
 ```
 
 
-2. Install the required third-party Python libraries:
+3. Install the required third-party Python libraries:
 
 ```
 pip install -r requirements.txt
 ```
 
-3. Ensure you've installed `ai2thor` version `2.2.0`:
+4. Ensure you've installed `ai2thor` version `2.2.0`:
 
 ```
 pip show ai2thor
 ```
 
-4. Set up torch and torchvision:
+5. Set up torch and torchvision:
 
 ```
 bash setup_torch.sh
 ```
+
+
 
 ### Unity Application
 
