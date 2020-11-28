@@ -9,3 +9,5 @@
 unity_app
 SCENE_HISTORY/*/*
 unity*
+mcs_config.yaml
+unity_path.yaml
