@@ -44,7 +44,7 @@ class Evaluation3_Agent:
             self.exploration_agent.run_scene(scene_config)
         else:
             print("Current goal type: {}".format(goal_type))
-            raise ValueError("Goal type {} not clear! It should be either: , 'intuitive physics', 'agents' or 'retrieval'")
+            raise ValueError("Goal type not clear! It should be either: , 'intuitive physics', 'agents' or 'retrieval'")
 
 
 if __name__ == "__main__":
