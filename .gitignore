@@ -40,3 +40,6 @@ results/
 
 #ignore model file 
 **/*resnet*
+
+#ignore all pycharm files
+.idea/
