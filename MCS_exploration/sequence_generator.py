@@ -53,21 +53,13 @@ class SequenceGenerator(object):
         exploration_routine = self.rotate_exploration_points(exploration_routine,rotation)
         pose = game_util.get_pose(self.game_state)[:3]
 
-        SHOW_ANIMATION = False
-        if SHOW_ANIMATION:
-            plt.cla()
-            plt.xlim((-100, 100))
-            plt.ylim((-100, 100))
-            plt.gca().set_xlim((-100, 100))
-            plt.gca().set_ylim((-100, 100))
-    
-            for elem in exploration_routine :
-                plt.plot(elem[0],elem[1],'x' )
-            plt.show()
 
         #print ("done exploring point and now going to random points")
         #print ("current pose ", pose)
         #self.explore_all_objects()
+
+        if self.agent.game_state.trophy_picked_up == True:
+            return
 
         if self.agent.game_state.goals_found:
             print ("Object found returning to main ")
@@ -104,9 +96,41 @@ class SequenceGenerator(object):
         #print (outer_poly_new.area)
 
         overall_area = abs(x_max-x_min) * abs (y_max-y_min)
-        #print ("beginning of explore scene view 3")
+        '''
+        sorted_by_x,sorted_by_y = self.get_outermost_map_sorted_coords ()
+        outermost_orig = []
+        outermost_orig.append(sorted_by_y[-1])
+        outermost_orig.append(sorted_by_x[0])
+        outermost_orig.append(sorted_by_y[0])
+        outermost_orig.append(sorted_by_x[-1])
 
-        while overall_area * 0.65 >  self.agent.game_state.world_poly.area or len(self.agent.game_state.discovered_objects) == 0 :
+        print ("outermost orig", outermost_orig)
+        polar_sorted = self.get_polar_sorted_coords(outermost_orig)
+        print ("polar sorted coords", polar_sorted)
+
+        outermost_polygon = Polygon(polar_sorted)
+        
+        #print ("beginning of explore scene view 3")
+        print ("outermost_polygon area", outermost_polygon.area)
+        print ("seen area", self.agent.game_state.world_poly.area)
+
+        SHOW_ANIMATION = True
+        if SHOW_ANIMATION:
+            plt.cla()
+            plt.xlim((-100, 100))
+            plt.ylim((-100, 100))
+            plt.gca().set_xlim((-100, 100))
+            plt.gca().set_ylim((-100, 100))
+    
+            patch1 = PolygonPatch(outermost_polygon,fc='green', ec="black", alpha=0.2, zorder=1)
+            plt.gca().add_patch(patch1)
+            for elem in exploration_routine :
+                plt.plot(elem[0],elem[1],'x' )
+            plt.show()
+        '''
+        while overall_area * 0.8 >  self.agent.game_state.world_poly.area or len(self.agent.game_state.global_obstacles) == 0 :
+            print (self.agent.game_state.world_poly.area)
+            print (overall_area)
             #print ("In the main for loop of executtion")
             points_checked = 0
             #z+=1
@@ -159,12 +183,16 @@ class SequenceGenerator(object):
             if nav_success == False :
                 continue
 
+            if self.agent.game_state.trophy_picked_up == True:
+                return
             #self.event = self.agent.game_state.event
             if self.agent.game_state.goals_found:
                 self.go_to_goal_and_pick()
                 return
             cover_floor.explore_point(self.agent.game_state.position['x'], self.agent.game_state.position['z'], self.agent,
                                       self.agent.nav.scene_obstacles_dict.values())
+            if self.agent.game_state.trophy_picked_up == True:
+                return
             if self.agent.game_state.goals_found :
                 self.go_to_goal_and_pick()
                 return
@@ -173,8 +201,11 @@ class SequenceGenerator(object):
                 return
             if len(exploration_routine) == 0:
                 #self.go_to_goal_and_pick()
-                print ("explored a lot of points but objects not found")
-                return
+                #print ("explored a lot of points but objects not found")
+                break
+
+        self.explore_all_points()
+        return
 
         all_explored = False
         while (all_explored == False):
@@ -218,21 +249,40 @@ class SequenceGenerator(object):
 
     def go_to_goal_and_pick(self):
 
-        print ("object goal ID = " , self.agent.game_state.goal_id)
+        #print ("object goal ID = " , self.agent.game_state.goal_id)
 
+        print ("in go to goal and pick")
         target_obj = self.get_target_obj(self.agent.game_state.goal_id)
+        print ("goal ID ", target_obj.id)
         object_nearest_point = self.get_best_object_point(target_obj, 1000, self.nearest )
+        goal_object_centre = [0]*2
+        goal_object_centre[0] = target_obj.centre_x
+        goal_object_centre[1] = target_obj.centre_z
+        object_nearest_point = get_point_between_points(object_nearest_point, goal_object_centre, self.agent.nav_radius)
         agent_pos = self.agent.game_state.position
 
-        success_distance = 0.40 
+        success_distance = 0.30 
         #print ("agent position" , agent_pos)
         #print ("goal point : ", object_nearest_point)
         nav_success = self.agent.nav.go_to_goal(object_nearest_point, self.agent, success_distance) 
+
+        print ("in nav go to goal done moving towards goal")
+
         self.face_object(target_obj)
         x,y = self.get_obj_pixels(target_obj)
+
+        print ("goal pick up coordinates" ,x,y)
+        print ("goal current frame ID",target_obj.current_frame_id)
                 
         action = {'action':"PickupObject", 'x': x, 'y':y}
         self.agent.game_state.step(action)
+
+        if self.agent.game_state.event.return_status == "SUCCESSFUL" :
+            if self.agent.game_state.event.reward > 0 :
+                self.agent.game_state.trophy_picked_up = True
+                return
+                
+
         going_closer_counter = 0
 
         while self.agent.game_state.event.return_status == "OUT_OF_REACH":
@@ -246,11 +296,14 @@ class SequenceGenerator(object):
                 continue
             action = {'action':"PickupObject", 'x': x, 'y':y}
             self.agent.game_state.step(action)
+            if self.agent.game_state.event.return_status == "SUCCESSFUL":
+                if self.agent.game_state.event.reward > 0 :
+                    self.agent.game_state.trophy_picked_up = True
+                    return 
             going_closer_counter += 1
             if going_closer_counter > 5:
                 break
         
-
     def get_obj_pixels(self,target_obj):
         arr_mask = np.array(self.agent.game_state.event.object_mask_list[-1])
         reshaped_obj_masks = arr_mask.reshape(-1, arr_mask.shape[-1])
@@ -316,6 +369,8 @@ class SequenceGenerator(object):
 
     def look_straight(self):
         omega = self.agent.game_state.event.head_tilt
+
+        #print ("in look straight")
          
         m = int(abs(omega) // 10)
         if omega > 0:
@@ -354,29 +409,63 @@ class SequenceGenerator(object):
         #target_obj = get_target_obj(target_obj_id)
         object_nearest_point = self.get_best_object_point(target_obj, 1000, self.nearest)
         object_farthest_point = self.get_best_object_point(target_obj, 0.0 , self.farthest)
+        goal_object_centre = [0]*2
+        goal_object_centre[0] = target_obj.centre_x
+        goal_object_centre[1] = target_obj.centre_z
+        #print ("object nearest point", object_nearest_point)
+        #print ("object nearest point", object_farthest_point)
+        #print ("goal centre" , goal_object_centre)
+        object_nearest_point = get_point_between_points(object_nearest_point, goal_object_centre, self.agent.nav_radius)
+        object_farthest_point = get_point_between_points(object_farthest_point, goal_object_centre, self.agent.nav_radius)
     
         #print ("object nearest point", object_nearest_point)
         #print ("object nearest point", object_farthest_point)
-
-        success_distance = 0.40 
+        success_distance = 0.30 
         nav_success = self.agent.nav.go_to_goal(object_nearest_point, self.agent, success_distance) 
         self.face_object(target_obj)
+
 
         x,y = self.get_obj_pixels (target_obj)
         action = {'action':"OpenObject", 'x': x, 'y':y}
         self.agent.game_state.step(action)
 
+        if self.agent.game_state.goal_object_visible: 
+            #print ("found goal in the middle of looking into containers")
+            return
+
+        if self.agent.game_state.event.return_status == "NOT_OPENABLE":
+            return 
+
+        #print ("done opening object ")
         self.look_straight()
         nav_success = self.agent.nav.go_to_goal(object_farthest_point, self.agent, success_distance) 
         self.face_object(target_obj)
     
     def explore_all_objects(self):
-        for obstacle in self.agent.game_state.global_obstacles[2:] :
-            self.go_to_object_and_open(obstacle)
+        for obstacle in reversed(self.agent.game_state.global_obstacles) :
+            print ("obj height ", obstacle.height)
+            if self.obstacle_is_possible_container(obstacle):
+                self.go_to_object_and_open(obstacle)
+                if self.agent.game_state.goal_object_visible: 
+                    target_obj = self.get_target_obj(self.agent.game_state.goal_id)
+                    x,y = self.get_obj_pixels(target_obj)
+                    action = {'action':"PickupObject", 'x': x, 'y':y}
+                    self.agent.game_state.step(action)
+                    print ("pick up action status" , self.agent.game_state.event.return_status == "NOT_OPENABLE")
+                    #self.go_to_goal_and_pick()
+                    break 
+                self.look_straight()
+
+    def obstacle_is_possible_container(self,obstacle):
+        if obstacle.height < 0.15 :
+            return False
+        if obstacle.height > 2.5 :
+            return False
+        return True
 
     def get_outermost_map_sorted_coords(self):
         all_coords = []
-        for obstacle in self.agent.game_state.global_obstacles :
+        for obstacle in self.agent.game_state.global_obstacles[-1:] :
             current_coords= obstacle.get_convex_polygon_coords()
             for x,y in zip(current_coords[0], current_coords[1]):
                 all_coords.append((x,y))
@@ -392,7 +481,6 @@ class SequenceGenerator(object):
         outermost_orig.append(sorted_by_x[0])
         outermost_orig.append(sorted_by_y[0])
         outermost_orig.append(sorted_by_x[-1])
-        
 
         outermost_pts = []
         outermost_pts.append((0,0))
@@ -400,8 +488,8 @@ class SequenceGenerator(object):
         outermost_pts.append((sorted_by_y[0][0]-sorted_by_y[-1][0],sorted_by_y[0][1]-sorted_by_y[-1][1]))
         outermost_pts.append((sorted_by_x[-1][0]-sorted_by_y[-1][0],sorted_by_x[-1][1]-sorted_by_y[-1][1]))
 
-        center = tuple(map(operator.truediv, reduce(lambda x, y: map(operator.add, x, y), outermost_pts), [len(outermost_pts)] * 2))
-        sorted_coords  = sorted(outermost_pts, key=lambda coord: (-135 - math.degrees(math.atan2(*tuple(map(operator.sub, coord, center))[::-1]))) % 360)
+        sorted_coords= self.get_polar_sorted_coords(outermost_pts)
+        #print ("sorted coords ",sorted_coords)
     
         x1,y1 = sorted_coords[-2]
 
@@ -426,6 +514,11 @@ class SequenceGenerator(object):
         yMax = sorted_by_y[0][1]
         yMin = sorted_by_y[-1][1]
         return [xMin,xMax,yMin,yMax],rotation
+
+    def get_polar_sorted_coords(self,outermost_pts):
+        center = tuple(map(operator.truediv, reduce(lambda x, y: map(operator.add, x, y), outermost_pts), [len(outermost_pts)] * 2))
+        sorted_coords  = sorted(outermost_pts, key=lambda coord: (-135 - math.degrees(math.atan2(*tuple(map(operator.sub, coord, center))[::-1]))) % 360)
+        return sorted_coords 
 
     def rotate_exploration_points(self, exploration_routine , angle_rotated_by):
 

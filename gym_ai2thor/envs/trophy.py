@@ -83,6 +83,8 @@ def pre_process_objects(objects, all_obstacles, trophy_prob=1):
         args = VALID_OPTIONS[valid_keys](objects)
 
     random_pick = TrophyWithBox(*args)
+    print ("trophy pickup optins args[0]", args[0])
+    print ("trophy pickup optins args[1]", args[1])
 
     all_obstacles = random_pick.place_to_scene(all_obstacles)
 

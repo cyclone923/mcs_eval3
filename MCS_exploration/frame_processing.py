@@ -212,11 +212,12 @@ def point_cloud_to_polygon(points,occupancy_map,grid_size, displacement, obj_mas
         obj_coords = np.where(ar_row_view==elem)
         #obj_coords = np.where(obj_masks==elem)
         obj_points = points[obj_coords[0]]
+        obj_height = np.max(obj_points[:,1])
         obj_points = np.delete(obj_points, 1, 1)
         obj_points = np.int_((obj_points+displacement)/grid_size)
         obj_points_str = obj_points.view('|S%d' % (obj_points.itemsize * obj_points.shape[1]))
         _,unique_indices,unique_counts = np.unique(obj_points_str,return_index=True,return_counts=True)
-        object_occupancy_grids_row_view[elem] = obj_points[unique_indices]
+        object_occupancy_grids_row_view[elem] = (obj_points[unique_indices],obj_height)
         np_occ_map[obj_points[unique_indices][:,0],obj_points[unique_indices][:,1]] = unique_counts[:]
         np_occ_map = np.where(np_occ_map>=3, 1, 0)
         occupancy_map = merge_occupancy_map(occupancy_map, np_occ_map)
@@ -229,7 +230,6 @@ def point_cloud_to_polygon(points,occupancy_map,grid_size, displacement, obj_mas
         plt.cla()
         #patch1 = PolygonPatch(all_polygons,fc='grey', ec="black", alpha=0.2, zorder=1)
         patch1 = PolygonPatch(simplified_polygon,fc='grey', ec="black", alpha=0.2, zorder=1)
-        
         plt.gca().add_patch(patch1)
         plt.axis("equal")
         plt.pause(0.01)

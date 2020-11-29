@@ -370,7 +370,9 @@ def explore_point(x, y, agent, obstacles):
     for _ in range (directions):
         agent.game_state.step(action)
         rotation = agent.game_state.rotation
+        start_time = time.time()
         update_seen(x , y ,agent.game_state,rotation,camera_field_of_view, agent.nav.scene_obstacles_dict.values() )
+        #print ("time taken to update seen",time.time()-start_time)
         if agent.game_state.goals_found == True :
             return
     #action = {'action':'RotateLook', 'horizon':-1}
@@ -381,8 +383,10 @@ def update_seen(x,y,game_state,rotation,camera_field_of_view,obstacles):
     #rotation = (rotation - 45)%360
     #print (rotation)
     rotation_rad = rotation / 180 * math.pi
+    #start_time = time.time()
     fov = FieldOfView([x, y, rotation_rad], camera_field_of_view / 180.0 * math.pi, obstacles)
     poly = fov.getFoVPolygon(17)
+    #print ("time taken to creat new fov" ,time.time()-start_time)
 
     try:
         view = Polygon(zip(poly.x_list, poly.y_list))
@@ -485,7 +489,7 @@ def get_point_between_points(p1, p2, radius):
 
     distance_ratio = -0.1
     distance_new_point = 0
-    while (distance_new_point < 1.6 * radius):
+    while (distance_new_point < radius):
         x = p1[0] + distance_ratio * (p2[0] - p1[0])
         y = p1[1] + distance_ratio * (p2[1] - p1[1])
         new_pt = [x,y]

@@ -2,10 +2,10 @@ from frame_processing import *
 from shapely.geometry import Point, MultiPoint
 
 class Obstacle():
-    def __init__(self,obj_id,map_points,size,scale,displacement):
+    def __init__(self,obj_id,obj_height,map_points,size,scale,displacement):
         self.id = obj_id
         self.occupancy_map_points = map_points[:]
-        self.height = 0.2
+        self.height = obj_height
         self.is_goal = False
         self.current_frame_id = None
         self.is_container = 1 #initial assumption that anything can be a container
@@ -16,6 +16,7 @@ class Obstacle():
         self.bounding_box = None
         self.calculate_bounding_box(size,scale, displacement)
         self.calculate_centre()
+        self.parent_id = -1
 
     def expand_obstacle(self, current_scene_map_points,size,scale,displacement):
         obstacle_len = len(self.occupancy_map_points)

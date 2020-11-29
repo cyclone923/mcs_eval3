@@ -6,15 +6,15 @@ import sys
 
 
 if __name__ == "__main__":
-    start_scene_number = 0
+    start_scene_number = 0 
     collector = Frame_collector(scene_dir="simple_task_img", start_scene_number=start_scene_number)
     env = McsEnv(
-        task="interaction_scenes", scene_type="retrieval", seed=50,
+        #task="interaction_scenes", scene_type="retrieval", seed=50,
         #task="interaction_scenes", scene_type="traversal", seed=50,
         #task="interaction_scenes", scene_type="transferral", seed=50,
-        #task="interaction_scenes", scene_type="experiment", seed=50,
-        start_scene_number=start_scene_number, frame_collector=None, set_trophy=True, trophy_prob=1
-        #start_scene_number=start_scene_number, frame_collector=None, set_trophy=False, trophy_prob=1
+        task="interaction_scenes", scene_type="experiment", seed=50,
+        #start_scene_number=start_scene_number, frame_collector=None, set_trophy=True, trophy_prob=0
+        start_scene_number=start_scene_number, frame_collector=None, set_trophy=False, trophy_prob=1
     ) # trophy_prob=1 mean the trophy is 100% outside the box, trophy_prob=0 mean the trophy is 100% inside the box,
     metaController = MetaController(env)
     result_total = 0
@@ -50,6 +50,8 @@ if __name__ == "__main__":
             failure_return_status[env.current_scene] = env.step_output.return_status
             print ("Action status return  :", env.step_output.return_status)
             
+
+        print ("reward from current scene = ", env.step_output.reward)
         number_tasks_attempted +=1
         game_state = metaController.sequence_generator_object.agent.game_state
         total_actions += game_state.number_actions
@@ -62,7 +64,7 @@ if __name__ == "__main__":
         #        str(result_total)+",exploration success until now,"+ str(exploration_success)  +"\n")
         #f.close()
         #print ("scene number completed = ", env.current_scene)
-        break
+        #break
 
     #print ("Number tasks attempted" , number_tasks_attempted)
     print ("Total Success envs", number_tasks_success)

@@ -119,10 +119,7 @@ class BoundingBoxNavigator:
 		for bounding_box in bounding_boxes:
 			#print ("in the new obstacle calculation function", len(list(bounding_boxes)))
 			#obstacle_polygon = ObstaclePolygon(bounding_box[0],bounding_box[1]).simplify(2)
-			#if bounding_box.geom_type == "MultiPolygon":
-			#obstacle_polygon = ObstaclePolygon(bounding_box[0],bounding_box[1]).simplify(2)
 			self.scene_obstacles_dict[obj_id] = ObstaclePolygon(bounding_box.exterior.coords.xy[0], bounding_box.exterior.coords.xy[1])
-			#obstacle_polygon = ObstaclePolygon([p[0] for p in bounding_box],[p[1] for p in bounding_box])
 			#print (obstacle_polygon.exterior.coords.xy)
 			self.scene_obstacles_dict_roadmap[obj_id] = 0
 			#print ("time taken till creating FOV after roadmap",time_taken_part_1)
@@ -150,6 +147,26 @@ class BoundingBoxNavigator:
 				#plt.savefig("bounding_box_add_shapely_output.png")
 			obj_id += 1
 		#print("obj_id = ", obj_id)
+
+	def add_obstacle_from_global_obstacles(self, global_obstacles):
+		if len(global_obstacles) == 0  :
+			return
+		obj_id = int(0)
+		self.scene_obstacles_dict = {}
+		self.scene_obstacles_dict_roadmap = {}
+		for obstacle in global_obstacles :
+			bounding_boxes = obstacle.get_bounding_box()
+			if bounding_boxes.geom_type != "MultiPolygon" :
+				self.scene_obstacles_dict[obj_id] = ObstaclePolygon(bounding_boxes.exterior.coords.xy[0], bounding_boxes.exterior.coords.xy[1])
+				self.scene_obstacles_dict_roadmap[obj_id] = 0
+				obj_id += 1
+			else :
+				for bounding_box in bounding_boxes:
+					start_time = time.time()
+					self.scene_obstacles_dict[obj_id] = ObstaclePolygon(bounding_box.exterior.coords.xy[0], bounding_box.exterior.coords.xy[1])
+					self.scene_obstacles_dict_roadmap[obj_id] = 0
+					#print ("time taken till creating FOV after roadmap", time.time()-start_time )
+					obj_id += 1
         
 	#def go_to_goal(self, nav_env, goal, success_distance, epsd_collector=None, frame_collector=None):
 	def can_add_obstacle(self, obstacle, goal):

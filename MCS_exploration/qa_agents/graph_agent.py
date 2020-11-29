@@ -15,6 +15,7 @@ class GraphAgent(object):
         if game_state is None:
             self.game_state = GameState(env=env)
             self.game_state.add_obstacle_func = self.nav.add_obstacle_from_bounding_boxes
+            #self.game_state.add_obstacle_func = self.nav.add_obstacle_from_global_obstacles
             self.game_state.get_obstacles = self.nav.get_obstacles
         else:
             self.game_state = game_state
