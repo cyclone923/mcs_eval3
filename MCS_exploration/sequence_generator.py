@@ -47,11 +47,6 @@ class SequenceGenerator(object):
         cover_floor.explore_initial_point(self.agent.game_state.position['x'],self.agent.game_state.position['z'],self.agent,self.agent.nav.scene_obstacles_dict.values())
         #exploration_routine = cover_floor.flood_fill(0,0, cover_floor.check_validity)
 
-        x_z_range,rotation = self.get_rotated_boundaries()
-    
-        exploration_routine = cover_floor.flood_fill(0,0, cover_floor.check_validity,x_z_range)
-        exploration_routine = self.rotate_exploration_points(exploration_routine,rotation)
-        pose = game_util.get_pose(self.game_state)[:3]
 
 
         #print ("done exploring point and now going to random points")
@@ -90,12 +85,22 @@ class SequenceGenerator(object):
         y_min = min(y_list)
         y_max = max(y_list)
 
+        x_z_range = [x_min,x_max,y_min,y_max]
+        #x_z_range,rotation = self.get_rotated_boundaries()
+    
+        exploration_routine = cover_floor.flood_fill(0,0, cover_floor.check_validity,x_z_range)
+        #exploration_routine = self.rotate_exploration_points(exploration_routine,rotation)
+        pose = game_util.get_pose(self.game_state)[:3]
+
         #outer_poly = Polygon(zip([x_min,x_min,x_max,x_max],[y_min,y_max,y_min,y_max]))
         #outer_poly_new = outer_poly.difference(self.agent.game_state.world_poly)
         #print (value.x_list,value.y_list)
         #print (outer_poly_new.area)
 
+
         overall_area = abs(x_max-x_min) * abs (y_max-y_min)
+        #print ("overall area",overall_area)
+        #print (" poly area " , self.agent.game_state.world_poly.area)
         '''
         sorted_by_x,sorted_by_y = self.get_outermost_map_sorted_coords ()
         outermost_orig = []
@@ -128,9 +133,9 @@ class SequenceGenerator(object):
                 plt.plot(elem[0],elem[1],'x' )
             plt.show()
         '''
-        while overall_area * 0.8 >  self.agent.game_state.world_poly.area or len(self.agent.game_state.global_obstacles) == 0 :
-            print (self.agent.game_state.world_poly.area)
-            print (overall_area)
+        while overall_area * 0.9 >  self.agent.game_state.world_poly.area or len(self.agent.game_state.global_obstacles) == 0 :
+            #print (self.agent.game_state.world_poly.area)
+            #print (overall_area)
             #print ("In the main for loop of executtion")
             points_checked = 0
             #z+=1
@@ -204,7 +209,7 @@ class SequenceGenerator(object):
                 #print ("explored a lot of points but objects not found")
                 break
 
-        self.explore_all_points()
+        self.explore_all_objects()
         return
 
         all_explored = False
@@ -255,13 +260,13 @@ class SequenceGenerator(object):
         target_obj = self.get_target_obj(self.agent.game_state.goal_id)
         print ("goal ID ", target_obj.id)
         object_nearest_point = self.get_best_object_point(target_obj, 1000, self.nearest )
-        goal_object_centre = [0]*2
-        goal_object_centre[0] = target_obj.centre_x
-        goal_object_centre[1] = target_obj.centre_z
-        object_nearest_point = get_point_between_points(object_nearest_point, goal_object_centre, self.agent.nav_radius)
+        #goal_object_centre = [0]*2
+        #goal_object_centre[0] = target_obj.centre_x
+        #goal_object_centre[1] = target_obj.centre_z
+        #object_nearest_point = get_point_between_points(object_nearest_point, goal_object_centre, self.agent.nav_radius)
         agent_pos = self.agent.game_state.position
 
-        success_distance = 0.30 
+        success_distance = 0.40 
         #print ("agent position" , agent_pos)
         #print ("goal point : ", object_nearest_point)
         nav_success = self.agent.nav.go_to_goal(object_nearest_point, self.agent, success_distance) 
@@ -278,6 +283,7 @@ class SequenceGenerator(object):
         self.agent.game_state.step(action)
 
         if self.agent.game_state.event.return_status == "SUCCESSFUL" :
+            self.update_picked_up(target_obj)
             if self.agent.game_state.event.reward > 0 :
                 self.agent.game_state.trophy_picked_up = True
                 return
@@ -297,13 +303,20 @@ class SequenceGenerator(object):
             action = {'action':"PickupObject", 'x': x, 'y':y}
             self.agent.game_state.step(action)
             if self.agent.game_state.event.return_status == "SUCCESSFUL":
+                slef.update_picked_up(target_obj)
                 if self.agent.game_state.event.reward > 0 :
                     self.agent.game_state.trophy_picked_up = True
                     return 
             going_closer_counter += 1
-            if going_closer_counter > 5:
+            if going_closer_counter > 2:
                 break
         
+    def update_picked_up(self,target_obj):
+        for i,obstacle in enumerate(self.agent.game_state.global_obstacles) :
+            if target_obj.id == obstacle.id :
+                self.agent.game_state.global_obstacles[i].is_picked = True
+                return 
+
     def get_obj_pixels(self,target_obj):
         arr_mask = np.array(self.agent.game_state.event.object_mask_list[-1])
         reshaped_obj_masks = arr_mask.reshape(-1, arr_mask.shape[-1])
@@ -409,18 +422,18 @@ class SequenceGenerator(object):
         #target_obj = get_target_obj(target_obj_id)
         object_nearest_point = self.get_best_object_point(target_obj, 1000, self.nearest)
         object_farthest_point = self.get_best_object_point(target_obj, 0.0 , self.farthest)
-        goal_object_centre = [0]*2
-        goal_object_centre[0] = target_obj.centre_x
-        goal_object_centre[1] = target_obj.centre_z
+        #goal_object_centre = [0]*2
+        #goal_object_centre[0] = target_obj.centre_x
+        #goal_object_centre[1] = target_obj.centre_z
         #print ("object nearest point", object_nearest_point)
         #print ("object nearest point", object_farthest_point)
         #print ("goal centre" , goal_object_centre)
-        object_nearest_point = get_point_between_points(object_nearest_point, goal_object_centre, self.agent.nav_radius)
-        object_farthest_point = get_point_between_points(object_farthest_point, goal_object_centre, self.agent.nav_radius)
+        #object_nearest_point = get_point_between_points(object_nearest_point, goal_object_centre, self.agent.nav_radius)
+        #object_farthest_point = get_point_between_points(object_farthest_point, goal_object_centre, self.agent.nav_radius)
     
         #print ("object nearest point", object_nearest_point)
         #print ("object nearest point", object_farthest_point)
-        success_distance = 0.30 
+        success_distance = 0.40 
         nav_success = self.agent.nav.go_to_goal(object_nearest_point, self.agent, success_distance) 
         self.face_object(target_obj)
 
@@ -442,17 +455,21 @@ class SequenceGenerator(object):
         self.face_object(target_obj)
     
     def explore_all_objects(self):
-        for obstacle in reversed(self.agent.game_state.global_obstacles) :
+        for i,obstacle in enumerate(self.agent.game_state.global_obstacles) :
             print ("obj height ", obstacle.height)
             if self.obstacle_is_possible_container(obstacle):
                 self.go_to_object_and_open(obstacle)
+                self.agent.game_state.global_obstacles[i].is_opened = True
                 if self.agent.game_state.goal_object_visible: 
+                    '''
+                    print ("target obj visible, about to pick it")
                     target_obj = self.get_target_obj(self.agent.game_state.goal_id)
                     x,y = self.get_obj_pixels(target_obj)
                     action = {'action':"PickupObject", 'x': x, 'y':y}
                     self.agent.game_state.step(action)
                     print ("pick up action status" , self.agent.game_state.event.return_status == "NOT_OPENABLE")
-                    #self.go_to_goal_and_pick()
+                    '''
+                    self.go_to_goal_and_pick()
                     break 
                 self.look_straight()
 
@@ -460,6 +477,8 @@ class SequenceGenerator(object):
         if obstacle.height < 0.15 :
             return False
         if obstacle.height > 2.5 :
+            return False
+        if obstacle.is_opened == True :
             return False
         return True
 

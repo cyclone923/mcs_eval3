@@ -185,8 +185,13 @@ class GameState(object):
             self.goal_id = None
             self.pose_estimate = np.zeros((3,1),dtype = np.float64)
             self.global_obstacles = []
-
+            self.goal_object_visible = False
+            self.trophy_picked_up = False
+            self.position = None
+            self.rotation = None
+            self.head_tilt = None
             self.bounds = None
+            self.objs = 0
 
             #while True :
             #self.event = self.event.events[0]

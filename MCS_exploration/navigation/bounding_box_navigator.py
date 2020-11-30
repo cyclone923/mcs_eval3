@@ -185,7 +185,6 @@ class BoundingBoxNavigator:
 		self.epsilon = success_distance
 
 		gx, gy = goal_pose[0], goal_pose[1]
-		
 		for obstacle_key, obstacle in self.scene_obstacles_dict.items():
 			self.scene_obstacles_dict_roadmap[obstacle_key] = 0
 

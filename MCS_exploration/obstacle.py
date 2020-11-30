@@ -17,6 +17,7 @@ class Obstacle():
         self.calculate_bounding_box(size,scale, displacement)
         self.calculate_centre()
         self.parent_id = -1
+        self.is_picked = False
 
     def expand_obstacle(self, current_scene_map_points,size,scale,displacement):
         obstacle_len = len(self.occupancy_map_points)
