@@ -37,14 +37,20 @@ pip show ai2thor
 bash setup_torch.sh
 ```
 
-
-
 ### Unity Application
 
 Set up the unity application
 
 ```
 bash setup_unity.sh
+```
+
+### Vision System
+
+Set up object mask and class predictor
+
+```
+bash setup_vision.sh
 ```
 
 ### To run everything from the project root
