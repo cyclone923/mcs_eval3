@@ -2,9 +2,12 @@ import machine_common_sense as mcs
 import yaml
 import os
 import random
+"""
 from exploration.controller_agent import ExploreAgent
 from voe.voe_agent import VoeAgent
 from voe.agency_voe_agent import AgencyVoeAgent
+"""
+import physics_voe_agent
 
 
 class Evaluation3_Agent:
@@ -30,9 +33,12 @@ class Evaluation3_Agent:
 
         assert self.level in ['oracle', 'level1', 'level2']
 
+        """
         self.exploration_agent = ExploreAgent(self.controller, self.level)
         self.voe_agent = VoeAgent(self.controller, self.level)
         self.agency_voe_agent = AgencyVoeAgent(self.controller, self.level)
+        """
+        self.phys_voe = physics_voe_agent.VoeAgent(self.controller, self.level)
 
         #initilize VOE agent here also
 
@@ -44,7 +50,7 @@ class Evaluation3_Agent:
         scene_config, status = mcs.load_config_json_file(one_scene)
         goal_type = scene_config['goal']['category']
         if goal_type == "intuitive physics":
-            self.voe_agent.run_scene(scene_config)
+            self.phys_voe.run_scene(scene_config)
         elif goal_type == "agents":
             self.agency_voe_agent.run_scene(scene_config)
         elif goal_type == "retrieval":
