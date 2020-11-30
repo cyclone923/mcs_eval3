@@ -14,7 +14,7 @@ class MaskAndClassPredictor(object):
     '''
     def __init__(self, dataset='mcsvideo3_inter',
                        config='plus_resnet50_config_depth_MC',
-                       weights=None, cuda=True):
+                       weights=None):
         '''
         @Param: dataset -- 'mcsvideo3_inter | mcsvideo_inter | mcsvideo_voe'
                 config -- check the config files in data for more configurations.
@@ -34,7 +34,7 @@ class MaskAndClassPredictor(object):
         self.net.load_weights(weights)
         self.net.eval()
 
-        self.cuda    = cuda
+        self.cuda    = torch.cuda.is_available()
         if self.cuda:
             self.net = self.net.cuda()
 
@@ -124,7 +124,7 @@ if __name__=='__main__':
     bgrI   = cv2.imread('./vision/instSeg/demo/original-24-0.jpg')
     depthI = smisc.imread('./vision/instSeg/demo/depth-24-0.png', mode='P')
 
-    model = MaskAndClassPredictor(cuda=False)
+    model = MaskAndClassPredictor()
     ret   = model.step(bgrI, depthI)
 
     fig, ax = plt.subplots(2,2)

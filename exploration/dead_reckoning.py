@@ -74,7 +74,7 @@ class DeadReckoningMcsWrapper(McsWrapper):
     def reset(self):
         McsWrapper.reset(self)
         if self.dead_reckonging:
-            self.dead_reckonging.reset(self.env)
+            self.dead_reckonging.reset()
 
     def step(self, **kwargs):
         McsWrapper.step(self, **kwargs)
@@ -111,7 +111,7 @@ class DeadReckoningMcsWrapper(McsWrapper):
         if self.level != 'oracle':
             agent_x = self.dead_reckonging.x
         else:
-            agent_x = McsWrapper.agent_x
+            agent_x = McsWrapper.agent_x.fget(self)
         return agent_x
 
     @property
@@ -119,7 +119,7 @@ class DeadReckoningMcsWrapper(McsWrapper):
         if self.level != 'oracle':
             agent_y = self.dead_reckonging.y
         else:
-            agent_y = McsWrapper.agent_y
+            agent_y = McsWrapper.agent_y.fget(self)
         return agent_y
 
     @property
@@ -127,7 +127,7 @@ class DeadReckoningMcsWrapper(McsWrapper):
         if self.level != 'oracle':
             agent_z = self.dead_reckonging.z
         else:
-            agent_z = McsWrapper.agent_z
+            agent_z = McsWrapper.agent_z.fget(self)
         return agent_z
 
     @property
@@ -135,7 +135,7 @@ class DeadReckoningMcsWrapper(McsWrapper):
         if self.level != 'oracle':
             agent_r = self.dead_reckonging.r
         else:
-            agent_r = McsWrapper.agent_rotation
+            agent_r = McsWrapper.agent_rotation.fget(self)
         return agent_r
 
     @property
