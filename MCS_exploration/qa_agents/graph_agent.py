@@ -3,7 +3,7 @@ import time
 
 from game_state import GameState
 from navigation import bounding_box_navigator
-from gym_ai2thor.envs.trophy import AGENT_RADIUS
+from MCS_exploration.gym_ai2thor.envs.trophy import AGENT_RADIUS
 
 import constants
 
