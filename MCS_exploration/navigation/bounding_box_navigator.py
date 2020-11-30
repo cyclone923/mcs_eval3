@@ -7,10 +7,11 @@ import matplotlib.pyplot as plt
 from MCS_exploration.navigation.fov import FieldOfView
 import cover_floor
 import time
-from shapely.geometry import Point, MultiPoint
+from shapely.geometry import Point, MultiPoint, LineString
 import numpy as np
+from descartes import PolygonPatch
 
-SHOW_ANIMATION = True
+SHOW_ANIMATION = False
 LIMIT_STEPS = 350
 
 class BoundingBoxNavigator:
@@ -31,34 +32,47 @@ class BoundingBoxNavigator:
 		self.current_nav_steps = 0
 
 	
-	def get_one_step_move(self, goal, roadmap):
 
-		try :
-			pathX, pathY = roadmap.planning(self.agentX, self.agentY, goal[0], goal[1])
-		except ValueError:
-			return None,None
+	def step_towards_point(self, agent, x,y):
+		dX = x - self.agentX
+		dY = y - self.agentY
+		heading = math.atan2(dX, dY)
 
-		# execute a small step along that plan by
-		# turning to face the first waypoint
-		if len(pathX) == 1 and len(pathY) == 1:
-			i = 0
-		else:
-			i = 1
-		dX = pathX[i]-self.agentX
-		dY = pathY[i]-self.agentY
-		angleFromAxis = math.atan2(dX, dY)
-			
-		#taking at most a step of size 0.1
-		distToFirstWaypoint = math.sqrt((self.agentX-pathX[i])**2 + (self.agentY-pathY[i])**2)
-		stepSize = min(self.maxStep, distToFirstWaypoint)
 
-		return stepSize, angleFromAxis
+		rotation_degree = heading / (2 * math.pi) * 360 - agent.game_state.rotation
+		
+		if np.abs(rotation_degree) > 360:
+			rotation_degree = np.sign(rotation_degree) * (np.abs(rotation_degree) - 360)
+		if rotation_degree > 180:
+			rotation_degree -= 360
+		if rotation_degree < -180:
+			rotation_degree += 360
+
+		n = int(abs(round(rotation_degree)) // 10)
+		
+		action_list = []
+
+		for _ in range(n):
+			action_list.append( {'action': 'RotateLeft'} if rotation_degree > 0 else {'action': 'RotateRight'})
+		if math.sqrt( dX**2 + dY**2) >= 0.09:
+			action_list.append({'action':"MoveAhead"})
+		
+		for act in action_list:
+			agent.game_state.step(act)
+			rotation = agent.game_state.rotation
+			self.agentX = agent.game_state.position['x']
+			self.agentY = agent.game_state.position['z']
+			self.agentH = rotation / 360 * (2 * math.pi)
+			cover_floor.update_seen(self.agentX, self.agentY, agent.game_state, rotation, 42.5,
+								self.scene_obstacles_dict.values())
+			self.current_nav_steps += 1
+		return agent.game_state.event.return_status != "SUCCESSFUL"
 
 	def clear_obstacle_dict(self):
 		self.scene_obstacles_dict = {}
 
 	def reset(self):
-		self.clear_obstacle_dict()
+		self.scene_obstacles_dict = {}
 		self.agentX = None
 		self.agentY = None
 		self.agentH = None
@@ -91,66 +105,140 @@ class BoundingBoxNavigator:
 				self.scene_obstacles_dict[obj.uuid] = ObstaclePolygon(x_list, z_list)
 				self.scene_obstacles_dict_roadmap[obj.uuid] = 0
 
+	def add_obstacle_from_bounding_boxes(self, bounding_boxes):
+		if bounding_boxes == None  :
+			return
+		obj_id = int(0)
+		self.scene_obstacles_dict = {}
+		self.scene_obstacles_dict_roadmap = {}
+		#print ("in the new obstacle calculation function", len(list(bounding_boxes)))
+		if bounding_boxes.geom_type != "MultiPolygon" :
+			self.scene_obstacles_dict[obj_id] = ObstaclePolygon(bounding_boxes.exterior.coords.xy[0], bounding_boxes.exterior.coords.xy[1])
+			self.scene_obstacles_dict_roadmap[obj_id] = 0
+			return
+		for bounding_box in bounding_boxes:
+			#print ("in the new obstacle calculation function", len(list(bounding_boxes)))
+			#obstacle_polygon = ObstaclePolygon(bounding_box[0],bounding_box[1]).simplify(2)
+			self.scene_obstacles_dict[obj_id] = ObstaclePolygon(bounding_box.exterior.coords.xy[0], bounding_box.exterior.coords.xy[1])
+			#print (obstacle_polygon.exterior.coords.xy)
+			self.scene_obstacles_dict_roadmap[obj_id] = 0
+			#print ("time taken till creating FOV after roadmap",time_taken_part_1)
+
+
+			SHOW_ANIMATION = False
+			if SHOW_ANIMATION:
+			#if True:
+				plt.cla()
+				plt.xlim((-7, 7))
+				plt.ylim((-7, 7))
+				plt.gca().set_xlim((-7, 7))
+				plt.gca().set_ylim((-7, 7))
+
+				circle = plt.Circle((self.agentX, self.agentY), radius=self.radius, color='r')
+				plt.gca().add_artist(circle)
+
+				for obstacle in self.scene_obstacles_dict.values():
+					obstacle.plot("green")
+				#self.scene_obstacles_dict[obj_id].plot("green")
+
+				plt.axis("equal")
+				plt.pause(1)
+				print ("in show animation and trying to save fig")
+				#plt.savefig("bounding_box_add_shapely_output.png")
+			obj_id += 1
+		#print("obj_id = ", obj_id)
+
+	def add_obstacle_from_global_obstacles(self, global_obstacles):
+		if len(global_obstacles) == 0  :
+			return
+		obj_id = int(0)
+		self.scene_obstacles_dict = {}
+		self.scene_obstacles_dict_roadmap = {}
+		for obstacle in global_obstacles :
+			bounding_boxes = obstacle.get_bounding_box()
+			if bounding_boxes.geom_type != "MultiPolygon" :
+				self.scene_obstacles_dict[obj_id] = ObstaclePolygon(bounding_boxes.exterior.coords.xy[0], bounding_boxes.exterior.coords.xy[1])
+				self.scene_obstacles_dict_roadmap[obj_id] = 0
+				obj_id += 1
+			else :
+				for bounding_box in bounding_boxes:
+					start_time = time.time()
+					self.scene_obstacles_dict[obj_id] = ObstaclePolygon(bounding_box.exterior.coords.xy[0], bounding_box.exterior.coords.xy[1])
+					self.scene_obstacles_dict_roadmap[obj_id] = 0
+					#print ("time taken till creating FOV after roadmap", time.time()-start_time )
+					obj_id += 1
+        
 	#def go_to_goal(self, nav_env, goal, success_distance, epsd_collector=None, frame_collector=None):
 	def can_add_obstacle(self, obstacle, goal):
-		return not obstacle.contains_goal(goal) and obstacle.distance(Point(goal[0], goal[1])) > 0.5
+		#return not obstacle.contains_goal(goal) and obstacle.distance(Point(goal[0], goal[1])) > 0.5
+		return True
+
+	def get_obstacles(self):
+		return self.scene_obstacles_dict
 
 	def go_to_goal(self, goal_pose, agent, success_distance):
 
 		self.current_nav_steps = 0
-		self.agentX = agent.game_state.event.position['x']
-		self.agentY = agent.game_state.event.position['z']
-		self.agentH = agent.game_state.event.rotation / 360 * (2 * math.pi)
+		self.agentX = agent.game_state.position['x']
+		self.agentY = agent.game_state.position['z']
+		self.agentH = agent.game_state.rotation / 360 * (2 * math.pi)
 		self.epsilon = success_distance
 
 		gx, gy = goal_pose[0], goal_pose[1]
-		sx, sy = self.agentX, self.agentY
-		#roadmap = IncrementalVisibilityRoadMap(self.radius, do_plot=False)
 		for obstacle_key, obstacle in self.scene_obstacles_dict.items():
 			self.scene_obstacles_dict_roadmap[obstacle_key] = 0
 
-		obs = []
-		for obstacle_key, obstacle in self.scene_obstacles_dict.items():
-			if self.can_add_obstacle(obstacle, (gx, gy)):
-				self.scene_obstacles_dict_roadmap[obstacle_key] = 1
-				obs.append(obstacle)
-				#roadmap.addObstacle(obstacle)
-
-		roadmap = DiscreteActionPlanner(self.radius, obs)
-
+		plan = []
+		collision = False
+		
 		while True:
 			start_time = time.time()
 
+			#check if we are close enough
+			dis_to_goal = math.sqrt((self.agentX-gx)**2 + (self.agentY-gy)**2)
+			if dis_to_goal < self.epsilon:
+				break
+			obs = []
+
+			#add any new obstacles
 			for obstacle_key, obstacle in self.scene_obstacles_dict.items():
 				if self.scene_obstacles_dict_roadmap[obstacle_key] == 0:
 					#print ("not added obstacle", self.current_nav_steps)
 					if self.can_add_obstacle(obstacle, (gx, gy)):
 						#print ("adding new obstacles ", self.current_nav_steps)
 						self.scene_obstacles_dict_roadmap[obstacle_key] =1
-						roadmap.addObstacle(obstacle)
+						obs.append(obstacle)
+						#roadmap.addObstacle(obstacle)
+			roadmap = DiscreteActionPlanner(self.radius, obs)
+			
+			#check if the plan is still valid / exists and replan if not
+			if not roadmap.validPlan(plan, (self.agentX, self.agentY)):
+				plan_x, plan_y = roadmap.planning(self.agentX, self.agentY, gx, gy)
+				plan = list(zip(plan_x, plan_y))
+				
 
-			goal_obj_bonding_box = None
-			for id, box in self.scene_obstacles_dict.items():
-				if box.contains_goal((gx,gy)):
-					goal_obj_bonding_box = box.get_goal_bonding_box_polygon()
-					break
-			if not goal_obj_bonding_box:
-				dis_to_goal = math.sqrt((self.agentX-gx)**2 + (self.agentY-gy)**2)
-				# print("Dis to goal point {:.3f}, Suc dis: {:.3f}".format(dis_to_goal, success_distance))
-			else:
-				dis_to_goal = goal_obj_bonding_box.distance(Point(self.agentX, self.agentY))
-				# print("Dis to goal bonding box {:.3f}, Suc dis: {:.3f}".format(dis_to_goal, success_distance))
+			#take action if the plan provides one
+			if len(plan) > 0:
+				x,y = plan.pop(0)
+				collision = self.step_towards_point(agent, x,y)
 
-			if dis_to_goal < self.epsilon:
-				break
-
-			fov = FieldOfView([sx, sy, 0], 42.5 / 180.0 * math.pi, self.scene_obstacles_dict.values())
-			fov.agentX = self.agentX
-			fov.agentY = self.agentY
-			fov.agentH = self.agentH
-			poly = fov.getFoVPolygon(15)
-
+			
+			#if we collide or produced no plan, try to un-stick ourselves
+			if collision or len(plan) == 0:
+				path_x, path_y = roadmap.getUnstuckPath(self.agentX, self.agentY) 
+				for x,y in zip(path_x, path_y):
+					self.step_towards_point(agent, x, y)
+				plan = []
+				
+			
+			#plot out the state if enabled
 			if SHOW_ANIMATION:
+				fov = FieldOfView([self.agentX, self.agentY, 0], 42.5 / 180.0 * math.pi, self.scene_obstacles_dict.values())
+				fov.agentX = self.agentX
+				fov.agentY = self.agentY
+				fov.agentH = self.agentH
+				poly = fov.getFoVPolygon(15)
+
 				plt.cla()
 				plt.xlim((-7, 7))
 				plt.ylim((-7, 7))
@@ -165,180 +253,26 @@ class BoundingBoxNavigator:
 				for obstacle in self.scene_obstacles_dict.values():
 					obstacle.plot("green")
 
+				if len(plan) > 1:
+					linePlan = LineString( plan ).buffer(self.radius)
+					patch1 = PolygonPatch(linePlan,fc='grey', ec="black", alpha=0.2, zorder=1)
+					plt.gca().add_patch(patch1)
+					
 				plt.axis("equal")
 				plt.pause(0.001)
 
-			start_time = time.time()
-			stepSize, heading = self.get_one_step_move([gx, gy], roadmap)
+
 			end_time = time.time()
 
-			if stepSize == None and heading == None:
-				print("Planning Fail")
-				return  False
-
-			# needs to be replaced with turning the agent to the appropriate heading in the simulator, then stepping.
-			# the resulting agent position / heading should be used to set plan.agent* values.
-
-
-			rotation_degree = heading / (2 * math.pi) * 360 - agent.game_state.event.rotation
-
-			if np.abs(rotation_degree) > 360:
-				rotation_degree = np.sign(rotation_degree) * (np.abs(rotation_degree) - 360)
-			if rotation_degree > 180:
-				rotation_degree -= 360
-			if rotation_degree < -180:
-				rotation_degree += 360
-
-			n = int(abs(rotation_degree) // 10)
-			if rotation_degree > 0:
-				for _ in range(n):
-					agent.game_state.step({'action': 'RotateLeft'})
-			else:
-				for _ in range(n):
-					agent.game_state.step({'action': 'RotateRight'})
-
-			rotation = agent.game_state.event.rotation
-			self.agentX = agent.game_state.event.position['x']
-			self.agentY = agent.game_state.event.position['z']
-			self.agentH = rotation / 360 * (2 * math.pi)
-			self.current_nav_steps += 1
-			cover_floor.update_seen(self.agentX, self.agentY, agent.game_state, rotation, 42.5,
-									self.scene_obstacles_dict.values())
-
-
-			action={'action':"MoveAhead"}
-			agent.step(action)
-			rotation = agent.game_state.event.rotation
-			self.agentX = agent.game_state.event.position['x']
-			self.agentY = agent.game_state.event.position['z']
-			self.agentH = rotation / 360 * (2 * math.pi)
-
-			cover_floor.update_seen(self.agentX, self.agentY, agent.game_state, rotation, 42.5,
-									self.scene_obstacles_dict.values())
-
-			self.current_nav_steps += 1
+			
 
 			if agent.game_state.number_actions >= 595 :
-				return
-
-			if agent.game_state.goals_found == True:
+				print("Reached overall STEPS limit")
 				return
 
 			if self.current_nav_steps >= LIMIT_STEPS:
 				print("Reach LIMIT STEPS")
 				return False
 
+
 		return True
-
-
-
-def genRandomRectangle():
-    width = random.randrange(5,50)
-    height = random.randrange(5,50)
-    botLeftX = random.randrange(1,100)
-    botRightX = random.randrange(1,100)
-    theta = random.random()*2*math.pi
-
-    x = [random.randrange(1,50)]
-    y = [random.randrange(1,50)]
-
-    x.append(x[-1]+width)
-    y.append(y[-1])
-
-    x.append(x[-1])
-    y.append(y[-1]+height)
-
-    x.append(x[-1]-width)
-    y.append(y[-1])
-
-    for i in range(4):
-        tx = x[i]*math.cos(theta) - y[i]*math.sin(theta)
-        ty = x[i]*math.sin(theta) + y[i]*math.cos(theta)
-        x[i] = tx
-        y[i] = ty
-
-    return ObstaclePolygon(x,y)
-
-def main():
-	print(__file__ + " start!!")
-
-
-	for i in range(20):
-		# start and goal position
-		sx, sy = random.randrange(-100,-80), random.randrange(-100,-80)  # [m]
-		gx, gy = random.randrange(80,100), random.randrange(80,100)  # [m]
-
-		robot_radius = 5.0  # [m]
-
-		cnt = 15
-		obstacles=[]
-		for i in range(cnt):
-			obstacles.append(genRandomRectangle())
-		visible = [False]*cnt
-
-		if SHOW_ANIMATION:  # pragma: no cover
-			plt.xlim((-100, 100))
-			plt.ylim((-100, 100))
-			plt.plot(sx, sy, "or")
-			plt.plot(gx, gy, "ob")
-			for ob in obstacles:
-				ob.plot()
-			plt.axis("equal")
-			
-			#plt.pause(0.1)
-
-		#create a planner and initalize it with the agent's pose
-		plan = BoundingBoxNavigator( [sx,sy,0], [])
-
-
-		fov = FieldOfView( [sx,sy,0], 60/180.0*math.pi, obstacles)
-			
-		for stepSize, heading in plan.closedLoopPlannerFast([gx,gy]):
-			
-			#needs to be replaced with turning the agent to the appropriate heading in the simulator, then stepping.
-			#the resulting agent position / heading should be used to set plan.agent* values.
-			plan.agentH = heading
-			plan.agentX = plan.agentX + stepSize*math.sin(plan.agentH)
-			plan.agentY = plan.agentY + stepSize*math.cos(plan.agentH)
-
-			#any new obstacles that were observed during the step should be added to the planner
-			for i in range(len(obstacles)):
-				if not visible[i] and obstacles[i].minDistanceToVertex(plan.agentX, plan.agentY) < 30:
-					plan.addObstacle(obstacles[i])
-					visible[i] = True
-
-			fov.agentX = plan.agentX
-			fov.agentY = plan.agentY
-			fov.agentH = plan.agentH
-			poly = fov.getFoVPolygon(100)
-			
-
-			if SHOW_ANIMATION:
-				plt.cla()
-				plt.xlim((-100, 100))
-				plt.ylim((-100, 100))
-				plt.gca().set_xlim((-100, 100))
-				plt.gca().set_ylim((-100, 100))
-
-				plt.plot(plan.agentX, plan.agentY, "or")
-				plt.plot(gx, gy, "ob")
-				poly.plot("red")
-			
-				for i in range(len(obstacles)):
-					if visible[i]:
-						obstacles[i].plot("green")
-					else:
-						obstacles[i].plot("black")
-				
-				plt.axis("equal")
-				plt.pause(0.1)
-
-    
-    #if SHOW_ANIMATION:  # pragma: no cover
-    #    plt.plot(rx, ry, "-r")
-    #    plt.pause(0.1)
-    #    plt.show()
-
-
-if __name__ == '__main__':
-    main()

@@ -6,7 +6,7 @@ DEBUG = False
 
 
 if __name__ == "__main__":
-    start_scene_number = 1
+    start_scene_number = 0
     env = McsEnv(
         task="interaction_scenes", scene_type="transferral" if not DEBUG else 'debug', seed=50,
         start_scene_number=start_scene_number, frame_collector=None, set_trophy=True if not DEBUG else False

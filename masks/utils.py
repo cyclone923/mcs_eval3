@@ -55,6 +55,7 @@ def draw_appearance_bars(base_image, frame_objects_info):
 
     fig = plt.figure(figsize=(base_image.size[0] / 100, base_image.size[1] / 100), dpi=100)
     ax = fig.add_subplot(111)
+    ax.set_ylim([0, 1])
     ax.bar(objects, apperance_match)
     ax.set_ylabel('probability')
     ax.set_title('Object Appearance Matching')

@@ -1,4 +1,3 @@
-
 import constants
 import networkx as nx
 import math
@@ -7,6 +6,7 @@ from shapely.geometry import Point, Polygon
 from navigation.fov import FieldOfView
 import  numpy as np
 import matplotlib.pyplot as plt
+import quaternion
 
 testing = 0
 
@@ -284,7 +284,8 @@ def intersect(a, b, c, d):
         return x, y
     raise ValueError
 
-def check_validity(x,z,q):
+def check_validity(x,z,q,x_z_range):
+    xMin,xMax,zMin,zMax = x_z_range
     if x < xMin :
         return False
     elif x >= xMax :
@@ -297,7 +298,8 @@ def check_validity(x,z,q):
         return False
     return True
 
-def flood_fill(x,y, check_validity):
+def flood_fill(x,y, check_validity,x_z_range):
+#def flood_fill(x,y, check_validity):
     #//here check_validity is a function that given coordinates of the point tells you whether
     #//the point should be colored or not
     #Queue q
@@ -306,6 +308,7 @@ def flood_fill(x,y, check_validity):
     q.append((x,y))
     curr_q.append((x,y))
     i = 1
+    x_z_range = [i/constants.AGENT_STEP_SIZE for i in x_z_range]
     while (len(curr_q) != 0):
         #(x1,y1) = curr_q.pop()
         (x1,y1) = curr_q[0]
@@ -313,19 +316,23 @@ def flood_fill(x,y, check_validity):
         #print (x1,y1)
         #color(x1,y1)
 
-        if (check_validity(x1+move_step_size,y1,q)):
+        if (check_validity(x1+move_step_size,y1,q,x_z_range)):
+        #if (check_validity(x1+move_step_size,y1,q)):
             q.append((x1+move_step_size,y1))
             curr_q.append((x1+move_step_size,y1))
             i += 1
-        if (check_validity(x1,y1+move_step_size,q)):
+        if (check_validity(x1,y1+move_step_size,q,x_z_range)):
+        #if (check_validity(x1,y1+move_step_size,q)):
             q.append((x1,y1+move_step_size))
             curr_q.append((x1,y1+move_step_size))
             i += 1
-        if (check_validity(x1-move_step_size,y1,q)):
+        if (check_validity(x1-move_step_size,y1,q,x_z_range)):
+        #if (check_validity(x1-move_step_size,y1,q)):
             q.append((x1-move_step_size,y1))
             curr_q.append((x1-move_step_size,y1))
             i += 1
-        if (check_validity(x1,y1-move_step_size,q)):
+        if (check_validity(x1,y1-move_step_size,q,x_z_range)):
+        #if (check_validity(x1,y1-move_step_size,q)):
             q.append((x1,y1-move_step_size))
             curr_q.append((x1,y1-move_step_size))
             i += 1
@@ -342,6 +349,7 @@ def explore_initial_point(x,y, agent,obstacles):
     explore_point(x,y,agent,obstacles)
     if agent.game_state.goals_found == True:
         return
+    return
     directions = 30 // 10
     action = {'action': 'LookDown'}
     for _ in range(directions):
@@ -354,15 +362,17 @@ def explore_initial_point(x,y, agent,obstacles):
 
 def explore_point(x, y, agent, obstacles):
     directions = 360 // 10
-    event = agent.game_state.event
     camera_field_of_view = agent.game_state.event.camera_field_of_view
     #action = {'action':'RotateLook', 'horizon':1}
     #agent.game_state.step(action)
     action = {'action':'RotateLeft'}
+    #action = {'action':'RotateRight'}
     for _ in range (directions):
         agent.game_state.step(action)
-        rotation = agent.game_state.event.rotation
+        rotation = agent.game_state.rotation
+        start_time = time.time()
         update_seen(x , y ,agent.game_state,rotation,camera_field_of_view, agent.nav.scene_obstacles_dict.values() )
+        #print ("time taken to update seen",time.time()-start_time)
         if agent.game_state.goals_found == True :
             return
     #action = {'action':'RotateLook', 'horizon':-1}
@@ -373,8 +383,10 @@ def update_seen(x,y,game_state,rotation,camera_field_of_view,obstacles):
     #rotation = (rotation - 45)%360
     #print (rotation)
     rotation_rad = rotation / 180 * math.pi
+    #start_time = time.time()
     fov = FieldOfView([x, y, rotation_rad], camera_field_of_view / 180.0 * math.pi, obstacles)
     poly = fov.getFoVPolygon(17)
+    #print ("time taken to creat new fov" ,time.time()-start_time)
 
     try:
         view = Polygon(zip(poly.x_list, poly.y_list))
@@ -477,7 +489,7 @@ def get_point_between_points(p1, p2, radius):
 
     distance_ratio = -0.1
     distance_new_point = 0
-    while (distance_new_point < 1.6 * radius):
+    while (distance_new_point < radius):
         x = p1[0] + distance_ratio * (p2[0] - p1[0])
         y = p1[1] + distance_ratio * (p2[1] - p1[1])
         new_pt = [x,y]
@@ -486,12 +498,58 @@ def get_point_between_points(p1, p2, radius):
 
     return new_pt
 
+def get_polar_direction(goal, game_state):
+    delta_x_3d = goal[0] - game_state.position['x']
+    delta_y_3d = goal[1] - game_state.position['y']
+    delta_z_3d = goal[2] - game_state.position['z']
+    delta_x_unit_3d, delta_y_unit_3d, delta_z_unit_3d = normalize_3d_rotation(delta_x_3d, delta_y_3d, delta_z_3d)
+    # the agent is originally looking at z axis
+    # rotate_state = degrees of rotating right
+
+    theta = 2 * np.pi * game_state.rotation / 360 
+    souce_rotation = quat_from_angle_axis(theta)
+    direction_vec_unit = [delta_x_unit_3d, delta_y_unit_3d, delta_z_unit_3d]
+    direction_vec_unit_agent = quaternion_rotate_vector(souce_rotation.inverse(), direction_vec_unit)
+    dir_3d = np.arctan2(-direction_vec_unit_agent[0], direction_vec_unit_agent[2])
+
+    return dir_3d
+
+def get_head_tilt(goal, game_state):
+    distance_to_goal = distance_to_goal_calc(goal, game_state) + 1e-6
+    delta_y = game_state.position['y'] - goal[1]
+    return np.arctan(delta_y/distance_to_goal) * 360 / (2 * np.pi)
+
+def distance_to_goal_calc(goal, game_state):
+    distance = ( 
+                    (game_state.position['x'] - goal[0]) ** 2 + \
+                    (game_state.position['z'] - goal[2]) ** 2
+    ) ** 0.5 
+
+    return distance
+
+def normalize_3d_rotation(delta_x, delta_y, delta_z):
+    if delta_x == 0 and delta_y == 0 and delta_z ==0:
+        return 0, 0, 0
+    norm = (delta_x ** 2 + delta_y ** 2 + delta_z ** 2) ** 0.5 
+    return delta_x / norm, delta_y / norm, delta_z / norm
+
+def quaternion_rotate_vector(quat, v): 
+    vq = np.quaternion(0, 0, 0, 0)
+    vq.imag = v 
+    return (quat * vq * quat.inverse()).imag
+
+def quat_from_angle_axis(theta, axis=np.array([0,1,0])):
+    axis = axis.astype(np.float)
+    axis /= np.linalg.norm(axis)
+    return quaternion.from_rotation_vector(theta * axis)
+
+
 '''
 def get_visible_points_v2(x,y,direction,camera_field_of_view,radius):
-    
-    #camera_field_of_view = 90
-    #direction = 0.5
-    direction = (direction+3) %4
+
+#camera_field_of_view = 90
+#direction = 0.5
+direction = (direction+3) %4
     #print ("dircetion = ", direction)
     rotation = direction * 90
     z = y

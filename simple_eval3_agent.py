@@ -10,6 +10,13 @@ from voe.agency_voe_agent import AgencyVoeAgent
 class Evaluation3_Agent:
 
     def __init__(self, seed=0):
+
+        try:
+            assert "unity_path.yaml" in os.listdir(os.getcwd())
+            assert "mcs_config.yaml" in os.listdir(os.getcwd())
+        except:
+            raise FileExistsError("You might not set up mcs config and unity path yet. Please run 'bash setup_unity.sh'.")
+
         with open("./unity_path.yaml", 'r') as config_file:
             config = yaml.safe_load(config_file)
 
@@ -44,7 +51,7 @@ class Evaluation3_Agent:
             self.exploration_agent.run_scene(scene_config)
         else:
             print("Current goal type: {}".format(goal_type))
-            raise ValueError("Goal type {} not clear! It should be either: , 'intuitive physics', 'agents' or 'retrieval'")
+            raise ValueError("Goal type not clear! It should be either: , 'intuitive physics', 'agents' or 'retrieval'")
 
 
 if __name__ == "__main__":

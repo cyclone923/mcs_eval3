@@ -26,7 +26,7 @@ from MCS_exploration.navigation.dijkstra_search import DijkstraSearch
 import ray
 import psutil
 
-from shapely.ops import unary_union
+from shapely.ops import unary_union, nearest_points
 from heapq import heappush, heappop
 
 from shapely import speedups
@@ -40,7 +40,7 @@ def validEdge(p1, p2, poly, robot_radius):
     if math.sqrt( (p1[0] - p2[0])**2 + (p1[1] - p2[1])**2) <= 0.01:
              return False
 
-    radiusPolygon = sp.LineString([p1, p2]).buffer(robot_radius)
+    radiusPolygon = sp.LineString([p1, p2]).buffer(robot_radius+0.05)
     return not poly.intersects(radiusPolygon)
 
 
@@ -73,45 +73,37 @@ class Node(object):
 class DiscreteActionPlanner:
 
     def __init__(self, robot_radius, obstacles, eps=0.2, do_plot=False):
-        self.robot_radius = robot_radius*1.1
-        self.obstacles = (unary_union(obstacles))
+        self.robot_radius = robot_radius
+        self.obstacles = (unary_union([o.boundary for o in obstacles]))
         self.eps = eps
         self.step = 0.1
         self.turn = 10
         self.offsets = [ (math.sin(a)*self.step, math.cos(a)*self.step) for a in [self.turn*x/180*np.pi for x in range(0,360//self.turn)]]
-        self.existing_plan = None
+        self.existing_plan = []
         
 
     def addObstacle(self, obstacle):
         # add obstacle and just rebuild the map
-        self.obstacles = (self.obstacles.union(obstacle))
+        self.obstacles = (self.obstacles.union(obstacle.boundary))
         
     def resetObstacles(self, obstacles=None):
         if obstacles:
-            self.obstacles = unary_union(obstacles)
+            self.obstacles = unary_union([o.boundary for o in obstacles])
         else:
             self.obstacles = MultiPolygon()
 
-    def planning(self, start_x, start_y, goal_x, goal_y, max_exp = 1000):
-
+    def planning(self, start_x, start_y, goal_x, goal_y, max_exp = 100):
+        #print(len(self.obstacles))
         poly = prep(self.obstacles)
 
+        # if len(self.existing_plan) > 1:
 
-        if self.existing_plan and len(self.existing_plan) > 1:
-
-            linePlan = sp.LineString( self.existing_plan ).buffer(self.robot_radius)
-
-            
-            if not poly.intersects(linePlan):
-                self.existing_plan.pop(0)
-                return [p[0] for p in self.existing_plan], [p[1] for p in self.existing_plan]
-            else:
-                self.existing_plan = None
-
-
-        #pr = cProfile.Profile()
-        #pr.enable()
-        
+        #     if self.validPlan(self.existing_plan, (start_x, start_y)):
+        #         self.existing_plan.pop(0)
+        #         return [p[0] for p in self.existing_plan], [p[1] for p in self.existing_plan]
+        #     else:
+        #         self.existing_plan = []
+ 
         #use a max heap for the open set ordered by heuristic
         openList = [  Node(start_x, start_y, self.heurstic(start_x, start_y, goal_x, goal_y), 0, None) ]
 
@@ -134,20 +126,17 @@ class DiscreteActionPlanner:
                 nearest = curr
 
             i += 1
-            #print("Exp # {:d} -- |Open| = {:d} -- |Closed| = {:d}".format(i, len(openList), len(closedSet)))
+            
             # add any successors that arent already in the open/closed set
             for s in filter(lambda x: x not in openSet and x not in closedSet, self.validSuccessors(curr, goal, poly)):
                 heappush(openList, s)
                 openSet.add(s)
             
-             
-
-        #pr.disable()
-        #s = StringIO()
-        #sortby = 'cumulative'
-        #ps = pstats.Stats(pr, stream=s).sort_stats(sortby)
-        #ps.print_stats()
-        #print(s.getvalue())
+        #if i == 1:
+        #    path_x, path_y = self.getUnstuckPath(start_x, start_y)
+        #    self.existing_plan = list(zip(path_x, path_y))[1:]
+        #    return path_x, path_y
+            #raise ValueError("Stuck at start state")
 
         if openList and openList[0].h <= self.eps:
             path = [openList[0]]
@@ -157,37 +146,41 @@ class DiscreteActionPlanner:
         while path[-1].prev:
             path.append(path[-1].prev)
         path.reverse()
-        self.existing_plan = [ (n.x, n.y) for n in path ]
+        #self.existing_plan = [ (n.x, n.y) for n in path[1:] ]
 
-        return [p.x for p in path], [p.y for p in path]
-
-        # what do do when we find no path? well... this often happens when the final step forward to the goal radius would result in a collision. We arent modelling that so just tell it to step forward anyway?
-        #return [goal_x], [goal_y]
-        #raise ValueError("Planner failed to find a path")
+        return [p.x for p in path[1:]], [p.y for p in path[1:]]
         
+    def validPlan(self, path, cur):
+        if len(path) == 0:
+            return False
+        tp = path.copy()
+
+        tp.insert(0, cur)
+        planPoly = sp.LineString(tp).buffer(self.robot_radius)
+
+        poly = prep(self.obstacles)
+
+        return not poly.intersects(planPoly)
+
+    def getUnstuckPath(self, x, y, steps=5):
+        cur, nearest = nearest_points(sp.Point( (x,y) ), self.obstacles)
+        cur_x, cur_y = list(cur.coords)[0][0], list(cur.coords)[0][1]
+        near_x, near_y = list(nearest.coords)[0][0], list(nearest.coords)[0][1]
+
+        x = cur_x - near_x
+        y = cur_y - near_y
+        n = math.sqrt( x**2 + y**2)
+        x = x/(n+0.000000001)
+        y = y/(n+0.000000001)
+
+        x_path = [cur_x + self.step*x*i for i in range(steps)]
+        y_path = [cur_y + self.step*y*i for i in range(steps)]
+
+        return x_path, y_path
+
+
     def validSuccessors(self, loc, goal, poly):
         return [ Node(loc.x+x, loc.y+y, self.heurstic(loc.x+x, loc.y+y, goal.x, goal.y), loc.g+self.step, loc) for x,y in self.offsets if validEdge( (loc.x, loc.y), (loc.x+x, loc.y+y), poly, self.robot_radius) ]
        
     def heurstic(self,loc_x,loc_y, goal_x, goal_y):
         return math.sqrt( (loc_x - goal_x)**2 + (loc_y - goal_y)**2)
-
-
-
-
-class ObstaclePolygon(sp.Polygon):
-    def __init__(self, x, y):
-        super().__init__(zip(x,y))
-        self.x_list = x
-        self.y_list = y
-
-    def plot(self, clr="grey"):
-        patch1 = PolygonPatch(self, fc=clr, ec="black", alpha=0.2, zorder=1)
-        plt.gca().add_patch(patch1)
-
-    def contains_goal(self, goal):
-        return self.contains(sp.Point(goal))
-
-    def get_goal_bonding_box_polygon(self):
-        return self
-
-

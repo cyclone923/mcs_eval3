@@ -175,8 +175,8 @@ else:
 
 ########################################################################################################################
 # Unity Hyperparameters
-AGENT_STEP_SIZE = 0.25
-#AGENT_STEP_SIZE = 0.1
+#AGENT_STEP_SIZE = 0.25
+AGENT_STEP_SIZE = 0.1
 BUILD_PATH = 'thor_builds/build_linux/thor_full.x86_64'
 #BUILD_PATH = '/home/rajesh/rajesh/mcs_data/MCS-AI2-THOR-Unity-App-v0.0.6.x86_64'
 SCREEN_WIDTH = 600

@@ -3,7 +3,7 @@ import time
 
 from game_state import GameState
 from navigation import bounding_box_navigator
-from gym_ai2thor.envs.trophy import AGENT_RADIUS
+from MCS_exploration.gym_ai2thor.envs.trophy import AGENT_RADIUS
 
 import constants
 
@@ -14,8 +14,9 @@ class GraphAgent(object):
         self.nav = bounding_box_navigator.BoundingBoxNavigator(self.nav_radius, maxStep=0.1)
         if game_state is None:
             self.game_state = GameState(env=env)
-            self.game_state.add_obstacle_func = self.nav.add_obstacle_from_step_output
-            #self.game_state = GameState(sess=sess,env=env)
+            self.game_state.add_obstacle_func = self.nav.add_obstacle_from_bounding_boxes
+            #self.game_state.add_obstacle_func = self.nav.add_obstacle_from_global_obstacles
+            self.game_state.get_obstacles = self.nav.get_obstacles
         else:
             self.game_state = game_state
         self.action_util = self.game_state.action_util
