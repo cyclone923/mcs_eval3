@@ -1,5 +1,6 @@
 # Ignore the unity app directory
 unity_app/
+unity*
 
 #ignore the scenes 
 interaction_scenes/retrieval/
@@ -44,5 +45,7 @@ results/
 #ignore all pycharm files
 .idea/
 
-#ignore all yaml files 
-**/*.yaml
+#ignore the yaml files 
+mcs_config.yaml
+unity_path.yaml
+
