@@ -1,6 +1,6 @@
 from MCS_exploration.gym_ai2thor.envs.mcs_env import McsEnv
-from meta_controller.meta_controller import MetaController
-from frame_collector import Frame_collector
+from MCS_exploration.meta_controller.meta_controller import MetaController
+from MCS_exploration.frame_collector import Frame_collector
 import sys
 
 

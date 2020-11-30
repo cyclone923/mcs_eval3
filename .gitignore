@@ -43,3 +43,6 @@ results/
 
 #ignore all pycharm files
 .idea/
+
+#ignore all yaml files 
+**/*.yaml
