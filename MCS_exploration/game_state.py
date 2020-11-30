@@ -406,9 +406,9 @@ class GameState(object):
 
     
         if self.trophy_location != None :
-            SHOW_ANIMATION = True
+            SHOW_ANIMATION = False
         else :
-            SHOW_ANIMATION = True
+            SHOW_ANIMATION = False
             
 
         #print (self.global_obstacles)
