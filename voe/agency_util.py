@@ -249,14 +249,18 @@ def get_agent_pos(im, x_off=0, y_off=0):
     return avg_x, avg_y
 
 def get_obj_pos(im):
-    positions = cv2.findNonZero(im.sum(axis=2))
-    positions = np.squeeze(positions)
-    num_px = positions.shape[0]
-    avg_x = int(np.sum(positions[:,0]) / num_px)
-    avg_y = int(np.sum(positions[:,1]) / num_px)
-    # @TODO fix this hack, could replace with halfing towards the bottom left
-    avg_x -= 8
-    avg_y += 7
+    try:
+        positions = cv2.findNonZero(im.sum(axis=2))
+        positions = np.squeeze(positions)
+        num_px = positions.shape[0]
+        avg_x = int(np.sum(positions[:,0]) / num_px)
+        avg_y = int(np.sum(positions[:,1]) / num_px)
+        # @TODO fix this hack, could replace with halfing towards the bottom left
+        avg_x -= 8
+        avg_y += 7
+    except:
+        avg_x = 0
+        avg_y = 0
     return avg_x, avg_y
 
 def get_ch_avgs(im):
@@ -342,6 +346,30 @@ def create_arena():
             row.append(1)
         _arena.append(row)
     return _arena
+
+# instead of a recursive solution, just hardcoded one since the nested structure isn't too deep
+def jsonify_info_dict(info):    
+    keys_to_keep = ["trial_err", "step_num", "arena", "agent_ch_avgs", "objs_ch_avgs", "trial_1_objs_pos", "path", "wall_i_s", "trial_err"]
+    json_friendly = {key:val for key, val in info.items() if key in keys_to_keep}
+    for key, value in json_friendly.items():
+        if type(value) == type(np.array([])):
+            json_friendly[key] = value.tolist()
+        elif type(value) == type({}):
+            tmp_dict = {k:v for k, v in value.items()}
+            for k, v in tmp_dict.items():
+                if type(v) == type(np.array([])):
+                    tmp_dict[k] = v.tolist()
+            json_friendly[key] = tmp_dict
+        elif type(value) == type((1, 2)):
+            tmp_tuple = ()
+            for v in value:
+                if type(v) == type(np.array([])):
+                    tmp_tuple += (v.tolist(), )
+                else:
+                    tmp_tuple += (v, )
+            json_friendly[key] = tmp_tuple
+    
+    return json_friendly
 
 def find_and_rm_jerk_walls(g_rgb, g_mask, structural_mask_c_s, a, o_1, o_2, h):
     '''
