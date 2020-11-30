@@ -1,7 +1,5 @@
-from MCS_exploration.navigation.discrete_action_planner import DiscreteActionPlanner
+from exploration.roadmap.discrete_action_planner import DiscreteActionPlanner
 import math
-import matplotlib.pyplot as plt
-from MCS_exploration.navigation.fov import FieldOfView
 from shapely.geometry import Point
 import numpy as np
 
@@ -37,6 +35,7 @@ class Navigator():
 			i = 0
 		else:
 			i = 1
+
 		dX = self.path_x[i]-self.agent.agent_x
 		dZ = self.path_z[i]-self.agent.agent_z
 		angleFromAxis = math.atan2(dX, dZ)
@@ -56,6 +55,7 @@ class Navigator():
 	def process_state(self, roadmap):
 		gx, gz, _ = self.goal
 		dis_to_goal = math.sqrt((self.agent.agent_x - gx) ** 2 + (self.agent.agent_z - gz) ** 2)
+		print("Dis: {}".format(dis_to_goal))
 
 		for obstacle_key, obstacle in self.agent.scene_obstacles.items():
 

@@ -303,7 +303,7 @@ class SequenceGenerator(object):
             action = {'action':"PickupObject", 'x': x, 'y':y}
             self.agent.game_state.step(action)
             if self.agent.game_state.event.return_status == "SUCCESSFUL":
-                slef.update_picked_up(target_obj)
+                self.update_picked_up(target_obj)
                 if self.agent.game_state.event.reward > 0 :
                     self.agent.game_state.trophy_picked_up = True
                     return 

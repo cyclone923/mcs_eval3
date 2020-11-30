@@ -43,8 +43,10 @@ class ExploreStrategy:
         intersection_free_points = [[], []]
         for i, j in zip(checkPoly.x_list, checkPoly.y_list):
             if len(intersection_free_points[0]) != 0:
-                if not (abs(i - intersection_free_points[0][-1]) < 0.001 and abs(
-                        j - intersection_free_points[1][-1]) < 0.001):
+                if not (
+                    abs(i - intersection_free_points[0][-1]) < 0.001 and
+                    abs(j - intersection_free_points[1][-1]) < 0.001
+                ):
                     intersection_free_points[0].append(i)
                     intersection_free_points[1].append(j)
             else:
@@ -56,11 +58,9 @@ class ExploreStrategy:
     def initial_exploration(self):
         look_around = ['RotateRight' for _ in range(36)]
         actions = ['LookDown' for _ in range(2)] + look_around + ['LookUp' for _ in range(2)]
-        actions = look_around
+        # actions = look_around
         for a in actions:
             self.agent.step(action=a)
-            if self.agent.goal_found:
-                break
 
     def find_next_best_pose(self):
 
