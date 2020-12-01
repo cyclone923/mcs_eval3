@@ -36,7 +36,7 @@ class Frame_collector:
                                  step_output.object_list,
                                  result_dir=self.result_dir, sname=f'-{self.step}-{j}')
 
-                save_depth_image(np.asarray(step_output.depth_mask_list[j]),
+                save_depth_image(np.asarray(step_output.depth_map_list[j]),
                                             result_dir = self.result_dir, sname=f'-{self.step}-{j}')
             self.step += 1
         else:

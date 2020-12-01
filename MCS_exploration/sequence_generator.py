@@ -322,8 +322,8 @@ class SequenceGenerator(object):
         reshaped_obj_masks = arr_mask.reshape(-1, arr_mask.shape[-1])
         ar_row_view= reshaped_obj_masks.view('|S%d' % (reshaped_obj_masks.itemsize * reshaped_obj_masks.shape[1]))
         reshaped_obj_masks = ar_row_view.reshape(arr_mask.shape[:2])
-        goal_pixel_coords = np.where(reshaped_obj_masks==target_obj.current_frame_id )
-        if len(goal_pixel_coords[0])==0 :
+        goal_pixel_coords = np.where(reshaped_obj_masks==target_obj.current_frame_id)
+        if len(goal_pixel_coords[0])==0:
             return None, None
 
         #print ("xmax,xmin", np.amax(goal_pixel_coords[0]), np.amin(goal_pixel_coords[0]))

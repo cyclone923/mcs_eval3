@@ -4,4 +4,5 @@ scikit-image==0.17.2
 descartes==1.1.0
 ray==1.0.1
 pathfinding==0.0.4
+easydict==1.9
 git+https://github.com/NextCenturyCorporation/MCS@latest#egg=machine_common_sense
