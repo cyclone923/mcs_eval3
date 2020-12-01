@@ -25,10 +25,10 @@ def process_scene(data):
             obj_img.save(f'{frame_num:02d}_{shape}{obj_num}.png')
         # Display structures (occluders, walls)
         for struct_num, (struct, mask) in enumerate(zip(structs, struct_masks)):
-            shape = struct.shape
+            name = struct.uuid #Look at this to determine what kind of occluder it is
             if mask.sum() == 0: continue
             struct_img = mask_img(mask, img)
-            struct_img.save(f'{frame_num:02d}_STRUCT_{shape}{struct_num}.png')
+            struct_img.save(f'{frame_num:02d}_STRUCT_{name}.png')
         import pdb ; pdb.set_trace()
 
 
