@@ -252,10 +252,10 @@ class GameState(object):
                     if (x, z) not in bd_point:
                         x = x - position['x']
                         z = z - position['z']
-                        #new_pt_x = (x * math.cos(rotation)) - (z * math.sin(rotation)) 
-                        #new_pt_z = (x * math.sin(rotation)) + (z * math.cos(rotation))
-                        #bd_point.add((new_pt_x, new_pt_z))
-                        bd_point.add((x,z))
+                        new_pt_x = (x * math.cos(rotation)) - (z * math.sin(rotation)) 
+                        new_pt_z = (x * math.sin(rotation)) + (z * math.cos(rotation))
+                        bd_point.add((new_pt_x, new_pt_z))
+                        #bd_point.add((x,z))
 
                 poly = MultiPoint(sorted(bd_point)).convex_hull
                 x_list, z_list = poly.exterior.coords.xy
