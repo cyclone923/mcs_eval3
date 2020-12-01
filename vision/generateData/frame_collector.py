@@ -47,6 +47,7 @@ class Frame_collector:
             self.step += 1
         else:
             pass
+
         # for checking the FG objects and BG objects
         for i in step_output.object_list:
             if i.shape not in (self.shape_keys+self.shap_new_keys):
@@ -66,7 +67,7 @@ class Frame_collector:
         self.result_dir = os.path.join(self.scene_dir, 'scene_'+str(self.scene_number))
         os.makedirs(self.result_dir, exist_ok=True)
         print("Reset, Current Scene: {}".format(self.scene_number))
-        print("un-set uuid key including: ", self.stru_new_keys)
-        print("un-set shape key including: ", self.shap_new_keys)
+        #print("un-set uuid key including: ", self.stru_new_keys)
+        #print("un-set shape key including: ", self.shap_new_keys)
         print("statistical shape key counts: ", self.count_hist)
         print("--------------------------------------------------------")
