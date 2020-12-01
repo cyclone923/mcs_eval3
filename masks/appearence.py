@@ -77,7 +77,7 @@ def process_video(video_data, appearance_model, save_path=None, save_mp4=False, 
     track_info = {}
     processed_frames = []
     for frame_num, frame in enumerate(video_data):
-        track_info = track_objects(frame, track_info)
+        track_info = track_objects(frame.obj_mask, track_info)
         track_info['objects'] = object_appearance_match(appearance_model, frame,
                                                         track_info['objects'], device)
 
@@ -124,6 +124,7 @@ class ObjectDataset(Dataset):
 
         return {'images': self.data['images'][idx],
                 'shapes': int(self.data['shapes'][idx])}
+
 
 def generate_data(scenes_files):
     data = {'images': [], 'shapes': [], 'materials': [], 'textures': []}

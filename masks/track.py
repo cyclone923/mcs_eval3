@@ -14,15 +14,15 @@ def l2_distance(src_pos, dest_pos):
     return np.sqrt(sum((src_pos[axis] - dest_pos[axis]) ** 2 for axis in ['x', 'y']))
 
 
-def track_objects(frame, track_info={}):
+def track_objects(frame_mask, track_info={}):
     if 'object_index' not in track_info:
         track_info['object_index'] = 0
     if 'objects' not in track_info:
         track_info['objects'] = {}
 
     # Note : Assumption of sequential order
-    objs = frame.obj_mask.max() + 1
-    obj_masks = split_obj_masks(frame.obj_mask, objs)
+    objs = frame_mask.max() + 1
+    obj_masks = split_obj_masks(frame_mask, objs)
 
     # Remove any object which doesn't have a valid mask.
     for frame_obj_mask in obj_masks:
@@ -78,7 +78,7 @@ def process_video(video_data, save_path=None, save_mp4=False):
     track_info = {}
     processed_frames = []
     for frame_num, frame in enumerate(video_data):
-        track_info = track_objects(frame, track_info)
+        track_info = track_objects(frame.obj_mask, track_info)
         processed_frames.append(draw_bounding_boxes(frame.image, track_info['objects']))
 
     # save gif
