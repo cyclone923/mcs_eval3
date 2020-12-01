@@ -33,13 +33,16 @@ class BoundingBoxNavigator:
 
 	
 
-	def step_towards_point(self, agent, x,y):
+	def step_towards_point(self, agent, x,y, backwards=False):
 		dX = x - self.agentX
 		dY = y - self.agentY
 		heading = math.atan2(dX, dY)
 
 
 		rotation_degree = heading / (2 * math.pi) * 360 - agent.game_state.rotation
+
+		if backwards:
+			rotation_degree -= 180
 		
 		if np.abs(rotation_degree) > 360:
 			rotation_degree = np.sign(rotation_degree) * (np.abs(rotation_degree) - 360)
@@ -55,7 +58,10 @@ class BoundingBoxNavigator:
 		for _ in range(n):
 			action_list.append( {'action': 'RotateLeft'} if rotation_degree > 0 else {'action': 'RotateRight'})
 		if math.sqrt( dX**2 + dY**2) >= 0.09:
-			action_list.append({'action':"MoveAhead"})
+			if backwards:
+				action_list.append({'action':"MoveBack"})
+			else:
+				action_list.append({'action':"MoveAhead"})
 		
 		for act in action_list:
 			agent.game_state.step(act)
@@ -228,7 +234,7 @@ class BoundingBoxNavigator:
 			if collision:
 				path_x, path_y = roadmap.getUnstuckPath(self.agentX, self.agentY) 
 				for x,y in zip(path_x, path_y):
-					self.step_towards_point(agent, x, y)
+					self.step_towards_point(agent, x, y, backwards=True)
 				plan = []
 				
 			
