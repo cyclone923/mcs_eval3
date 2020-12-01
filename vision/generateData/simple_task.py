@@ -8,7 +8,10 @@ from vision.generateData.frame_collector import Frame_collector
 if __name__ == "__main__":
     start_scene_number, end_scene_number = 0, -1
     task, scene_type = "interaction_scenes", "transferral"
-    collector = Frame_collector(scene_dir="instSeg/"+task+"/"+scene_type, start_scene_number=start_scene_number)
+    collector = Frame_collector(scene_dir="instSeg/"+task+"/"+scene_type,
+                                start_scene_number=start_scene_number)
+                                scene_type='interact',
+                                fg_class_en=False)
     env = McsEnv(
         task=task, scene_type=scene_type, seed=50,
         start_scene_number=start_scene_number, frame_collector=collector, set_trophy=True
