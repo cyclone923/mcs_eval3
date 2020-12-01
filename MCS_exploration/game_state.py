@@ -335,6 +335,10 @@ class GameState(object):
         elif action['action'] == 'MoveBack':
             vel = -0.1
             action =  'MoveBack'
+        elif action['action'] == 'MoveLeft':
+            action =  'MoveLeft'
+        elif action['action'] == 'MoveRight':
+            action =  'MoveRight'
         elif action['action'] == 'OpenObject':
             #action = "OpenObject,objectId="+ str(action["objectId"])
             #print ("constructed action for open object", action)
