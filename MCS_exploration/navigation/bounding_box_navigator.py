@@ -106,8 +106,8 @@ class BoundingBoxNavigator:
 				self.scene_obstacles_dict_roadmap[obj.uuid] = 0
 
 	def add_obstacle_from_bounding_boxes(self, bounding_boxes):
-		if bounding_boxes == None  :
-			return
+		#if bounding_boxes == None  :
+		#	return
 		obj_id = int(0)
 		self.scene_obstacles_dict = {}
 		self.scene_obstacles_dict_roadmap = {}
@@ -189,6 +189,7 @@ class BoundingBoxNavigator:
 			self.scene_obstacles_dict_roadmap[obstacle_key] = 0
 
 		plan = []
+		iteration_no = 0
 		collision = False
 		
 		while True:
@@ -264,7 +265,6 @@ class BoundingBoxNavigator:
 
 			end_time = time.time()
 
-			
 
 			if agent.game_state.number_actions >= 595 :
 				print("Reached overall STEPS limit")

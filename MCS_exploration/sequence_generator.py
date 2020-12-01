@@ -51,7 +51,7 @@ class SequenceGenerator(object):
 
         #print ("done exploring point and now going to random points")
         #print ("current pose ", pose)
-        #self.explore_all_objects()
+        self.explore_all_objects()
 
         if self.agent.game_state.trophy_picked_up == True:
             return
@@ -70,7 +70,6 @@ class SequenceGenerator(object):
         nav_success = self.agent.nav.go_to_goal(new_end_point, self.agent, success_distance) 
         '''
         #print ("beginning of explore scene view 2")
-        self.explore_all_objects()
 
         x_list, y_list = [],[]
 
@@ -86,7 +85,7 @@ class SequenceGenerator(object):
         y_min = min(y_list)
         y_max = max(y_list)
 
-        x_z_range = [x_min,x_max,y_min,y_max]
+        x_z_range = [x_min+1,x_max-1,y_min+1,y_max-1]
         #x_z_range,rotation = self.get_rotated_boundaries()
     
         exploration_routine = cover_floor.flood_fill(0,0, cover_floor.check_validity,x_z_range)
@@ -134,7 +133,7 @@ class SequenceGenerator(object):
                 plt.plot(elem[0],elem[1],'x' )
             plt.show()
         '''
-        while overall_area * 0.9 >  self.agent.game_state.world_poly.area or len(self.agent.game_state.global_obstacles) == 0 :
+        while overall_area * 0.84 >  self.agent.game_state.world_poly.area or len(self.agent.game_state.global_obstacles) == 0 :
             #print (self.agent.game_state.world_poly.area)
             #print (overall_area)
             #print ("In the main for loop of executtion")
@@ -258,6 +257,7 @@ class SequenceGenerator(object):
         #print ("object goal ID = " , self.agent.game_state.goal_id)
 
         print ("in go to goal and pick")
+        print ("goal ID : ", self.game_state.goal_id)
         target_obj = self.get_target_obj(self.agent.game_state.goal_id)
         print ("goal ID ", target_obj.id)
         object_nearest_point = self.get_best_object_point(target_obj, 1000, self.nearest )
@@ -458,10 +458,13 @@ class SequenceGenerator(object):
     def explore_all_objects(self):
         for i,obstacle in enumerate(self.agent.game_state.global_obstacles) :
             print ("obj height ", obstacle.height)
+            #print ("obj centre ", obstacle.get_centre())
             if self.obstacle_is_possible_container(obstacle):
                 self.go_to_object_and_open(obstacle)
                 self.agent.game_state.global_obstacles[i].is_opened = True
-                if self.agent.game_state.goal_object_visible: 
+                # This is not always right- Can be wrong if object is visible in oracle mode
+                #  but not in global map for some reason
+                if self.agent.game_state.goal_object_visible : 
                     '''
                     print ("target obj visible, about to pick it")
                     target_obj = self.get_target_obj(self.agent.game_state.goal_id)
@@ -471,11 +474,11 @@ class SequenceGenerator(object):
                     print ("pick up action status" , self.agent.game_state.event.return_status == "NOT_OPENABLE")
                     '''
                     self.go_to_goal_and_pick()
-                    break 
+                    return 
                 self.look_straight()
 
     def obstacle_is_possible_container(self,obstacle):
-        if obstacle.height < 0.15 :
+        if obstacle.height < 0.1 :
             return False
         if obstacle.height > 2.5 :
             return False
