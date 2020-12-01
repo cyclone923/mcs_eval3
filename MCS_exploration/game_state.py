@@ -17,11 +17,11 @@ from MCS_exploration.frame_processing import *
 from shapely.geometry import Point, MultiPoint
 from MCS_exploration.obstacle import Obstacle
 import copy
-#from vision.instSeg.inference import MaskAndClassPredictor
-#from vision.instSeg.data.config_mcsVideo3_inter import MCSVIDEO_INTER_CLASSES_BG, MCSVIDEO_INTER_CLASSES_FG
+from vision.instSeg.inference import MaskAndClassPredictor
+from vision.instSeg.data.config_mcsVideo3_inter import MCSVIDEO_INTER_CLASSES_BG, MCSVIDEO_INTER_CLASSES_FG
 
-#TROPHY_INDEX = MCSVIDEO_INTER_CLASSES_FG.index('trophy') + 1
-#BOX_INDEX = MCSVIDEO_INTER_CLASSES_FG.index('box') + 1
+TROPHY_INDEX = MCSVIDEO_INTER_CLASSES_FG.index('trophy') + 1
+BOX_INDEX = MCSVIDEO_INTER_CLASSES_FG.index('box') + 1
 
 
 import constants
@@ -117,11 +117,13 @@ class GameState(object):
         self.position = None
         self.rotation = None
         self.head_tilt = None
-        #self.mask_predictor = MaskAndClassPredictor(cuda=False)
+        self.mask_predictor = MaskAndClassPredictor()
         self.trophy_location = None #[Trophy location in the img seg list] 
         self.trophy_mask = None
         self.trophy_obstacle = None
         self.trophy_picked_up = False
+        self.mode = "oracle"
+        self.trophy_visible_current_frame = False
 
     def occupancy_map_init(self):
         #rows = int(self.map_width//self.grid_size)
@@ -192,6 +194,7 @@ class GameState(object):
             self.head_tilt = None
             self.bounds = None
             self.objs = 0
+            self.trophy_visible_current_frame = False
 
             #while True :
             #self.event = self.event.events[0]
@@ -226,42 +229,44 @@ class GameState(object):
 
             Oracle data being used (eval 3 )
             '''
-            position = self.event.position
-            rotation = math.radians(self.event.rotation)
-            #rotation = self.event.rotation
-            tilt = self.event.head_tilt
-            self.pose_estimate =np.array([float(position['x']),float(position['z']),rotation]).reshape(3, 1)
+        
+            if self.mode == "oracle":
+                position = self.event.position
+                rotation = math.radians(self.event.rotation)
+                #rotation = self.event.rotation
+                tilt = self.event.head_tilt
+                #self.pose_estimate =np.array([float(position['x']),float(position['z']),rotation]).reshape(3, 1)
 
-            for elem in self.event.object_list:
-                if self.event.goal.metadata['target']['id'] == elem.uuid :
-                    self.goal_object = elem
+                for elem in self.event.object_list:
+                    if self.event.goal.metadata['target']['id'] == elem.uuid :
+                        self.goal_object = elem
             
-            #print ("goal object",self.goal_object)
-            #print ("orig starting pos", position )
-            #print ("starting rotation ", self.event.rotation)
+                #print ("goal object",self.goal_object)
+                #print ("orig starting pos", position )
+                #print ("starting rotation ", self.event.rotation)
 
-            dimensions = self.goal_object.dimensions
-            bd_point = set()
-            for i in range(0, 8):
-                x, z = dimensions[i]['x'], dimensions[i]['z']
-                if (x, z) not in bd_point:
-                    x = x - position['x']
-                    z = z - position['z']
-                    #new_pt_x = (x * math.cos(rotation)) - (z * math.sin(rotation)) 
-                    #new_pt_z = (x * math.sin(rotation)) + (z * math.cos(rotation))
-                    #bd_point.add((new_pt_x, new_pt_z))
-                    bd_point.add((x,z))
+                dimensions = self.goal_object.dimensions
+                bd_point = set()
+                for i in range(0, 8):
+                    x, z = dimensions[i]['x'], dimensions[i]['z']
+                    if (x, z) not in bd_point:
+                        x = x - position['x']
+                        z = z - position['z']
+                        new_pt_x = (x * math.cos(rotation)) - (z * math.sin(rotation)) 
+                        new_pt_z = (x * math.sin(rotation)) + (z * math.cos(rotation))
+                        bd_point.add((new_pt_x, new_pt_z))
+                        #bd_point.add((x,z))
 
-            poly = MultiPoint(sorted(bd_point)).convex_hull
-            x_list, z_list = poly.exterior.coords.xy
-            self.goal_bounding_box = ObstaclePolygon(x_list, z_list)
+                poly = MultiPoint(sorted(bd_point)).convex_hull
+                x_list, z_list = poly.exterior.coords.xy
+                self.goal_bounding_box = ObstaclePolygon(x_list, z_list)
 
-            '''
-            Level 2 code :
-                if  at level 2 or oracle :
-                    do the following
-            '''
-            self.obj_mask = self.event.object_mask_list[-1]
+                '''
+                Level 2 code :
+                    if  at level 2 or oracle :
+                        do the following
+                '''
+                self.obj_mask = self.event.object_mask_list[-1]
             '''
             Local coordinate system init 
             '''
@@ -269,8 +274,8 @@ class GameState(object):
             #img_channels, self.trophy_location = self.prediction_level1()
             #self.obj_mask = img_channels['net-mask']
             self.camera_height = self.event.camera_height
-            #self.pose_estimate = np.array([0.0,0.0,0.0]).reshape(3,1)
-            self.pose_estimate = np.array([0,0,math.radians(self.event.rotation)]).reshape(3,1)
+            self.pose_estimate = np.array([0.0,0.0,0.0]).reshape(3,1)
+            #self.pose_estimate = np.array([0,0,math.radians(self.event.rotation)]).reshape(3,1)
             #self.pose_estimate = np.array([0,0,math.radians(0)]).reshape(3,1)
             self.position = {'x': self.pose_estimate[0][0], 'y': self.camera_height, 'z':self.pose_estimate[1][0]}
             self.rotation = math.degrees(self.pose_estimate[2][0])
@@ -290,6 +295,7 @@ class GameState(object):
     def step(self, action_or_ind):
         self.new_found_objects = []
         self.new_object_found = False
+        self.trophy_visible_current_frame = False
         if type(action_or_ind) == int:
             action = self.action_util.actions[action_or_ind]
         else:
@@ -363,8 +369,10 @@ class GameState(object):
         #img_channels, self.trophy_location = self.prediction_level1()
         #print ("trophy position in channels", self.trophy_location)
         if self.trophy_location != None :
+            #print ("channel data number of masks", img_channels['mask_prob'].shape )
             #print ("channels data mask prob",img_channels['mask_prob'][self.trophy_location[0]+4].shape)
             #print ("channel data",img_channels[trophy_location[0]+4].shape)
+            print ("all class scores", img_channels['obj_class_score']) 
             self.trophy_mask = img_channels['mask_prob'][self.trophy_location[0]+4].flatten()
             #print ("flattened mask ", trophy_mask.shape)
             #trophy_mask = np.where(trophy_mask >= 0.75 , 1 ,0 ) 
@@ -381,23 +389,30 @@ class GameState(object):
         start_time = time.time()
         #bounding_boxes = convert_observation(self,self.number_actions,self.position,self.rotation) 
         bounding_boxes,current_frame_occupancy_points = convert_observation(self,self.number_actions,self.position,self.rotation) 
-        self.create_current_frame_obstacles(current_frame_occupancy_points)
         #print ("Frame processing time" , time.time()- start_time)
-        self.update_global_obstacles()
-        self.merge_global_obstacles()
-        #print ("time taken to update global obstacle list", time.time()-start_time)
-        self.add_obstacle_func(bounding_boxes)
         #self.add_obstacle_func(self.global_obstacles)
         self.number_actions += 1
 
         obj_id = 10000
         if self.trophy_location != None :
-            self.trophy_obstacle = Obstacle(obj_id,self.trophy_occupancy_map_points ,self.occupancy_map.shape,self.grid_size,self.displacement)
+            if len(self.trophy_occupancy_map_points) != 0 :
+                self.trophy_obstacle = Obstacle(obj_id,0.2,self.trophy_occupancy_map_points ,self.occupancy_map.shape,self.grid_size,self.displacement)
+                self.trophy_obstacle.is_goal = True
+                self.trophy_visible_current_frame = True
+                print ("setting current frame to true")
+                #self.current_frame_obstacles.append(self.trophy_obstacle)
+            else :
+                self.trophy_location = None
             #print ("intersection1between ground truth bb and as seen from image predictions" , self.trophy_obstacle.get_bounding_box().intersection(self.goal_bounding_box).area)
             #print ("total area of ground truth bb", self.goal_bounding_box.area)
             #print ("total area of mask based trophy", self.trophy_obstacle.get_bounding_box().area)
             #print ("exterior coords", self.trophy_obstacle.get_bounding_box().exterior.coords.xy)
 
+        self.create_current_frame_obstacles(current_frame_occupancy_points)
+        self.update_global_obstacles()
+        self.merge_global_obstacles()
+        #print ("time taken to update global obstacle list", time.time()-start_time)
+        self.add_obstacle_func(bounding_boxes)
         
         if self.event.return_status :
             self.process_frame()
@@ -405,10 +420,7 @@ class GameState(object):
             print ("Failed status : ",self.event.return_status )
 
     
-        if self.trophy_location != None :
-            SHOW_ANIMATION = True
-        else :
-            SHOW_ANIMATION = True
+        SHOW_ANIMATION = True
             
 
         #print (self.global_obstacles)
@@ -427,10 +439,11 @@ class GameState(object):
                 #plt.plot(centre_x, centre_z, "x")
             #for obstacle in [self.goal_bounding_box,self.trophy_obstacle.get_bounding_box()]:
             if self.goal_bounding_box != None :
-                patch1 = PolygonPatch(self.goal_bounding_box, fc='red', ec="black", alpha=0.2, zorder=1)
+                patch1 = PolygonPatch(self.goal_bounding_box, fc='blue', ec="black", alpha=0.2, zorder=1)
                 plt.gca().add_patch(patch1)
-            #patch1 = PolygonPatch(self.trophy_obstacle.get_bounding_box(),fc='red',ec="black", alpha=0.2, zorder=1)
-            #plt.gca().add_patch(patch1)
+            if self.trophy_location != None :
+                patch1 = PolygonPatch(self.trophy_obstacle.get_bounding_box(),fc='red',ec="black", alpha=0.2, zorder=1)
+                plt.gca().add_patch(patch1)
 
             '''
             fig, ax = plt.subplots(1,2)
@@ -447,6 +460,7 @@ class GameState(object):
             plt.axis("equal")
             plt.pause(0.001)
             #plt.pause(1)
+        #print ("self goals found",self.goals_found)
 
         self.trophy_location = None
 
@@ -546,6 +560,7 @@ class GameState(object):
             self.current_frame_obstacles[-1].current_frame_id = key
             #if self.trophy_obstacle != None:
             if self.goal_object_visible:
+            #if self.trophy_visible_current_frame:
             #if True:
                 intersect_area = self.current_frame_obstacles[-1].get_bounding_box().intersection(self.goal_bounding_box).area
                 #intersect_area = self.current_frame_obstacles[-1].get_bounding_box().intersection(self.trophy_obstacle.get_bounding_box()).area

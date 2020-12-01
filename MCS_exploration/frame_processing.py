@@ -255,9 +255,11 @@ def update_goal_bounding_box(points, env):
     points = points[new_points[0]]
     env.trophy_mask = env.trophy_mask[new_points[0]]
     #print ("in update goal bounding box")
-    trophy_pixel_coords = np.where(env.trophy_mask >= 0.7)
-    #print ("number of pixels with pts greater than 0.9", len(trophy_pixel_coords[0]))
+    trophy_pixel_coords = np.where(env.trophy_mask >= 0.8)
+    #print (np.amax(env.trophy_mask), np.amin(env.trophy_mask))
+    #print ("number of pixels with pts greater than 0.7", len(trophy_pixel_coords[0]))
     trophy_points = points[trophy_pixel_coords[0]]
+    #print (env.trophy_mask)
     trophy_points = np.delete(trophy_points,1,1)
     trophy_points = np.int_((trophy_points+env.displacement)/env.grid_size)
     #print ("size of trophy points ", trophy_points.shape)

@@ -70,6 +70,7 @@ class SequenceGenerator(object):
         nav_success = self.agent.nav.go_to_goal(new_end_point, self.agent, success_distance) 
         '''
         #print ("beginning of explore scene view 2")
+        self.explore_all_objects()
 
         x_list, y_list = [],[]
 
