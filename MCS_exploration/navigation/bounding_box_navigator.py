@@ -210,7 +210,7 @@ class BoundingBoxNavigator:
 						self.scene_obstacles_dict_roadmap[obstacle_key] =1
 						obs.append(obstacle)
 						#roadmap.addObstacle(obstacle)
-			roadmap = DiscreteActionPlanner(self.radius, obs)
+			roadmap = DiscreteActionPlanner(self.radius+0.05, obs, self.epsilon)
 			
 			#check if the plan is still valid / exists and replan if not
 			if not roadmap.validPlan(plan, (self.agentX, self.agentY)):
@@ -219,13 +219,14 @@ class BoundingBoxNavigator:
 				
 
 			#take action if the plan provides one
+			collision = True
 			if len(plan) > 0:
 				x,y = plan.pop(0)
 				collision = self.step_towards_point(agent, x,y)
 
 			
 			#if we collide or produced no plan, try to un-stick ourselves
-			if collision or len(plan) == 0:
+			if collision:
 				path_x, path_y = roadmap.getUnstuckPath(self.agentX, self.agentY) 
 				for x,y in zip(path_x, path_y):
 					self.step_towards_point(agent, x, y)
