@@ -31,6 +31,7 @@ class McsEnv:
             goal_dir = os.path.join(task, "eval3")
             all_scenes = sorted(os.listdir(goal_dir))
             all_scenes = [os.path.join(goal_dir, one_scene) for one_scene in all_scenes]
+            print (len(all_scenes))
             assert len(all_scenes) == 1
             self.trophy_config, _ = mcs.load_config_json_file(all_scenes[0])
             self.debug_dir = os.path.join(task, "debug")

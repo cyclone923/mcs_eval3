@@ -235,7 +235,7 @@ class GameState(object):
                 rotation = math.radians(self.event.rotation)
                 #rotation = self.event.rotation
                 tilt = self.event.head_tilt
-                #self.pose_estimate =np.array([float(position['x']),float(position['z']),rotation]).reshape(3, 1)
+                self.pose_estimate =np.array([float(position['x']),float(position['z']),rotation]).reshape(3, 1)
 
                 for elem in self.event.object_list:
                     if self.event.goal.metadata['target']['id'] == elem.uuid :
@@ -267,6 +267,15 @@ class GameState(object):
                         do the following
                 '''
                 self.obj_mask = self.event.object_mask_list[-1]
+
+                '''
+                for obj in self.event.object_list:
+                    print ("obj id : ", obj.uuid)
+                    print ("dimensions : ")
+                    print (obj.dimensions)
+                    print ("position ")
+                    print (obj.position)
+                '''
             '''
             Local coordinate system init 
             '''
@@ -274,8 +283,9 @@ class GameState(object):
             #img_channels, self.trophy_location = self.prediction_level1()
             #self.obj_mask = img_channels['net-mask']
             self.camera_height = self.event.camera_height
-            self.pose_estimate = np.array([0.0,0.0,0.0]).reshape(3,1)
+            #print ("starting tilt", self.event.head_tilt)
             #self.pose_estimate = np.array([0,0,math.radians(self.event.rotation)]).reshape(3,1)
+            self.pose_estimate = np.array([0.0,0.0,0.0]).reshape(3,1)
             #self.pose_estimate = np.array([0,0,math.radians(0)]).reshape(3,1)
             self.position = {'x': self.pose_estimate[0][0], 'y': self.camera_height, 'z':self.pose_estimate[1][0]}
             self.rotation = math.degrees(self.pose_estimate[2][0])
@@ -293,6 +303,8 @@ class GameState(object):
         #print ("end of reset in game state function")
 
     def step(self, action_or_ind):
+        #print ("game state head tilt",self.head_tilt)
+        #print ("event head tilt", self.event.head_tilt)
         self.new_found_objects = []
         self.new_object_found = False
         self.trophy_visible_current_frame = False
@@ -320,6 +332,13 @@ class GameState(object):
         elif action['action'] == 'MoveAhead':
             vel = 0.1
             action =  'MoveAhead'
+        elif action['action'] == 'MoveBack':
+            vel = -0.1
+            action =  'MoveBack'
+        elif action['action'] == 'MoveLeft':
+            action =  'MoveLeft'
+        elif action['action'] == 'MoveRight':
+            action =  'MoveRight'
         elif action['action'] == 'OpenObject':
             #action = "OpenObject,objectId="+ str(action["objectId"])
             #print ("constructed action for open object", action)
@@ -367,12 +386,12 @@ class GameState(object):
 
         self.step_output = self.event
         #img_channels, self.trophy_location = self.prediction_level1()
+        #print ("channel data number of masks", img_channels['mask_prob'].shape )
+        #print ("all class scores", img_channels['obj_class_score']) 
         #print ("trophy position in channels", self.trophy_location)
         if self.trophy_location != None :
-            #print ("channel data number of masks", img_channels['mask_prob'].shape )
             #print ("channels data mask prob",img_channels['mask_prob'][self.trophy_location[0]+4].shape)
             #print ("channel data",img_channels[trophy_location[0]+4].shape)
-            print ("all class scores", img_channels['obj_class_score']) 
             self.trophy_mask = img_channels['mask_prob'][self.trophy_location[0]+4].flatten()
             #print ("flattened mask ", trophy_mask.shape)
             #trophy_mask = np.where(trophy_mask >= 0.75 , 1 ,0 ) 
@@ -463,6 +482,7 @@ class GameState(object):
         #print ("self goals found",self.goals_found)
 
         self.trophy_location = None
+        #print ("all obstcles len after each step", len(self.get_obstacles()))
 
         #if len(self.goals) == 0 :
         #    self.goals_found = True
@@ -508,6 +528,7 @@ class GameState(object):
                     self.global_obstacles[i].expand_obstacle(curr_frame_obstacle.get_occupancy_map_points(),self.occupancy_map.shape,self.grid_size,self.displacement)
                     self.global_obstacles[i].current_frame_id = curr_frame_obstacle.current_frame_id
                     self.global_obstacles[i].is_goal =  curr_frame_obstacle.is_goal
+                    self.global_obstacles[i].height = max(self.global_obstacles[i].height,curr_frame_obstacle.height)
                     if self.global_obstacles[i].is_goal :
                         #print ("goal obj id being set to(in intersect) = ", self.goal_id)
                         self.goal_id = self.global_obstacles[i].id
@@ -518,6 +539,7 @@ class GameState(object):
                 #self.global_obstacles.append(Obstacle(self.objs, values,self.occupancy_map.shape,self.grid_size,self.displacement))
                 self.global_obstacles.append(copy.deepcopy(curr_frame_obstacle))
                 self.global_obstacles[-1].id = self.objs
+                #print ("obj height being added" ,curr_frame_obstacle.height)
                 if self.global_obstacles[-1].is_goal == True :
                     self.goal_id = self.objs
                     #print ("goal obj id being set to(in non intersect) = ", self.goal_id)
@@ -537,7 +559,8 @@ class GameState(object):
                     if obstacle1.is_goal == True or obstacle2.is_goal == True: 
                         break
                 intersect_area = obstacle1.get_bounding_box().intersection(obstacle2.get_bounding_box()).area
-                if intersect_area > 0.00001 :
+                height_ratio = abs(obstacle1.height-obstacle2.height ) / (max(obstacle1.height,obstacle2.height))
+                if intersect_area > 0.00001 and height_ratio < 0.7:
                     obstacle1.expand_obstacle(obstacle2.get_occupancy_map_points(),self.occupancy_map.shape,self.grid_size,self.displacement)
                     obstacle1.height = max(obstacle1.height,obstacle2.height)
                     elem_to_pop.append(obstacle2) 
@@ -561,7 +584,6 @@ class GameState(object):
             #if self.trophy_obstacle != None:
             if self.goal_object_visible:
             #if self.trophy_visible_current_frame:
-            #if True:
                 intersect_area = self.current_frame_obstacles[-1].get_bounding_box().intersection(self.goal_bounding_box).area
                 #intersect_area = self.current_frame_obstacles[-1].get_bounding_box().intersection(self.trophy_obstacle.get_bounding_box()).area
                 #print ("Intersection area : ", intersect_area)
@@ -586,7 +608,7 @@ class GameState(object):
 
         ret = self.mask_predictor.step(bgrI, depthI)
         cls = np.argmax(ret['obj_class_score'], axis=1)
-        #print(cls)
+        print("all object scores : ", ret["obj_class_score"])
         n_th_obj = None
         if TROPHY_INDEX in cls:
             n_th_obj = np.where(cls == TROPHY_INDEX)[0]

@@ -200,7 +200,7 @@ def point_cloud_to_polygon(points,occupancy_map,grid_size, displacement, obj_mas
     points = points[::sample]
     obj_masks_new = obj_masks[::sample]
     obj_masks = obj_masks_new[:]
-    new_points = np.where((points[:,1] > 0.05) & (points[:,1] <= 3))#,1,0).reshape(points.shape[0],1)
+    new_points = np.where((points[:,1] > 0.05) & (points[:,1] <= 2.9))#,1,0).reshape(points.shape[0],1)
     points = points[new_points[0]]
     obj_masks = obj_masks[new_points[0]]
     ar_row_view = obj_masks.view('|S%d' % (obj_masks.itemsize * obj_masks.shape[1]))
@@ -255,8 +255,8 @@ def update_goal_bounding_box(points, env):
     points = points[new_points[0]]
     env.trophy_mask = env.trophy_mask[new_points[0]]
     #print ("in update goal bounding box")
-    trophy_pixel_coords = np.where(env.trophy_mask >= 0.8)
-    #print (np.amax(env.trophy_mask), np.amin(env.trophy_mask))
+    trophy_pixel_coords = np.where(env.trophy_mask >= 0.9)
+    print (np.amax(env.trophy_mask), np.amin(env.trophy_mask))
     #print ("number of pixels with pts greater than 0.7", len(trophy_pixel_coords[0]))
     trophy_points = points[trophy_pixel_coords[0]]
     #print (env.trophy_mask)

@@ -2,7 +2,7 @@ from frame_processing import *
 from shapely.geometry import Point, MultiPoint
 
 class Obstacle():
-    def __init__(self,obj_id,obj_height,map_points,size,scale,displacement):
+    def __init__(self,obj_id,obj_height,map_points,size,scale,displacement,trophy_prob =0, number_pixel_points=0):
         self.id = obj_id
         self.occupancy_map_points = map_points[:]
         self.height = obj_height
@@ -18,6 +18,10 @@ class Obstacle():
         self.calculate_centre()
         self.parent_id = -1
         self.is_picked = False
+        self.number_pixel_points = [number_pixel_points]
+        self.trophy_prob = trophy_prob
+        self.trophy_prob_per_frame = [trophy_prob]
+        #self.agent_pos_per_frame = [agent_pos]
 
     def expand_obstacle(self, current_scene_map_points,size,scale,displacement):
         obstacle_len = len(self.occupancy_map_points)
@@ -53,6 +57,15 @@ class Obstacle():
             exterior_coords = self.bounding_box.exterior.coords.xy
 
         return exterior_coords
+    '''
+    def calculate_trophy_prob(self):
+
+        for i in range(len(trophy_prob_per_frame)):
+            frame_weight = dist_
+             
+
+        self.trophy_prob =  
+    '''
         
     def get_occupancy_map_points(self):
         return self.occupancy_map_points
