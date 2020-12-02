@@ -151,13 +151,14 @@ def output_voe(viols):
     for v in viols:
         print(v.describe())
 
-def show_scene(frame, depth, hmap, omap=None):
+def show_scene(frame, depth, masks, hmap, omap=None):
     from matplotlib import pyplot as plt
     trip = np.repeat(depth[:, :, np.newaxis], axis=2, repeats=3)
     trip /= depth.max()
+    trip[masks!=-1] = [0, 1, 0]
     if omap is not None:
         oidxs = np.nonzero(omap)
-        trip[oidxs] = [0, 1, 0]
+        trip[oidxs] = [1, 1, 0]
     hidxs = np.nonzero(hmap)
     trip[hidxs] = [1, 0, 0]
     plt.imshow(trip)
