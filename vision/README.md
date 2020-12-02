@@ -63,7 +63,7 @@
         + Intphy scenes (VOE scenes)
             ``` Shell
             wget https://oregonstate.box.com/shared/static/zmvcjyumltkziqfqbcqodkh6dgecikci.pth
-            mv 0syjouwkkpm0g1zbnt1riheshfvtd2by.pth dvis_resnet50_mc.pth 
+            mv zmvcjyumltkziqfqbcqodkh6dgecikci.pth dvis_resnet50_mc.pth 
             ```
         
     4. Run the demo test
