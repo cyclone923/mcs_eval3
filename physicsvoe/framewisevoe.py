@@ -1,4 +1,5 @@
 from . import depthutils as du
+from . import occlude
 from .data.dataset import ThorDataset, collate
 from .nets import ThorNLLS
 
@@ -136,17 +137,29 @@ def make_voe_heatmap(viols, obj_mask):
         hmap = v.fill_heatmap(hmap, obj_mask)
     return hmap
 
+def make_occ_heatmap(obj_occluded, obj_ids, obj_mask):
+    hmap = np.zeros_like(obj_mask, dtype=bool)
+    for occluded, idx in zip(obj_occluded, obj_ids):
+        if not occluded:
+            continue
+        mask = obj_mask == idx
+        hmap[mask] = True
+    return hmap
+
 def output_voe(viols):
     viols = viols or []
     for v in viols:
         print(v.describe())
 
-def show_scene(frame, depth, hmap):
+def show_scene(frame, depth, hmap, omap=None):
     from matplotlib import pyplot as plt
     trip = np.repeat(depth[:, :, np.newaxis], axis=2, repeats=3)
     trip /= depth.max()
-    idxs = np.nonzero(hmap)
-    trip[idxs] = [1, 0, 0]
+    if omap is not None:
+        oidxs = np.nonzero(omap)
+        trip[oidxs] = [0, 1, 0]
+    hidxs = np.nonzero(hmap)
+    trip[hidxs] = [1, 0, 0]
     plt.imshow(trip)
     plt.savefig(f'{frame:02d}.png')
 
@@ -176,12 +189,14 @@ def full_voe(data):
         # Get acutal obj positions
         depth = data.scene_depth[frame_num]
         masks = data.scene_idxs[frame_num]
+        obj_occluded = occlude.detect_occlusions(depth, masks)
         obj_ids, obj_pos, obj_present = calc_world_pos(depth, masks, DEFAULT_CAMERA)
         # Infer positions from history
         viols = voe.detect(frame_num, obj_pos, obj_ids)
         voe_hmap = make_voe_heatmap(viols, masks)
+        occ_hmap = make_occ_heatmap(obj_occluded, obj_ids, masks)
         output_voe(viols)
-        show_scene(frame_num, depth, voe_hmap)
+        show_scene(frame_num, depth, voe_hmap, occ_hmap)
         # Update tracker
         voe.record_obs(frame_num, obj_ids, obj_pos, obj_present)
 

@@ -1,6 +1,8 @@
 from physicsvoe.data.data_gen import convert_output
 from physicsvoe import framewisevoe
 
+DEFAULT_CAMERA = {'vfov': 42.5, 'pos': [0, 1.5, -4.5]}
+
 class VoeAgent:
     def __init__(self, controller, level):
         self.controller = controller
@@ -27,14 +29,13 @@ class VoeAgent:
         # TODO: calculate tracking info
         # HACK: Just use oracle masks
         frame = convert_output(step_output)
-        import pdb; pdb.set_trace()  # XXX BREAKPOINT
-        depth = frame.scene_depth[frame_num]
-        masks = frame.scene_idxs[frame_num]
+        depth = frame.depth_mask
+        masks = frame.obj_mask
         obj_ids, obj_pos, obj_present = framewisevoe.calc_world_pos(depth, masks, DEFAULT_CAMERA)
         # Infer positions from history
-        viols = voe.detect(frame_num, obj_pos, obj_ids)
+        viols = self.detector.detect(frame_num, obj_pos, obj_ids)
         voe_hmap = framewisevoe.make_voe_heatmap(viols, masks)
         framewisevoe.output_voe(viols)
         framewisevoe.show_scene(frame_num, depth, voe_hmap)
         # Update tracker
-        voe.record_obs(frame_num, obj_ids, obj_pos, obj_present)
+        self.detector.record_obs(frame_num, obj_ids, obj_pos, obj_present)
