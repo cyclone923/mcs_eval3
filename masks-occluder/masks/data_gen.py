@@ -29,6 +29,7 @@ def convert_frame(o, i):
     obj_mask = convert_obj_mask(o.object_mask_list[-1], objs)
     struct_mask = convert_obj_mask(o.object_mask_list[-1], structs)
     depth_mask = np.array(o.depth_map_list[-1])
+    print(len(o.object_mask_list), len(o.depth_map_list), len(o.image_list))
     camera_desc = CameraInfo(o.camera_field_of_view, o.position, o.rotation, o.head_tilt)
     # Project depth map to a 3D point cloud - removed for performance
     # depth_pts = depth_to_points(depth_mask, *camera_desc)
@@ -115,13 +116,13 @@ def make_parser():
 
 def main(sim_path, data_path, filter):
     env = McsEnv(sim_path, data_path, filter)
+
     scenes = list(env.all_scenes)
     print(f'Found {len(scenes)} scenes')
     random.shuffle(scenes)
     # Work around stupid sim bug
-    Path('SCENE_HISTORY/evaluation3Training').mkdir(parents=True)
+    Path('SCENE_HISTORY/evaluation3Training').mkdir(exist_ok=True, parents=True)
     convert_scenes(env, scenes)
-
 
 if __name__ == '__main__':
     args = make_parser().parse_args()

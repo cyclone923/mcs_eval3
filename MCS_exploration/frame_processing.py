@@ -25,9 +25,15 @@ def convert_observation(env,frame_idx, agent_pos, rotation):
     start_time = time.time()
     all_points, obj_masks = convert_output_dead_reckoning(env,agent_pos, rotation)
     env.occupancy_map, polygons,object_occupancy_grids = point_cloud_to_polygon(all_points,env.occupancy_map,env.grid_size,env.displacement,env.obj_mask)
-    if env.trophy_location != None :
+    #if env.trophy_location != None :
         #print ("trophy location not none in observation", env.trophy_location)
-        update_goal_bounding_box(all_points, env)
+        #update_goal_bounding_box(all_points, env)
+    if env.level == "level1" or env.level == "level2":
+        print ("obj classcore", env.img_channels['obj_class_score'])
+        print ("  ")
+        for i in range(env.img_channels['obj_class_score'].shape[0]):
+            mask = env.img_channels['mask_prob'][i+4] 
+            create_img_seg_occ_map_pts(all_points,i,mask,env)
     return polygons, object_occupancy_grids
 
 def convert_output_dead_reckoning(env,agent_pos, rotation ):
@@ -200,7 +206,7 @@ def point_cloud_to_polygon(points,occupancy_map,grid_size, displacement, obj_mas
     points = points[::sample]
     obj_masks_new = obj_masks[::sample]
     obj_masks = obj_masks_new[:]
-    new_points = np.where((points[:,1] > 0.05) & (points[:,1] <= 3))#,1,0).reshape(points.shape[0],1)
+    new_points = np.where((points[:,1] > 0.05) & (points[:,1] <= 2.9))#,1,0).reshape(points.shape[0],1)
     points = points[new_points[0]]
     obj_masks = obj_masks[new_points[0]]
     ar_row_view = obj_masks.view('|S%d' % (obj_masks.itemsize * obj_masks.shape[1]))
@@ -223,7 +229,7 @@ def point_cloud_to_polygon(points,occupancy_map,grid_size, displacement, obj_mas
         occupancy_map = merge_occupancy_map(occupancy_map, np_occ_map)
 
     all_polygons = occupancy_to_polygons(occupancy_map, grid_size, displacement  )
-    simplified_polygon = polygon_simplify(all_polygons,0.08)
+    simplified_polygon = polygon_simplify(all_polygons,0.03)
     show_animation =  False
     #plt.close()
     if show_animation :
@@ -249,15 +255,35 @@ def polygon_simplify(all_polygons,scale=0.0):
 
     return simplified_polygon
 
+def create_img_seg_occ_map_pts(points,obj_id, mask,env):
+    #print ("in create img seg map pts")
+    new_points = np.where((points[:,1] > 0.05) & (points[:,1] <= 2.9))#,1,0).reshape(points.shape[0],1)
+    points = points[new_points[0]]
+    mask = mask.flatten()
+    mask = mask[new_points[0]]
+    print ("min max values" , np.amax(mask), np.amin(mask))
+    obj_pixel_coords = np.where(mask >= 0.9)
+    if len(obj_pixel_coords[0]) == 0 :
+        return
+    obj_points = points[obj_pixel_coords[0]]
+    obj_height = np.max(obj_points[:,1])
+    obj_points = np.delete(obj_points,1,1)
+    obj_points = np.int_((obj_points+env.displacement)/env.grid_size)
+    obj_pts_str =obj_points.view('|S%d' % (obj_points.itemsize * obj_points.shape[1]))
+    _,unique_indices,unique_counts = np.unique(obj_pts_str,return_index=True,return_counts=True)
+    env.img_seg_occupancy_map_points[obj_id] = (obj_points[unique_indices],obj_height)
+
 
 def update_goal_bounding_box(points, env):
-    new_points = np.where((points[:,1] > 0.05) & (points[:,1] <= 3))#,1,0).reshape(points.shape[0],1)
+    new_points = np.where((points[:,1] > 0.05) & (points[:,1] <= 2.9))#,1,0).reshape(points.shape[0],1)
     points = points[new_points[0]]
     env.trophy_mask = env.trophy_mask[new_points[0]]
     #print ("in update goal bounding box")
-    trophy_pixel_coords = np.where(env.trophy_mask >= 0.7)
-    #print ("number of pixels with pts greater than 0.9", len(trophy_pixel_coords[0]))
+    trophy_pixel_coords = np.where(env.trophy_mask >= 0.9)
+    print (np.amax(env.trophy_mask), np.amin(env.trophy_mask))
+    #print ("number of pixels with pts greater than 0.7", len(trophy_pixel_coords[0]))
     trophy_points = points[trophy_pixel_coords[0]]
+    #print (env.trophy_mask)
     trophy_points = np.delete(trophy_points,1,1)
     trophy_points = np.int_((trophy_points+env.displacement)/env.grid_size)
     #print ("size of trophy points ", trophy_points.shape)

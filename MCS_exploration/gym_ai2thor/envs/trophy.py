@@ -77,25 +77,25 @@ def pre_process_objects(objects, all_obstacles, trophy_prob=1):
     if random.random() > 1 - trophy_prob: # turn this to 0.x to have 0.x probability to see a box contains a trophy
         # args = TROPHY_OPTION['single_trophy'](objects)
         valid_keys = random.choice(list(TROPHY_OPTION.keys()))
-        args = TROPHY_OPTION[valid_keys](objects)
+        args_0 = TROPHY_OPTION[valid_keys](objects)
     else:
         valid_keys = random.choice(list(VALID_OPTIONS.keys()))
-        args = VALID_OPTIONS[valid_keys](objects)
+        args_0 = VALID_OPTIONS[valid_keys](objects)
 
-    random_pick = TrophyWithBox(*args)
+    random_pick = TrophyWithBox(*args_0)
 
     all_obstacles = random_pick.place_to_scene(all_obstacles)
 
     invalid_options = random.choice(list(INVALID_OPTIONS.keys()))
-    args = INVALID_OPTIONS[invalid_options](objects)
-    empty_box = TrophyWithBox(*args)
+    args_1 = INVALID_OPTIONS[invalid_options](objects)
+    empty_box = TrophyWithBox(*args_1)
     all_obstacles = empty_box.place_to_scene(all_obstacles)
 
     invalid_options_2 = random.choice(list(VALID_OPTIONS.keys()))
     args_2 = VALID_OPTIONS[invalid_options_2](objects)
 
     empty_box_2 = TrophyWithBox(None, args_2[1])
-    _ = empty_box.place_to_scene(all_obstacles)
+    _ = empty_box_2.place_to_scene(all_obstacles)
 
     return random_pick, empty_box, empty_box_2 # there will always be 2 empty boxes in the scene, and one trophy or trophy with box
 
@@ -106,8 +106,8 @@ class TrophyWithBox:
     RANDOM_ROTATE = [0, 90, 180, 270]
 
     def __init__(self, trophy, box, random_rotate=True):
-        self.trophy = trophy
-        self.box = box
+        self.trophy = deepcopy(trophy)
+        self.box = deepcopy(box)
         self.bdbox = None
         self.rotate_in_y = None
         if random_rotate:
@@ -132,7 +132,7 @@ class TrophyWithBox:
         else:
             r_x, r_z = self.BOX_TROPHY_SIZE[self.trophy['id']]['x_r'], self.BOX_TROPHY_SIZE[self.trophy['id']]['z_r']
 
-        if self.rotate_in_y:
+        if self.rotate_in_y is not  None:
             if self.rotate_in_y in [90, 270]:
                 tmp = r_x
                 r_x = r_z

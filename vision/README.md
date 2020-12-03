@@ -63,8 +63,11 @@
         + Intphy scenes (VOE scenes)
             ``` Shell
             wget https://oregonstate.box.com/shared/static/zmvcjyumltkziqfqbcqodkh6dgecikci.pth
-            mv zmvcjyumltkziqfqbcqodkh6dgecikci.pth dvis_resnet50_mc.pth 
+            mv zmvcjyumltkziqfqbcqodkh6dgecikci.pth dvis_resnet50_mc_voe.pth 
             ```
+        + Currently, only 'mcsvideo3_inter' and 'mcsvideo3_voe' are supported. And you could check
+            the './vision/instSeg/data/config_xx.py' file to see what are the BG categories and 
+            what are the FG categories detected in it.
         
     4. Run the demo test
         ```Shell
@@ -74,12 +77,12 @@
 
     5. Call the API from path.
         + Add './vision' to the system path
-            - In script: 'import sys  sys.path.append('./tracker')'
-            - In command line: export PYTHONPATH=$PYTHONPATH:./tracker
+            - In script: 'import sys  sys.path.append('./vision')'
+            - In command line: export PYTHONPATH=$PYTHONPATH:./vision
     
         ```Shell
         from instSeg.inference import MaskAndClassPredictor as Predictor
-        model = Predictor(dataset='mcsvideo3_inter')
+        model = Predictor(dataset='mcsvideo3_inter', weights='PATH_TO_PTH_FILE')
         # prepare bgrI, depthI
         ret = model(bgrI, depthI)
         ```

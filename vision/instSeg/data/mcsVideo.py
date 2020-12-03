@@ -11,8 +11,8 @@ import torch
 import torch.utils.data as data
 import torch.nn.functional as F
 
-from vision.instSeg.base_dataset import Detection
-from vision.instSeg.base_dataset import FromImageAnnotationTransform as AnnotationTransform
+from .base_dataset import Detection
+from .base_dataset import FromImageAnnotationTransform as AnnotationTransform
 
 class MCSVIDEODetection(Detection):
     """`
@@ -44,8 +44,12 @@ class MCSVIDEODetection(Detection):
         self.ignore_label   = option.ignore_label
         self.name           = dataset_name
         self.image_set      = running_mode
-        self.ids            = self._load_image_set_index(info_file)
         self.read_depth     = option.extra_input
+        self.ids            = self._load_image_set_index(info_file)
+        if running_mode == 'train':
+            self.select_semids = option.select_semids
+        else:
+            self.select_semids = None
 
     def _load_image_set_index(self, info_file):
         """
@@ -63,10 +67,9 @@ class MCSVIDEODetection(Detection):
             glob_imgs = glob(osp.join(base_dir, fdir, '*'+key))
             img_list = [osp.join(fdir, osp.basename(v).split(key)[0]) for v in glob_imgs]
             image_set_index += img_list
-
         return image_set_index
 
-    def _readLabelImage(self, fname):
+    def _readLabelImage(self, fname, has_inst=True):
         '''
         @func: given fname, read the color maskImage and parse to instanceI and semanticI
         '''
@@ -74,10 +77,13 @@ class MCSVIDEODetection(Detection):
         sem_file  = osp.join(self.root, fdir, ori_name.replace('original', 'cls')+'.png')
         semI = smisc.imread(sem_file, mode='P')
 
-        inst_file = osp.join(self.root, fdir, ori_name.replace('original', 'inst')+'.png')
-        instI = smisc.imread(inst_file, mode='P')
+        if not has_inst:
+            return semI
+        else:
+            inst_file = osp.join(self.root, fdir, ori_name.replace('original', 'inst')+'.png')
+            instI = smisc.imread(inst_file, mode='P')
 
-        return semI, instI
+            return semI, instI
 
     def save_subpath(self, index, result_path='', subPath=''):
         fname = self.ids[index]
@@ -116,6 +122,12 @@ class MCSVIDEODetection(Detection):
         if self.has_gt:
             anns = self.pull_anno(index)
             semI, masks, target = anns['sem'], anns['inst_mask'], anns['bbox']
+            if self.select_semids is not None and \
+                   (not any([ele in self.select_semids for ele in np.unique(semI)])) and \
+                   np.random.random() < 0.95:
+                step = np.random.randint(1, len(self.ids))
+                return self.pull_item((index+ step)%len(self.ids))
+
         if not self.has_gt or target is None:
             semI   = None
             masks  = np.zeros([1, height, width], dtype=np.float)

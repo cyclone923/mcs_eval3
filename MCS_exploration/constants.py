@@ -184,7 +184,7 @@ SCREEN_HEIGHT = 400
 #SCREEN_WIDTH = 300
 #SCREEN_HEIGHT = 300
 CAMERA_HEIGHT_OFFSET = 0.75
-MAX_STEPS = 595
+MAX_STEPS = 1000
 
 ########################################################################################################################
 # Network hyperparameters

@@ -33,14 +33,12 @@ from shapely import speedups
 if speedups.available:
     speedups.enable()
 
-show_animation = True
-
 
 def validEdge(p1, p2, poly, robot_radius):
     if math.sqrt( (p1[0] - p2[0])**2 + (p1[1] - p2[1])**2) <= 0.01:
              return False
 
-    radiusPolygon = sp.LineString([p1, p2]).buffer(robot_radius+0.05)
+    radiusPolygon = sp.LineString([p1, p2]).buffer(robot_radius)
     return not poly.intersects(radiusPolygon)
 
 
@@ -55,11 +53,12 @@ class Node(object):
         self.prev = prev
 
     def __hash__(self):
-        #hash up to 4 digits
-        return hash( ((self.x*1000)//1000, (self.y*1000)//1000 ) )
+        #hash up to 4 decimals
+        return hash( (int(self.x*1000), int(self.y*1000) ) )
 
     def __eq__(self, other):
-        return self.x==other.x and self.y==other.y
+        #fuzzy notion of equality based on hash
+        return self.__hash__() == other.__hash__()
         
     def __ne__(self, other):
         return not self.__eq__(other)
@@ -72,18 +71,17 @@ class Node(object):
 
 class DiscreteActionPlanner:
 
-    def __init__(self, robot_radius, obstacles, eps=0.2, do_plot=False):
+    def __init__(self, robot_radius, obstacles, eps=0.2, step=0.1, turn=10):
         self.robot_radius = robot_radius
         self.obstacles = (unary_union([o.boundary for o in obstacles]))
         self.eps = eps
-        self.step = 0.1
-        self.turn = 10
-        self.offsets = [ (math.sin(a)*self.step, math.cos(a)*self.step) for a in [self.turn*x/180*np.pi for x in range(0,360//self.turn)]]
+        self.step = step
+        self.turn = turn
+        self.offsets = [ (math.sin(a)*self.step, math.cos(a)*self.step) for a in [self.turn*x/180*np.pi for x in range(0,350//self.turn)]]
         self.existing_plan = []
         
 
     def addObstacle(self, obstacle):
-        # add obstacle and just rebuild the map
         self.obstacles = (self.obstacles.union(obstacle.boundary))
         
     def resetObstacles(self, obstacles=None):
@@ -92,18 +90,10 @@ class DiscreteActionPlanner:
         else:
             self.obstacles = MultiPolygon()
 
-    def planning(self, start_x, start_y, goal_x, goal_y, max_exp = 100):
-        #print(len(self.obstacles))
+    def planning(self, start_x, start_y, goal_x, goal_y, max_exp = 1000):
+        #get optimized polygon to make comparisons quicker
         poly = prep(self.obstacles)
 
-        # if len(self.existing_plan) > 1:
-
-        #     if self.validPlan(self.existing_plan, (start_x, start_y)):
-        #         self.existing_plan.pop(0)
-        #         return [p[0] for p in self.existing_plan], [p[1] for p in self.existing_plan]
-        #     else:
-        #         self.existing_plan = []
- 
         #use a max heap for the open set ordered by heuristic
         openList = [  Node(start_x, start_y, self.heurstic(start_x, start_y, goal_x, goal_y), 0, None) ]
 
@@ -132,12 +122,6 @@ class DiscreteActionPlanner:
                 heappush(openList, s)
                 openSet.add(s)
             
-        #if i == 1:
-        #    path_x, path_y = self.getUnstuckPath(start_x, start_y)
-        #    self.existing_plan = list(zip(path_x, path_y))[1:]
-        #    return path_x, path_y
-            #raise ValueError("Stuck at start state")
-
         if openList and openList[0].h <= self.eps:
             path = [openList[0]]
         else:
@@ -177,7 +161,6 @@ class DiscreteActionPlanner:
         y_path = [cur_y + self.step*y*i for i in range(steps)]
 
         return x_path, y_path
-
 
     def validSuccessors(self, loc, goal, poly):
         return [ Node(loc.x+x, loc.y+y, self.heurstic(loc.x+x, loc.y+y, goal.x, goal.y), loc.g+self.step, loc) for x,y in self.offsets if validEdge( (loc.x, loc.y), (loc.x+x, loc.y+y), poly, self.robot_radius) ]
