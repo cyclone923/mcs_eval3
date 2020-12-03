@@ -125,7 +125,7 @@ class PresenceViolation:
 
     def fill_heatmap(self, hmap, obj_mask):
         fpos = du.reverse_project(self.pred_pos, hmap, DEFAULT_CAMERA)
-        pos = np.array(hmap.shape) * (1+fpos.numpy()/2)
+        pos = np.array(hmap.shape) * (0.5+fpos.numpy()/2)
         pxs = np.stack(np.meshgrid(*[np.arange(x) for x in hmap.shape], indexing='ij'),
                        axis=-1)
         dist = (pxs-pos)**2
