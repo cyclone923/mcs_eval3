@@ -29,6 +29,7 @@ def convert_frame(o, i):
     obj_mask = convert_obj_mask(o.object_mask_list[-1], objs)
     struct_mask = convert_obj_mask(o.object_mask_list[-1], structs)
     depth_mask = np.array(o.depth_map_list[-1])
+    print(len(o.object_mask_list), len(o.depth_map_list), len(o.image_list))
     camera_desc = CameraInfo(o.camera_field_of_view, o.position, o.rotation, o.head_tilt)
     # Project depth map to a 3D point cloud - removed for performance
     # depth_pts = depth_to_points(depth_mask, *camera_desc)
