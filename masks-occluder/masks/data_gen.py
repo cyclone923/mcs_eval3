@@ -116,13 +116,13 @@ def make_parser():
 
 def main(sim_path, data_path, filter):
     env = McsEnv(sim_path, data_path, filter)
+
     scenes = list(env.all_scenes)
     print(f'Found {len(scenes)} scenes')
     random.shuffle(scenes)
     # Work around stupid sim bug
     Path('SCENE_HISTORY/evaluation3Training').mkdir(exist_ok=True, parents=True)
     convert_scenes(env, scenes)
-
 
 if __name__ == '__main__':
     args = make_parser().parse_args()
