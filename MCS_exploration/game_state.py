@@ -374,7 +374,9 @@ class GameState(object):
                 self.goal_object_visible = elem.visible 
 
         if self.level == "level1" or self.level == "level2":
+       
             self.img_seg_occupancy_map_points = {}
+            print ("net mask size", self.img_channels['net-mask'].shape)
             self.img_channels = self.prediction_level1()
 
 
