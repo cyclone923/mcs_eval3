@@ -65,7 +65,10 @@ def draw_appearance_bars(base_image, frame_objects_info):
             appearance_clr_hist_quotient.append(obj_info['appearance']['color_hist_quotient'])
 
     # plot shape info
-    fig, ax = plt.subplots(2, 6, figsize=(base_image.size[0] * 6 / 100, base_image.size[1] / 100), dpi=100)
+    plot_rows, plot_cols = 3, 3
+    fig, ax = plt.subplots(plot_rows, plot_cols, figsize=(base_image.size[0] * plot_cols / 100,
+                                                          base_image.size[1] * plot_rows / 100),
+                           dpi=100)
 
     sub_plot_i = 0
 
@@ -74,7 +77,7 @@ def draw_appearance_bars(base_image, frame_objects_info):
     sub_plot_i += 1
 
     # color hist
-    ax_i, ax_j = sub_plot_i // 6, sub_plot_i % 6
+    ax_i, ax_j = sub_plot_i // plot_cols, sub_plot_i % plot_cols
     ax[ax_i, ax_j].bar(np.arange(len(appearance_clr_hist_quotient)), appearance_clr_hist_quotient)
     ax[ax_i, ax_j].set_ylim([0, 1.2])
     ax[ax_i, ax_j].set_ylabel('probability')
@@ -84,7 +87,7 @@ def draw_appearance_bars(base_image, frame_objects_info):
     sub_plot_i += 1
 
     # appearance match
-    ax_i, ax_j = sub_plot_i // 6, sub_plot_i % 6
+    ax_i, ax_j = sub_plot_i // plot_cols, sub_plot_i % plot_cols
     ax[ax_i, ax_j].bar(np.arange(len(appearance_matches)), np.array(appearance_matches).astype(np.int))
     ax[ax_i, ax_j].set_ylabel('match(binary)')
     ax[ax_i, ax_j].set_title('Appearance Match')
@@ -94,7 +97,7 @@ def draw_appearance_bars(base_image, frame_objects_info):
 
     # shape class
     for o_i, object in enumerate(appearance_x_labels):
-        ax_i, ax_j = sub_plot_i // 6, sub_plot_i % 6
+        ax_i, ax_j = sub_plot_i // plot_cols, sub_plot_i % plot_cols
         ax[ax_i, ax_j].set_ylim([0, 1.2])
         ax[ax_i, ax_j].bar(np.arange(len(appearance_shape_prob[o_i])), appearance_shape_prob[o_i])
         ax[ax_i, ax_j].set_ylabel('probability')
@@ -106,7 +109,7 @@ def draw_appearance_bars(base_image, frame_objects_info):
 
     # color class
     for o_i, object in enumerate(appearance_x_labels):
-        ax_i, ax_j = sub_plot_i // 6, sub_plot_i % 6
+        ax_i, ax_j = sub_plot_i // plot_cols, sub_plot_i % plot_cols
         ax[ax_i, ax_j].set_ylim([0, 1.2])
         ax[ax_i, ax_j].bar(np.arange(len(appearance_color_prob[o_i])), appearance_color_prob[o_i])
         ax[ax_i, ax_j].set_ylabel('probability')
