@@ -10,6 +10,7 @@ import time
 from shapely.geometry import Point, MultiPoint, LineString
 import numpy as np
 from descartes import PolygonPatch
+import constants
 
 SHOW_ANIMATION = True
 LIMIT_STEPS = 350
@@ -273,7 +274,7 @@ class BoundingBoxNavigator:
 			end_time = time.time()
 
 
-			if agent.game_state.number_actions >= 595 :
+			if agent.game_state.number_actions >= constants.MAX_STEPS :
 				print("Reached overall STEPS limit")
 				return
 
