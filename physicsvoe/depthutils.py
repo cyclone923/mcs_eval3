@@ -125,10 +125,16 @@ def project_points_frame(depth, masks, camera_info):
 
 def reverse_project(world_pos, out_mask, camera_info):
     rel_v = world_pos - torch.tensor(camera_info['pos'])
-    width, height = out_mask.shape
+    height, width = out_mask.shape
     vfov = camera_info['vfov'] * (math.pi/180)
     hfov = 2*math.atan(math.tan(vfov/2) * width/height)
-    return torch.tensor([0, 0])
+    tans = torch.tensor([np.tan(fov/2) for fov in (hfov, vfov)])
+    norm_v = rel_v / rel_v[2]
+    xy = norm_v[:2]
+    screen_xy = xy / tans
+    screen_yx = screen_xy[[1, 0]]
+    screen_yx[0] *= -1
+    return screen_yx
 
 
 
