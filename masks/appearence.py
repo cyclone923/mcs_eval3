@@ -13,6 +13,7 @@ from torch.utils.data import Dataset, DataLoader
 from torch.optim import Adam
 from torch.utils.tensorboard import SummaryWriter
 import torch.nn as nn
+import cv2
 from tqdm import tqdm
 
 
@@ -38,37 +39,60 @@ class AppearanceMatchModel(nn.Module):
     def label(self, id):
         return self._labels[id]
 
+    def labels(self):
+        return self._labels
+
     def forward(self, x):
         feature = self.feature(x)
         feature = feature.flatten(1)
         return feature, self.shape_classifier(feature)
 
 
-def object_appearance_match(appearance_model, frame, objects_info, device='cpu'):
+def object_appearance_match(appearance_model, image, objects_info, device='cpu'):
     for obj_key in objects_info:
 
         top_x, top_y, bottom_x, bottom_y = objects_info[obj_key]['bounding_box']
-        obj_current_image = frame.image.crop((top_y, top_x, bottom_y, bottom_x))
-        obj_current_image = obj_image_to_tensor(obj_current_image).to(device)
-        obj_current_image = obj_current_image.unsqueeze(0)
+        obj_current_image = image.crop((top_y, top_x, bottom_y, bottom_x))
 
-        _, object_shape_logit = appearance_model(obj_current_image)
-        object_shape_logit = object_shape_logit.squeeze(0)
-        object_shape_prob = torch.softmax(object_shape_logit, dim=0)
+        with torch.no_grad():
+            obj_current_image_tensor = obj_image_to_tensor(obj_current_image).to(device)
+            obj_current_image_tensor = obj_current_image_tensor.unsqueeze(0)
+
+            # extract appearance ( shape) info
+            _, object_shape_logit = appearance_model(obj_current_image_tensor)
+            object_shape_logit = object_shape_logit.squeeze(0)
+            object_shape_prob = torch.softmax(object_shape_logit, dim=0)
+
         current_object_shape_id = torch.argmax(object_shape_prob).item()
 
-        if 'base_image' not in objects_info[obj_key]:
+        base_image = np.array(image)
+        mask_image = np.zeros(objects_info[obj_key]['mask'].shape, dtype=base_image.dtype)
+        mask_image[objects_info[obj_key]['mask']] = 255
+        obj_clr_hist = cv2.calcHist([np.array(image)], [0], mask_image, [256], [0, 256])
+
+        if 'base_image' not in objects_info[obj_key] or len(objects_info[obj_key]['position_history']) < 3:
             objects_info[obj_key]['base_image'] = {}
             objects_info[obj_key]['appearance'] = {}
-
             objects_info[obj_key]['base_image']['shape_id'] = current_object_shape_id
             objects_info[obj_key]['base_image']['shape'] = model.label(current_object_shape_id)
-            objects_info[obj_key]['appearance']['match'] = True
-            objects_info[obj_key]['appearance']['prob'] = object_shape_prob[current_object_shape_id].item()
+            objects_info[obj_key]['base_image']['histogram'] = obj_clr_hist
+            base_shape_id = current_object_shape_id
         else:
             base_shape_id = objects_info[obj_key]['base_image']['shape_id']
-            objects_info[obj_key]['appearance']['prob'] = object_shape_prob[base_shape_id].item()
-            objects_info[obj_key]['appearance']['match'] = current_object_shape_id == base_shape_id
+
+        # shape match
+        objects_info[obj_key]['appearance']['shape_match_quotient'] = object_shape_prob[base_shape_id].item()
+        objects_info[obj_key]['appearance']['shape_prob'] = object_shape_prob.numpy()
+        objects_info[obj_key]['appearance']['shape_prob_labels'] = model.labels()
+
+        # color match
+        objects_info[obj_key]['appearance']['color_hist'] = obj_clr_hist
+        objects_info[obj_key]['appearance']['color_hist_quotient'] = cv2.compareHist(obj_clr_hist,
+                                                                                     objects_info[obj_key]['base_image']['histogram'],
+                                                                                     cv2.HISTCMP_CHISQR)
+
+        # Todo: size match?
+        objects_info[obj_key]['appearance']['match'] = current_object_shape_id == base_shape_id
 
     return objects_info
 
@@ -78,7 +102,7 @@ def process_video(video_data, appearance_model, save_path=None, save_mp4=False, 
     processed_frames = []
     for frame_num, frame in enumerate(video_data):
         track_info = track_objects(frame.obj_mask, track_info)
-        track_info['objects'] = object_appearance_match(appearance_model, frame,
+        track_info['objects'] = object_appearance_match(appearance_model, frame.image,
                                                         track_info['objects'], device)
 
         img = draw_bounding_boxes(frame.image, track_info['objects'])
@@ -102,18 +126,25 @@ class ObjectDataset(Dataset):
 
     def __init__(self, data):
         self.data = data
-        self._labels = {name: id for id, name in enumerate(sorted(set(data['shapes'])))}
+        self.labels = sorted(set(data['shapes']))
+
         self.data['shapes'] = np.array(self.data['shapes'])
-
-        for shape, shape_id in self._labels.items():
+        for shape_id, shape in enumerate(self.labels):
             self.data['shapes'][self.data['shapes'] == shape] = shape_id
+        self.data['shapes'] = self.data['shapes'].astype(np.int)
 
-    def get_label(self, id):
-        return self._labels[id]
+    def label_name(self, label_id):
+        return self.labels[label_id]
 
-    @property
-    def labels(self):
-        return sorted([k for k in self._labels])
+    def labels_count(self):
+        _labels, counts = np.unique(self.data['shapes'], return_counts=True)
+        return [counts[_labels == label_i][0] for label_i, _ in enumerate(self.labels)]
+
+    def get_dataset_weights(self, label_probs):
+        weights = np.random.randn(self.__len__())
+        for label_i, prob in enumerate(label_probs):
+            weights[self.data['shapes'] == label_i] = prob
+        return weights
 
     def __len__(self):
         return len(self.data['images'])
@@ -123,7 +154,7 @@ class ObjectDataset(Dataset):
             idx = idx.tolist()
 
         return {'images': self.data['images'][idx],
-                'shapes': int(self.data['shapes'][idx])}
+                'shapes': self.data['shapes'][idx]}
 
 
 def generate_data(scenes_files):
@@ -177,6 +208,7 @@ def train_appearance_matching(dataloader, model, optimizer, epochs: int, writer,
     model.train()
     for epoch in range(init_epoch, epochs):
         batch_losses = {'shape': []}
+        batch_acc = {'shape': []}
         for i_batch, batch in enumerate(dataloader):
             object_image = batch['images']
             object_shape = batch['shapes']
@@ -185,12 +217,17 @@ def train_appearance_matching(dataloader, model, optimizer, epochs: int, writer,
             feature, shape_logits = model(object_image)
 
             shape_loss = nn.CrossEntropyLoss()(shape_logits, object_shape)
+            shape_acc = sum(torch.argmax(shape_logits, dim=1) == object_shape).item() / len(object_shape)
             batch_losses['shape'].append(shape_loss.item())
+            batch_acc['shape'].append(shape_acc)
+
+            # optimize
             optimizer.zero_grad()
             shape_loss.backward()
             optimizer.step()
 
-        writer.add_scalar('losses/shape', np.mean(batch_losses['shape']), epoch)
+        writer.add_scalar('train/shape_loss', np.mean(batch_losses['shape']), epoch)
+        writer.add_scalar('train/shape_accuracy', np.mean(batch_acc['shape']), epoch)
 
         if (epoch % checkpoint_interval) == 0:
             torch.save({
@@ -203,14 +240,14 @@ def train_appearance_matching(dataloader, model, optimizer, epochs: int, writer,
             torch.save(model.state_dict(), model_path)
 
         if epoch % log_interval == 0:
-            print('Epoch: {} Shape Loss: {}'.format(epoch, np.mean(batch_losses['shape'])))
+            print('Epoch: {} Shape Loss: {} Shape Accuracy:{}'.format(epoch, np.mean(batch_losses['shape']),
+                                                                      np.mean(batch_acc['shape'])))
 
 
 def make_parser():
     parser = ArgumentParser()
     parser.add_argument('--test-scenes-path', required=True, type=Path)
     parser.add_argument('--train-scenes-path', required=True, type=Path)
-
     parser.add_argument('--train-dataset-path', required=False, type=Path,
                         default=os.path.join(os.getcwd(), 'train_object_dataset.p'))
     parser.add_argument('--test-dataset-path', required=False, type=Path,
@@ -253,8 +290,13 @@ if __name__ == '__main__':
         # flush every 1 minutes
         summary_writer = SummaryWriter(log_path, flush_secs=60 * 1)
 
+        # create balanced distribution
         object_dataset = ObjectDataset(pickle.load(open(args.train_dataset_path, 'rb')))
-        dataloader = DataLoader(object_dataset, batch_size=args.batch_size, shuffle=True, num_workers=1)
+        probs = 1 / torch.Tensor(object_dataset.labels_count())
+        weights = object_dataset.get_dataset_weights(probs)
+        sampler = torch.utils.data.sampler.WeightedRandomSampler(weights, len(weights), replacement=True)
+        dataloader = DataLoader(object_dataset, batch_size=args.batch_size, shuffle=False, num_workers=1,
+                                sampler=sampler)
         model = AppearanceMatchModel(object_dataset.labels)
         optimizer = Adam(model.parameters(), lr=args.lr)
 
