@@ -63,7 +63,7 @@
         + Intphy scenes (VOE scenes)
             ``` Shell
             wget https://oregonstate.box.com/shared/static/zmvcjyumltkziqfqbcqodkh6dgecikci.pth
-            mv zmvcjyumltkziqfqbcqodkh6dgecikci.pth dvis_resnet50_mc.pth 
+            mv zmvcjyumltkziqfqbcqodkh6dgecikci.pth dvis_resnet50_mc_voe.pth 
             ```
         
     4. Run the demo test
@@ -79,7 +79,7 @@
     
         ```Shell
         from instSeg.inference import MaskAndClassPredictor as Predictor
-        model = Predictor(dataset='mcsvideo3_inter')
+        model = Predictor(dataset='mcsvideo3_inter', weights='PATH_TO_PTH_FILE')
         # prepare bgrI, depthI
         ret = model(bgrI, depthI)
         ```
