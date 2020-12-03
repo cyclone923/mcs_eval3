@@ -2,6 +2,7 @@ from physicsvoe.data.data_gen import convert_output
 from physicsvoe import framewisevoe
 from tracker import track
 from pathlib import Path
+from PIL import Image
 
 import numpy as np
 
@@ -21,16 +22,19 @@ class VoeAgent:
             framewisevoe.FramewiseVOE(min_hist_count=3, max_hist_count=8,
                                       dist_thresh=0.5)
         self.controller.start_scene(config)
+        scene_voe_detected = False
         for i, x in enumerate(config['goal']['action_list']):
             step_output = self.controller.step(action=x[0])
-            self.calc_voe(step_output, i, name)
+            voe_detected, voe_heatmap = self.calc_voe(step_output, i, name)
+            scene_voe_detected = scene_voe_detected or voe_detected
+            choice = plausible_str(voe_detected)
+            assert choice in config['goal']['metadata']['choose'] # Sanity check
             self.controller.make_step_prediction(
-                choice=None, confidence=None, violations_xy_list=None,
-                heatmap_img=None, internal_state={}
-            )
+                choice=choice, confidence=1.0, violations_xy_list=None,
+                heatmap_img=voe_heatmap)
             if step_output is None:
                 break
-        self.controller.end_scene(choice=None, confidence=None)
+        self.controller.end_scene(choice=plausible_str(scene_voe_detected), confidence=1.0)
 
     def calc_voe(self, step_output, frame_num, scene_name):
         frame = convert_output(step_output)
@@ -52,9 +56,16 @@ class VoeAgent:
         framewisevoe.show_scene(scene_name, frame_num, frame.depth_mask, tracked_masks, voe_hmap)
         # Update tracker
         self.detector.record_obs(frame_num, obj_ids, obj_pos, obj_present)
+        # Output results
+        voe_detected = viols is not None and len(viols) > 0
+        voe_hmap_img = Image.fromarray(voe_hmap)
+        return voe_detected, voe_hmap_img
 
 def squash_masks(ref, mask_l, ids):
     flat_mask = np.ones_like(ref) * -1
     for m, id_ in zip(mask_l, ids):
         flat_mask[m] = id_
     return flat_mask
+
+def plausible_str(violation_detected):
+    return 'implausible' if violation_detected else 'plausible'
