@@ -25,7 +25,7 @@ if __name__ == "__main__":
     exploration_success = 0
     negative_reward = 0
     number_tasks_success = 0 
-    number_scenes = 10
+    number_scenes = 100
     negative_rewards = 0
     failure_return_status = {}
     print ("Start scene number = ", start_scene_number)
@@ -38,7 +38,11 @@ if __name__ == "__main__":
         #env.reset()
         #env.reset()
         #env.reset()
-        result = metaController.excecute()
+        try:
+            result = metaController.excecute()
+        except:
+            pass
+
         sys.stdout.flush()
         collector.reset()
 
@@ -46,6 +50,7 @@ if __name__ == "__main__":
         if env.step_output.reward > 0 :
             number_tasks_success +=1
             result_total += env.step_output.reward
+            print("SUCCESS")
         else :
             negative_rewards += env.step_output.reward
             failure_return_status[env.current_scene] = env.step_output.return_status
