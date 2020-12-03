@@ -444,7 +444,7 @@ class GameState(object):
             print ("Failed status : ",self.event.return_status )
 
     
-        SHOW_ANIMATION = True
+        SHOW_ANIMATION = False
             
 
         #print (self.global_obstacles)
