@@ -41,6 +41,7 @@ results/
 
 #ignore model file 
 **/*resnet*
+**/*.pth
 
 #ignore all pycharm files
 .idea/

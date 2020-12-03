@@ -9,6 +9,7 @@ from cover_floor import *
 import math
 import time
 from shapely.geometry import Point, Polygon
+from shapely import affinity
 #from tasks.point_goal_navigation.navigator import NavigatorResNet
 #from tasks.search_object_in_receptacle.face_turner import FaceTurnerResNet
 from MCS_exploration.frame_processing import *
@@ -16,6 +17,7 @@ from MCS_exploration.navigation.visibility_road_map import ObstaclePolygon,Incre
 from shapely.geometry import Point, MultiPoint
 import operator
 from functools import reduce
+
 
 
 
@@ -48,7 +50,64 @@ class SequenceGenerator(object):
         #exploration_routine = cover_floor.flood_fill(0,0, cover_floor.check_validity)
 
 
+        all_coords = []
+        bd_point = set()
+        for obstacle in self.agent.game_state.global_obstacles :
+            current_coords= obstacle.get_convex_polygon_coords()
+            for x,z in zip(current_coords[0], current_coords[1]):
+                #all_coords.append((x,y))
+                if (x, z) not in bd_point:
+                    bd_point.add((x, z))
 
+        outermost_poly = MultiPoint(sorted(bd_point)).convex_hull
+
+        outermost_coords_x = outermost_poly.exterior.coords.xy[0]
+        outermost_coords_y = outermost_poly.exterior.coords.xy[1]
+
+        x_min = min(outermost_coords_x)
+        x_max = max(outermost_coords_x)
+        y_min = min(outermost_coords_y)
+        y_max = max(outermost_coords_y)
+        x_z_range = [x_min+1,x_max-1,y_min+1,y_max-1]
+        x_z_range = [(i/constants.AGENT_STEP_SIZE) for i in x_z_range]
+
+
+        x, y = np.meshgrid(np.arange(x_z_range[0],x_z_range[1]), np.arange(x_z_range[2],x_z_range[3])) # make a canvas with coordinates
+        x, y = x.flatten(), y.flatten()
+        points = np.vstack((x,y)).T 
+
+        points = points[::425]
+        exploration_routine = []
+
+        start_time = time.time()
+        outermost_poly_orig = outermost_poly
+        outermost_poly = affinity.scale(outermost_poly ,xfact=0.87, yfact=0.87)
+        #exit()
+        for point in points :
+            real_point = Point(point[0]*constants.AGENT_STEP_SIZE,point[1]*constants.AGENT_STEP_SIZE)
+            if real_point.within(outermost_poly):
+                exploration_routine.append((point[0],point[1]))
+        #print ("time taken for within", time.time()- start_time)
+        #print ("number of exploration points" , len(exploration_routine))
+
+        '''
+        SHOW_ANIMATION = False
+        if SHOW_ANIMATION:
+            plt.cla()
+            plt.xlim((-20, 20))
+            plt.ylim((-20, 20))
+            plt.gca().set_xlim((-20, 20))
+            plt.gca().set_ylim((-20, 20))
+    
+            patch1 = PolygonPatch(outermost_poly_orig,fc='green', ec="black", alpha=0.2, zorder=1)
+            plt.gca().add_patch(patch1)
+            patch1 = PolygonPatch(outermost_poly,fc='red', ec="black", alpha=0.2, zorder=1)
+            plt.gca().add_patch(patch1)
+            for elem in exploration_routine :
+                plt.plot(elem[0]/10,elem[1]/10,'x' )
+            plt.pause(0.001)
+            plt.show()
+        '''
         #print ("done exploring point and now going to random points")
         #print ("current pose ", pose)
         #self.explore_all_objects()
@@ -56,86 +115,16 @@ class SequenceGenerator(object):
         if self.agent.game_state.trophy_picked_up == True:
             return
 
-        if self.agent.game_state.goals_found:
-            print ("Object found returning to main ")
+        if self.agent.game_state.goals_found and False:
+            #print ("Object found returning to main ")
             self.go_to_goal_and_pick()
             return
     
-        '''
-        new_end_point = [0]*3
-        new_end_point[0] = 3.3 #self.agent.game_state.goal_object_nearest_point[0]
-        new_end_point[1] = 3.4#self.agent.game_state.goal_object_nearest_point[1]
-        new_end_point[2] = pose[2]
-        success_distance = 0.2 
-        nav_success = self.agent.nav.go_to_goal(new_end_point, self.agent, success_distance) 
-        '''
-        #print ("beginning of explore scene view 2")
-
-        x_list, y_list = [],[]
-
-        for key,value in self.agent.nav.scene_obstacles_dict.items():
-            x_list.append(min(value.x_list))
-            x_list.append(max(value.x_list))
-            y_list.append(min(value.y_list))
-            y_list.append(max(value.y_list))
-
-        #print ("bounds", min(x_list),max(x_list),min(y_list),max(y_list))
-        x_min = min(x_list)
-        x_max = max(x_list)
-        y_min = min(y_list)
-        y_max = max(y_list)
-
-        x_z_range = [x_min,x_max,y_min,y_max]
-        #x_z_range,rotation = self.get_rotated_boundaries()
-    
-        exploration_routine = cover_floor.flood_fill(0,0, cover_floor.check_validity,x_z_range)
-        #exploration_routine = self.rotate_exploration_points(exploration_routine,rotation)
+        overall_area = 102
         pose = game_util.get_pose(self.game_state)[:3]
-
-        #outer_poly = Polygon(zip([x_min,x_min,x_max,x_max],[y_min,y_max,y_min,y_max]))
-        #outer_poly_new = outer_poly.difference(self.agent.game_state.world_poly)
-        #print (value.x_list,value.y_list)
-        #print (outer_poly_new.area)
-
-
-        overall_area = abs(x_max-x_min) * abs (y_max-y_min)
         #print ("overall area",overall_area)
         #print (" poly area " , self.agent.game_state.world_poly.area)
-        '''
-        sorted_by_x,sorted_by_y = self.get_outermost_map_sorted_coords ()
-        outermost_orig = []
-        outermost_orig.append(sorted_by_y[-1])
-        outermost_orig.append(sorted_by_x[0])
-        outermost_orig.append(sorted_by_y[0])
-        outermost_orig.append(sorted_by_x[-1])
-
-        print ("outermost orig", outermost_orig)
-        polar_sorted = self.get_polar_sorted_coords(outermost_orig)
-        print ("polar sorted coords", polar_sorted)
-
-        outermost_polygon = Polygon(polar_sorted)
-        
-        #print ("beginning of explore scene view 3")
-        print ("outermost_polygon area", outermost_polygon.area)
-        print ("seen area", self.agent.game_state.world_poly.area)
-
-        SHOW_ANIMATION = True
-        if SHOW_ANIMATION:
-            plt.cla()
-            plt.xlim((-100, 100))
-            plt.ylim((-100, 100))
-            plt.gca().set_xlim((-100, 100))
-            plt.gca().set_ylim((-100, 100))
-    
-            patch1 = PolygonPatch(outermost_polygon,fc='green', ec="black", alpha=0.2, zorder=1)
-            plt.gca().add_patch(patch1)
-            for elem in exploration_routine :
-                plt.plot(elem[0],elem[1],'x' )
-            plt.show()
-        '''
-        while overall_area * 0.9 >  self.agent.game_state.world_poly.area or len(self.agent.game_state.global_obstacles) == 0 :
-            #print (self.agent.game_state.world_poly.area)
-            #print (overall_area)
+        while overall_area * 0.8 >  self.agent.game_state.world_poly.area or len(self.agent.game_state.global_obstacles) == 0 :
             #print ("In the main for loop of executtion")
             points_checked = 0
             #z+=1
@@ -168,13 +157,10 @@ class SequenceGenerator(object):
                 #points_visible(elem)
             end_time = time.time()
 
-            #max_visible_position = [(7,-7)]
-            #print(max_visible_position)
             time_taken = end_time-start_time
             #print("time taken to select next position", end_time - start_time)
-            #print ("points searched with area overlap", points_checked)
             if len(max_visible_position) == 0:
-                return
+                break
             new_end_point = [0] * 3
             new_end_point[0] = max_visible_position[-1][0] *constants.AGENT_STEP_SIZE
             new_end_point[1] = max_visible_position[-1][1] *constants.AGENT_STEP_SIZE
@@ -256,9 +242,10 @@ class SequenceGenerator(object):
 
         #print ("object goal ID = " , self.agent.game_state.goal_id)
 
-        print ("in go to goal and pick")
+        #print ("in go to goal and pick")
+        #print ("goal ID : ", self.game_state.goal_id)
         target_obj = self.get_target_obj(self.agent.game_state.goal_id)
-        print ("goal ID ", target_obj.id)
+        #print ("goal ID ", target_obj.id)
         object_nearest_point = self.get_best_object_point(target_obj, 1000, self.nearest )
         #goal_object_centre = [0]*2
         #goal_object_centre[0] = target_obj.centre_x
@@ -271,13 +258,13 @@ class SequenceGenerator(object):
         #print ("goal point : ", object_nearest_point)
         nav_success = self.agent.nav.go_to_goal(object_nearest_point, self.agent, success_distance) 
 
-        print ("in nav go to goal done moving towards goal")
+        #print ("in nav go to goal done moving towards goal")
 
         self.face_object(target_obj)
         x,y = self.get_obj_pixels(target_obj)
 
-        print ("goal pick up coordinates" ,x,y)
-        print ("goal current frame ID",target_obj.current_frame_id)
+        #print ("goal pick up coordinates" ,x,y)
+        #print ("goal current frame ID",target_obj.current_frame_id)
                 
         action = {'action':"PickupObject", 'x': x, 'y':y}
         self.agent.game_state.step(action)
@@ -350,7 +337,6 @@ class SequenceGenerator(object):
         goal_object_centre[0] = target_obj.centre_x
         goal_object_centre[1] = target_obj.centre_y
         goal_object_centre[2] = target_obj.centre_z
-        #goal_pixel_coords = np.where(self.agent.game_state.object_mask==self.agent.game_state.goal_id )
         
         theta = - get_polar_direction(goal_object_centre, self.agent.game_state) * 180/math.pi
         omega = get_head_tilt(goal_object_centre, self.agent.game_state) - self.agent.game_state.head_tilt
@@ -457,24 +443,19 @@ class SequenceGenerator(object):
     def explore_all_objects(self):
         for i,obstacle in enumerate(self.agent.game_state.global_obstacles) :
             print ("obj height ", obstacle.height)
+            #print ("obj centre ", obstacle.get_centre())
             if self.obstacle_is_possible_container(obstacle):
                 self.go_to_object_and_open(obstacle)
                 self.agent.game_state.global_obstacles[i].is_opened = True
-                if self.agent.game_state.goal_object_visible: 
-                    '''
-                    print ("target obj visible, about to pick it")
-                    target_obj = self.get_target_obj(self.agent.game_state.goal_id)
-                    x,y = self.get_obj_pixels(target_obj)
-                    action = {'action':"PickupObject", 'x': x, 'y':y}
-                    self.agent.game_state.step(action)
-                    print ("pick up action status" , self.agent.game_state.event.return_status == "NOT_OPENABLE")
-                    '''
+                # This is not always right- Can be wrong if object is visible in oracle mode
+                #  but not in global map for some reason
+                if self.agent.game_state.goal_object_visible : 
                     self.go_to_goal_and_pick()
-                    break 
+                    return 
                 self.look_straight()
 
     def obstacle_is_possible_container(self,obstacle):
-        if obstacle.height < 0.15 :
+        if obstacle.height < 0.1 :
             return False
         if obstacle.height > 2.5 :
             return False

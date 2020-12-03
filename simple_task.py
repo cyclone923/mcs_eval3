@@ -25,7 +25,7 @@ if __name__ == "__main__":
     exploration_success = 0
     negative_reward = 0
     number_tasks_success = 0 
-    number_scenes = 100
+    number_scenes = 15
     negative_rewards = 0
     failure_return_status = {}
     print ("Start scene number = ", start_scene_number)
@@ -54,7 +54,7 @@ if __name__ == "__main__":
         else :
             negative_rewards += env.step_output.reward
             failure_return_status[env.current_scene] = env.step_output.return_status
-            print ("Action status return  :", env.step_output.return_status)
+            print ("SCENE FAIL : Action status return  :", env.step_output.return_status)
             
 
         print ("reward from current scene = ", env.step_output.reward)
