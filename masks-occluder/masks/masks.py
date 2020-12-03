@@ -29,7 +29,7 @@ def process_scene(data):
             if mask.sum() == 0: continue
             struct_img = mask_img(mask, img)
             struct_img.save(f'{frame_num:02d}_STRUCT_{name}.png')
-        import pdb ; pdb.set_trace()
+    import pdb ; pdb.set_trace()
 
 
 def split_obj_masks(mask, num_objs):
