@@ -121,12 +121,16 @@ class PresenceViolation:
     def __init__(self, object_id, pred_pos):
         self.object_id = object_id
         self.pred_pos = pred_pos
+        self.radius = 5
 
     def fill_heatmap(self, hmap, obj_mask):
         fpos = du.reverse_project(self.pred_pos, DEFAULT_CAMERA)
-        pos = torch.tensor(hmap.shape) * fpos
-        import pdb; pdb.set_trace()  # XXX BREAKPOINT
-
+        pos = np.array(hmap.shape) * fpos.numpy()
+        pxs = np.stack(np.meshgrid(*[np.arange(x) for x in hmap.shape], indexing='ij'),
+                       axis=-1)
+        dist = (pxs-pos)**2
+        mask = dist.sum(-1) < self.radius**2
+        return hmap + mask
 
     def describe(self):
         return f'Object {self.object_id} is not visible, but should be at {self.pred_pos}'
