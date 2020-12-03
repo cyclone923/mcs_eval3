@@ -117,7 +117,7 @@ class GameState(object):
         self.position = None
         self.rotation = None
         self.head_tilt = None
-        self.mask_predictor = MaskAndClassPredictor()
+        # self.mask_predictor = MaskAndClassPredictor()
         self.trophy_location = None #[Trophy location in the img seg list] 
         self.trophy_mask = None
         self.trophy_obstacle = None
