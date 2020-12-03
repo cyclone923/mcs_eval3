@@ -46,19 +46,36 @@ def mask_img(mask, img):
 
 
 def draw_appearance_bars(base_image, frame_objects_info):
-    objects = []
-    apperance_match = []
+    appearance_x_labels = []
+    appearance_shape_prob = []
+    appearance_shape_prob_labels = []
+    appearance_clr_hist_quotient = []
+
     for obj_key, obj_info in frame_objects_info.items():
         if obj_info['visible']:
-            objects.append('{}({})'.format(obj_info['base_image']['shape'], obj_key))
-            apperance_match.append(obj_info['appearance']['prob'])
+            appearance_shape_prob.append(obj_info['appearance']['shape_prob'])
+            appearance_shape_prob_labels.append(obj_info['appearance']['shape_prob_labels'])
+            appearance_x_labels.append(obj_key)
+            appearance_clr_hist_quotient.append(obj_info['appearance']['color_hist_quotient'])
 
-    fig = plt.figure(figsize=(base_image.size[0] / 100, base_image.size[1] / 100), dpi=100)
-    ax = fig.add_subplot(111)
-    ax.set_ylim([0, 1])
-    ax.bar(objects, apperance_match)
-    ax.set_ylabel('probability')
-    ax.set_title('Object Appearance Matching')
+    # plot shape info
+    fig, ax = plt.subplots(1, 5, figsize=(base_image.size[0] * 4 / 100, base_image.size[1] / 100), dpi=100)
+    ax[0].bar(np.arange(len(appearance_clr_hist_quotient)), appearance_clr_hist_quotient)
+    ax[0].set_ylabel('probability')
+    ax[0].set_title('Color Histogram dist')
+    ax[0].set_xticks(np.arange(len(appearance_clr_hist_quotient)))
+    ax[0].set_xticklabels(appearance_x_labels)
+
+    for o_i, object in enumerate(appearance_x_labels):
+        ax[o_i + 1].set_ylim([0, 1.2])
+        ax[o_i + 1].bar(np.arange(len(appearance_shape_prob[o_i])), appearance_shape_prob[o_i])
+        ax[o_i + 1].set_ylabel('probability')
+        ax[o_i + 1].set_title('Shape Object:{}'.format(object))
+        ax[o_i + 1].set_xticks(np.arange(len(appearance_shape_prob[o_i])))
+        ax[o_i + 1].set_xticklabels(appearance_shape_prob_labels[o_i], rotation=20)
+        ax[o_i + 1].legend()
+
+    # clr histogram deviation
 
     fig.canvas.draw()
     image_from_plot = np.frombuffer(fig.canvas.tostring_rgb(), dtype=np.uint8)

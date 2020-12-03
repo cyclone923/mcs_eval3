@@ -1,8 +1,8 @@
-gym==0.10.9
 numpy-quaternion==2020.5.19.15.27.24
 scipy==1.2.0
 scikit-image==0.17.2
 descartes==1.1.0
 ray==1.0.1
 pathfinding==0.0.4
+easydict==1.9
 git+https://github.com/NextCenturyCorporation/MCS@latest#egg=machine_common_sense

@@ -55,10 +55,16 @@
         cd ../../
         ```
     3. download the weights file and save under 'tracker/instSeg/'.
-        ``` Shell
-        wget https://oregonstate.box.com/shared/static/0syjouwkkpm0g1zbnt1riheshfvtd2by.pth 
-        mv 0syjouwkkpm0g1zbnt1riheshfvtd2by.pth dvis_resnet50_mc.pth 
-        ```
+        + Interact transferal scene
+            ``` Shell
+            wget https://oregonstate.box.com/shared/static/0syjouwkkpm0g1zbnt1riheshfvtd2by.pth 
+            mv 0syjouwkkpm0g1zbnt1riheshfvtd2by.pth dvis_resnet50_mc.pth 
+            ```
+        + Intphy scenes (VOE scenes)
+            ``` Shell
+            wget https://oregonstate.box.com/shared/static/zmvcjyumltkziqfqbcqodkh6dgecikci.pth
+            mv zmvcjyumltkziqfqbcqodkh6dgecikci.pth dvis_resnet50_mc.pth 
+            ```
         
     4. Run the demo test
         ```Shell

@@ -5,7 +5,7 @@ from exploration.trophy_goal import TrophyGoal
 from exploration.plot import GeometryPlot
 from exploration.dead_reckoning import DeadReckoningMcsWrapper
 
-SHOW_ANIMATION = True
+SHOW_ANIMATION = False
 
 
 class ExploreAgent2D(DeadReckoningMcsWrapper, GeometryPlot):

@@ -1,6 +1,4 @@
 from MCS_exploration.gym_ai2thor.envs.mcs_wrapper import McsWrapper
-from tasks.point_goal_navigation.navigator import NavigatorResNet
-import numpy as np
 
 CAMERA_HIGHT = 2
 
