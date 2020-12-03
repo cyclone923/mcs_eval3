@@ -1,5 +1,5 @@
 from .mcs_env import McsEnv
-from .types import ThorFrame
+from .types import ThorFrame, CameraInfo
 
 import pickle
 import random
@@ -15,12 +15,13 @@ def convert_output(o):
     img = o.image_list[-1]
     obj_mask = convert_obj_mask(o.object_mask_list[-1], objs)
     depth_mask = np.array(o.depth_map_list[-1])
+    xyz_to_list = lambda x: [x['x'], x['y'], x['z']]
+    camera_desc = CameraInfo(o.camera_aspect_ratio, o.camera_field_of_view,
+                   xyz_to_list(o.position), o.rotation, o.head_tilt)
     """
-    camera_desc = [o.camera_clipping_planes, o.camera_field_of_view,
-                   o.position, o.rotation, o.head_tilt]
     depth_pts = depth_to_points(depth_mask, *camera_desc)
     """
-    return ThorFrame(objs, structs, depth_mask, obj_mask)
+    return ThorFrame(objs, structs, depth_mask, obj_mask, camera_desc)
 
 
 def convert_obj_mask(mask, objs):

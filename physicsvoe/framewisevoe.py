@@ -37,7 +37,7 @@ class FramewiseVOE:
         mask_l = [i in obj_ids for i in ids_l]
         return ids_l, pred_l, mask_l
 
-    def detect(self, time, actual_poss, actual_ids):
+    def detect(self, time, actual_poss, actual_ids, depth, camera):
         violations = []
         pred_info = self.predict(time)
         if pred_info is None:
@@ -55,9 +55,10 @@ class FramewiseVOE:
                     violations.append(v)
             else:
                 # TODO: Check for occlusion
-                v = PresenceViolation(pred_id, pred_pos)
+                v = PresenceViolation(pred_id, pred_pos, camera)
                 violations.append(v)
-        return violations
+        valid_violations = [v for v in violations if not v.ignore(depth, camera)]
+        return valid_violations
 
     def _get_inputs(self):
         time_l = []
@@ -114,27 +115,40 @@ class PositionViolation:
     def fill_heatmap(self, hmap, obj_mask):
         return hmap + (obj_mask == self.object_id)
 
+    def ignore(self, *_):
+        return False
+
     def describe(self):
         return f'Object {self.object_id} is at {self.actual_pos}, but should be at {self.pred_pos}'
 
 class PresenceViolation:
-    def __init__(self, object_id, pred_pos):
+    def __init__(self, object_id, pred_pos, camera):
         self.object_id = object_id
         self.pred_pos = pred_pos
         self.radius = 5
+        self._calc_mask(camera)
 
-    def fill_heatmap(self, hmap, obj_mask):
-        fpos = du.reverse_project(self.pred_pos, hmap, DEFAULT_CAMERA)
-        pos = np.array(hmap.shape) * (0.5+fpos.numpy()/2)
-        pxs = np.stack(np.meshgrid(*[np.arange(x) for x in hmap.shape], indexing='ij'),
+    def _calc_mask(self, camera):
+        fpos = du.reverse_project(self.pred_pos, camera)
+        rev_ratio = list(reversed(camera.aspect_ratio))
+        pos = np.array(rev_ratio) * (0.5+fpos.numpy()/2)
+        pxs = np.stack(np.meshgrid(*[np.arange(x) for x in rev_ratio], indexing='ij'),
                        axis=-1)
         dist = (pxs-pos)**2
-        mask = dist.sum(-1) < self.radius**2
-        return hmap + mask
+        self.mask = dist.sum(-1) < self.radius**2
+
+    def fill_heatmap(self, hmap, obj_mask):
+        return hmap + self.mask
+
+    def ignore(self, depth, camera):
+        scene_depth = du.query_depth(depth, self.mask)
+        pred_vec = self.pred_pos - torch.tensor(camera.position)
+        pred_depth = pred_vec[2]
+        is_occluded = scene_depth < pred_depth
+        return is_occluded
 
     def describe(self):
         return f'Object {self.object_id} is not visible, but should be at {self.pred_pos}'
-
 
 def make_voe_heatmap(viols, obj_mask):
     hmap = np.zeros_like(obj_mask, dtype=bool)
@@ -207,11 +221,11 @@ def full_voe(data):
         # Update tracker
         voe.record_obs(frame_num, obj_ids, obj_pos, obj_present)
 
-def calc_world_pos(depth, mask, camera_info):
+def calc_world_pos(depth, mask, camera):
     mask = torch.tensor(mask)
     depth = torch.tensor(depth)
     obj_masks, all_ids = du.separate_obj_masks(mask)
-    obj_pos, obj_present = du.project_points_frame(depth, obj_masks, camera_info)
+    obj_pos, obj_present = du.project_points_frame(depth, obj_masks, camera)
     return all_ids, obj_pos, obj_present
 
 def find_scenes(path, filter, exclude):

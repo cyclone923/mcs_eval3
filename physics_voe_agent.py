@@ -40,10 +40,9 @@ class VoeAgent:
         tracked_masks = squash_masks(frame.depth_mask, masks_list, obj_ids)
         # Calculate object level info from masks
         obj_ids, obj_pos, obj_present = \
-            framewisevoe.calc_world_pos(frame.depth_mask, tracked_masks,
-                                        DEFAULT_CAMERA)
+            framewisevoe.calc_world_pos(frame.depth_mask, tracked_masks, frame.camera)
         # Calculate violations
-        viols = self.detector.detect(frame_num, obj_pos, obj_ids)
+        viols = self.detector.detect(frame_num, obj_pos, obj_ids, frame.depth_mask, frame.camera)
         voe_hmap = framewisevoe.make_voe_heatmap(viols, tracked_masks)
         # Output violations
         framewisevoe.output_voe(viols)

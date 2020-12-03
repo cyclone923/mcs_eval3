@@ -52,17 +52,17 @@ def test_plot(depth, mask, x, oid, i, j):
     plt.show()
     plt.savefig(f'{oid:02d}_{i:02d}_{j:02d}_out.png')
 
-def project_points(depth, masks, camera_info):
+def project_points(depth, masks, camera):
     results = []
     bs = depth.size(0)
     ts = depth.size(1)
     obj_count = len(masks)
     height, width = depth.shape[-2:]
     cy, cx = height/2, width/2
-    vfov = camera_info['vfov'] * (math.pi/180)
+    vfov = camera.fov * (math.pi/180)
     hfov = 2*math.atan(math.tan(vfov/2) * width/height)
     tans = torch.tensor([np.tan(fov/2) for fov in (vfov, hfov)], device=depth.device)
-    cam_pos = torch.tensor(camera_info['pos'], device=depth.device)
+    cam_pos = torch.tensor(camera.position, device=depth.device)
     for oid, obj_mask in enumerate(masks):
         nz_tuple = obj_mask.nonzero(as_tuple=True)
         depths = depth[nz_tuple]
@@ -91,15 +91,15 @@ def project_points(depth, masks, camera_info):
         results.append((pt_pos, out_mask))
     return results
 
-def project_points_frame(depth, masks, camera_info):
+def project_points_frame(depth, masks, camera):
     results = []
     obj_count = len(masks)
     height, width = depth.shape[-2:]
     cy, cx = height/2, width/2
-    vfov = camera_info['vfov'] * (math.pi/180)
+    vfov = camera.fov * (math.pi/180)
     hfov = 2*math.atan(math.tan(vfov/2) * width/height)
     tans = torch.tensor([np.tan(fov/2) for fov in (vfov, hfov)], device=depth.device)
-    cam_pos = torch.tensor(camera_info['pos'], device=depth.device)
+    cam_pos = torch.tensor(camera.position, device=depth.device)
     obj_poses = []
     obj_present = []
     for obj_mask in masks:
@@ -123,10 +123,10 @@ def project_points_frame(depth, masks, camera_info):
             obj_present.append(False)
     return obj_poses, obj_present
 
-def reverse_project(world_pos, out_mask, camera_info):
-    rel_v = world_pos - torch.tensor(camera_info['pos'])
-    height, width = out_mask.shape
-    vfov = camera_info['vfov'] * (math.pi/180)
+def reverse_project(world_pos, camera):
+    rel_v = world_pos - torch.tensor(camera.position)
+    width, height = camera.aspect_ratio
+    vfov = camera.fov * (math.pi/180)
     hfov = 2*math.atan(math.tan(vfov/2) * width/height)
     tans = torch.tensor([np.tan(fov/2) for fov in (hfov, vfov)])
     norm_v = rel_v / rel_v[2]
@@ -136,5 +136,6 @@ def reverse_project(world_pos, out_mask, camera_info):
     screen_yx[0] *= -1
     return screen_yx
 
-
-
+def query_depth(depth, mask):
+    ds = depth[mask]
+    return np.mean(ds)
