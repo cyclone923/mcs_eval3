@@ -123,4 +123,13 @@ def project_points_frame(depth, masks, camera_info):
             obj_present.append(False)
     return obj_poses, obj_present
 
+def reverse_project(world_pos, camera_info):
+    rel_v = world_pos - torch.tensor(camera_info['pos'])
+    """
+    vfov = camera_info['vfov'] * (math.pi/180)
+    hfov = 2*math.atan(math.tan(vfov/2) * width/height)
+    """
+    return torch.tensor([0.5, 0.5])
+
+
 
