@@ -1,6 +1,7 @@
 from physicsvoe.data.data_gen import convert_output
 from physicsvoe import framewisevoe
 from tracker import track
+from pathlib import Path
 
 import numpy as np
 
@@ -12,6 +13,9 @@ class VoeAgent:
         self.level = level
 
     def run_scene(self, config):
+        name = Path(config['name']).name
+        Path(name).mkdir()
+        print(name)
         self.track_info = {}
         self.detector = \
             framewisevoe.FramewiseVOE(min_hist_count=3, max_hist_count=8,
@@ -19,7 +23,7 @@ class VoeAgent:
         self.controller.start_scene(config)
         for i, x in enumerate(config['goal']['action_list']):
             step_output = self.controller.step(action=x[0])
-            self.calc_voe(step_output, i)
+            self.calc_voe(step_output, i, name)
             self.controller.make_step_prediction(
                 choice=None, confidence=None, violations_xy_list=None,
                 heatmap_img=None, internal_state={}
@@ -27,9 +31,8 @@ class VoeAgent:
             if step_output is None:
                 break
         self.controller.end_scene(choice=None, confidence=None)
-        import pdb; pdb.set_trace()  # XXX BREAKPOINT
 
-    def calc_voe(self, step_output, frame_num):
+    def calc_voe(self, step_output, frame_num, scene_name):
         frame = convert_output(step_output)
         # TODO: calculate object masks
         masks = frame.obj_mask
@@ -46,7 +49,7 @@ class VoeAgent:
         voe_hmap = framewisevoe.make_voe_heatmap(viols, tracked_masks)
         # Output violations
         framewisevoe.output_voe(viols)
-        framewisevoe.show_scene(frame_num, frame.depth_mask, tracked_masks, voe_hmap)
+        framewisevoe.show_scene(scene_name, frame_num, frame.depth_mask, tracked_masks, voe_hmap)
         # Update tracker
         self.detector.record_obs(frame_num, obj_ids, obj_pos, obj_present)
 

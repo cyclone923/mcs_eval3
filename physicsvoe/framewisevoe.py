@@ -171,7 +171,7 @@ def output_voe(viols):
     for v in viols:
         print(v.describe())
 
-def show_scene(frame, depth, masks, hmap, omap=None):
+def show_scene(scene_name, frame, depth, masks, hmap, omap=None):
     from matplotlib import pyplot as plt
     trip = np.repeat(depth[:, :, np.newaxis], axis=2, repeats=3)
     trip /= depth.max()
@@ -182,7 +182,7 @@ def show_scene(frame, depth, masks, hmap, omap=None):
     hidxs = np.nonzero(hmap)
     trip[hidxs] = [1, 0, 0]
     plt.imshow(trip)
-    plt.savefig(f'{frame:02d}.png')
+    plt.savefig(f'{scene_name}/{frame:02d}.png')
 
 ###
 
