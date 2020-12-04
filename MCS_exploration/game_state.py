@@ -287,6 +287,8 @@ class GameState(object):
             self.position = {'x': self.pose_estimate[0][0], 'y': self.camera_height, 'z':self.pose_estimate[1][0]}
             self.rotation = math.degrees(self.pose_estimate[2][0])
             self.head_tilt = self.event.head_tilt
+            print ("pose estimate from dead reckoning : ", self.position, self.rotation)
+            print ("Actual pose estimate from simulat : ", self.event.position, self.event.rotation)
             bounding_boxes,current_frame_occupancy_points = convert_observation(self,self.number_actions,self.position,self.rotation) 
             if self.level == "oracle":
                 #print ("in oracle mode in reset")
@@ -407,6 +409,8 @@ class GameState(object):
         #self.obj_mask = img_channels['net-mask']
         self.position = {'x': self.pose_estimate[0][0], 'y': self.camera_height, 'z':self.pose_estimate[1][0]}
         self.rotation = math.degrees(self.pose_estimate[2][0])
+        #print ("pose estimate from dead reckoning : ", self.position, self.rotation)
+        #print ("Actual pose estimate from simulat : ", self.event.position, self.event.rotation)
         self.head_tilt = self.event.head_tilt
         start_time = time.time()
         bounding_boxes,current_frame_occupancy_points = convert_observation(self,self.number_actions,self.position,self.rotation) 
@@ -446,9 +450,8 @@ class GameState(object):
             print ("Failed status : ",self.event.return_status )
 
     
-        SHOW_ANIMATION = False
+        SHOW_ANIMATION = True
             
-
         #print (self.global_obstacles)
 
         if SHOW_ANIMATION:

@@ -63,6 +63,8 @@ def depth_to_points(depth, camera_clipping_planes,
         Px3 np.ndarray of (x,y,z) positions for each of P points.
     """
     # Get local offset from the camera of each pixel
+    #print ("shape of depth image", depth.shape)
+    #print ("min max of depth image", np.amin(depth),np.amax(depth))
     local_pts = depth_to_local(depth, camera_clipping_planes, camera_field_of_view)
     # Convert to world space
     # Use rotation & tilt to calculate rotation matrix.

@@ -12,7 +12,7 @@ import numpy as np
 from descartes import PolygonPatch
 import constants
 
-SHOW_ANIMATION = False
+SHOW_ANIMATION = True
 LIMIT_STEPS = 350
 
 class BoundingBoxNavigator:
@@ -236,7 +236,7 @@ class BoundingBoxNavigator:
 			if collision:
 				path_x, path_y = roadmap.getUnstuckPath(self.agentX, self.agentY) 
 				for x,y in zip(path_x, path_y):
-					self.step_towards_point(agent, x, y, backwards=True)
+					self.step_towards_point(agent, x, y, backwards=False)
 				plan = []
 				
 			

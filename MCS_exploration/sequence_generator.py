@@ -441,12 +441,15 @@ class SequenceGenerator(object):
         self.face_object(target_obj)
     
     def explore_all_objects(self):
+        #print ("number of gloabal obstacles", len(self.agent.game_state.global_obstacles))
         for i,obstacle in enumerate(self.agent.game_state.global_obstacles) :
-            print ("obj height ", obstacle.height)
+            #print ("obj height ", obstacle.height)
             #print ("obj centre ", obstacle.get_centre())
             if self.obstacle_is_possible_container(obstacle):
                 self.go_to_object_and_open(obstacle)
                 self.agent.game_state.global_obstacles[i].is_opened = True
+                print ("after go to object and open is done")
+                print ("goal object visible",self.agent.game_state.goal_object_visible)
                 # This is not always right- Can be wrong if object is visible in oracle mode
                 #  but not in global map for some reason
                 if self.agent.game_state.goal_object_visible : 
