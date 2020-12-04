@@ -3,7 +3,7 @@ from MCS_exploration.meta_controller.meta_controller import MetaController
 from MCS_exploration.frame_collector import Frame_collector
 import sys
 
-DEBUG = False
+DEBUG = True
 
 
 if __name__ == "__main__":
@@ -14,7 +14,7 @@ if __name__ == "__main__":
         #task="interaction_scenes", scene_type="traversal", seed=50,
         #task="interaction_scenes", scene_type="transferral", seed=50,
         #task="interaction_scenes", scene_type="experiment", seed=50,
-        start_scene_number=start_scene_number, frame_collector=None, set_trophy=True if not DEBUG else False, trophy_prob=0
+        start_scene_number=start_scene_number, frame_collector=None, set_trophy=True if not DEBUG else False, trophy_prob=1
         #start_scene_number=start_scene_number, frame_collector=None, set_trophy=False, trophy_prob=1
     ) # trophy_prob=1 mean the trophy is 100% outside the box, trophy_prob=0 mean the trophy is 100% inside the box,
     metaController = MetaController(env)

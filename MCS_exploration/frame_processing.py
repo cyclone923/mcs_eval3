@@ -29,8 +29,6 @@ def convert_observation(env,frame_idx, agent_pos, rotation):
         #print ("trophy location not none in observation", env.trophy_location)
         #update_goal_bounding_box(all_points, env)
     if env.level == "level1" or env.level == "level2":
-        print ("obj classcore", env.img_channels['obj_class_score'])
-        print ("  ")
         for i in range(env.img_channels['obj_class_score'].shape[0]):
             mask = env.img_channels['mask_prob'][i+4] 
             create_img_seg_occ_map_pts(all_points,i,mask,env)
@@ -259,12 +257,31 @@ def polygon_simplify(all_polygons,scale=0.0):
 
 def create_img_seg_occ_map_pts(points,obj_id, mask,env):
     #print ("in create img seg map pts")
-    new_points = np.where((points[:,1] > 0.05) & (points[:,1] <= 2.9))#,1,0).reshape(points.shape[0],1)
-    points = points[new_points[0]]
     mask = mask.flatten()
+    #new_points = np.where((points[:,1] > 0.05) & (points[:,1] <= 2.9))#,1,0).reshape(points.shape[0],1)
+
+    '''
+    min_max_prob =  (np.amin(mask), np.amax(mask))
+    print ("min max values b4 everything" , min_max_prob)
+
+    new_points = np.where(points[:,1] >=0.02)#,1,0).reshape(points.shape[0],1)
+    mask2 = mask[new_points[0]]
+    min_max_prob =  (np.amax(mask2), np.amin(mask2))
+    print ("min max values after removing only floor" , min_max_prob)
+
+    new_points = np.where(points[:,1] <= 2.9)#,1,0).reshape(points.shape[0],1)
+    mask3 = mask[new_points[0]]
+    min_max_prob =  (np.amax(mask3), np.amin(mask3))
+    print ("min max values after removing only ceiling" , min_max_prob)
+    '''
+    new_points = np.where((points[:,1] > 0.02)&  (points[:,1] <= 2.9))#,1,0).reshape(points.shape[0],1)
+    points = points[new_points[0]]
     mask = mask[new_points[0]]
-    print ("min max values" , np.amax(mask), np.amin(mask))
-    obj_pixel_coords = np.where(mask >= 0.9)
+    min_max_prob =  (np.amin(mask), np.amax(mask))
+    print ("min max values after taking out the floor and ceiling" , min_max_prob)
+
+
+    obj_pixel_coords = np.where(mask >= 0.5)
     if len(obj_pixel_coords[0]) == 0 :
         return
     obj_points = points[obj_pixel_coords[0]]
@@ -273,7 +290,7 @@ def create_img_seg_occ_map_pts(points,obj_id, mask,env):
     obj_points = np.int_((obj_points+env.displacement)/env.grid_size)
     obj_pts_str =obj_points.view('|S%d' % (obj_points.itemsize * obj_points.shape[1]))
     _,unique_indices,unique_counts = np.unique(obj_pts_str,return_index=True,return_counts=True)
-    env.img_seg_occupancy_map_points[obj_id] = (obj_points[unique_indices],obj_height)
+    env.img_seg_occupancy_map_points[obj_id] = (obj_points[unique_indices],obj_height,min_max_prob)
 
 
 def update_goal_bounding_box(points, env):
