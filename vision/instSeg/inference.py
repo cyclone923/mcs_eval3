@@ -7,9 +7,9 @@ from torch.nn import functional as F
 import sys
 sys.path.append('./vision/instSeg')
 
-import data
-from dvis_network import DVIS
-from utils.augmentations import BaseTransform
+from vision.instSeg import data
+from vision.instSeg.dvis_network import DVIS
+from vision.instSeg.utils.augmentations import BaseTransform
 
 class MaskAndClassPredictor(object):
     '''
