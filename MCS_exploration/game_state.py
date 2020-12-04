@@ -103,8 +103,8 @@ class GameState(object):
         self.goal_object_visible = False
         self.grid_size = 0.1 
         #self.grid_size = 1 
-        self.map_width = 36
-        self.map_length = 36                                                                     
+        self.map_width = 48
+        self.map_length = 48                                                                     
         self.displacement = 12
         self.occupancy_map = self.occupancy_map_init() #* unexplored
         self.object_mask = None
@@ -459,7 +459,7 @@ class GameState(object):
             print ("Failed status : ",self.event.return_status )
 
     
-        SHOW_ANIMATION = True
+        SHOW_ANIMATION = False
             
         #print (self.global_obstacles)
 
@@ -483,9 +483,9 @@ class GameState(object):
                 #patch1 = PolygonPatch(self.current_frame_img_obstacles[-1].get_bounding_box(), fc='green', ec="black", alpha=0.2, zorder=1)
                 patch1 = PolygonPatch(obstacle.get_bounding_box(), fc='blue', ec="black", alpha=0.2, zorder=1)
                 plt.gca().add_patch(patch1)
-            #if self.goal_bounding_box != None :
-            #    patch1 = PolygonPatch(self.goal_bounding_box, fc='blue', ec="black", alpha=0.2, zorder=1)
-            #    plt.gca().add_patch(patch1)
+            if self.goal_bounding_box != None :
+                patch1 = PolygonPatch(self.goal_bounding_box, fc='blue', ec="black", alpha=0.2, zorder=1)
+                plt.gca().add_patch(patch1)
             if self.trophy_obstacle != None :
                 patch1 = PolygonPatch(self.trophy_obstacle.get_bounding_box(),fc='red',ec="black", alpha=0.2, zorder=1)
             #    plt.gca().add_patch(patch1)

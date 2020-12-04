@@ -229,7 +229,7 @@ def point_cloud_to_polygon(points,occupancy_map,grid_size, displacement, obj_mas
         occupancy_map = merge_occupancy_map(occupancy_map, np_occ_map)
 
     all_polygons = occupancy_to_polygons(occupancy_map, grid_size, displacement  )
-    simplified_polygon = polygon_simplify(all_polygons,0.03)
+    simplified_polygon = polygon_simplify(all_polygons,0.05)
     show_animation =  False
     #plt.close()
     if show_animation :

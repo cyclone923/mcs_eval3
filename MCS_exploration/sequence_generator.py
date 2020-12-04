@@ -112,7 +112,6 @@ class SequenceGenerator(object):
         #print ("current pose ", pose)
         #self.explore_all_objects()
 
-
         if self.agent.game_state.goals_found :
             print ("Object found returning to main ")
             self.pick_up_obstacles(possible_trophy_obstacles=True)
@@ -198,6 +197,8 @@ class SequenceGenerator(object):
                 break
 
         self.explore_all_objects()
+        if self.agent.game_state.trophy_picked_up == True:
+            return
         self.pick_up_obstacles(all_obstacles=True)
 
         return
@@ -244,13 +245,8 @@ class SequenceGenerator(object):
 
     def go_to_object_and_pick(self,target_obj):
 
-        #print ("object goal ID = " , self.agent.game_state.goal_id)
 
         #print ("in go to goal and pick")
-        #print ("goal ID : ", self.game_state.goal_id)
-        #target_obj = self.get_target_obj(self.agent.game_state.goal_id)
-        #target_obj = self.get_target_obj(obj_id)
-        #print ("goal ID ", target_obj.id)
         object_nearest_point = self.get_best_object_point(target_obj, 1000, self.nearest )
         #goal_object_centre = [0]*2
         #goal_object_centre[0] = target_obj.centre_x
@@ -259,7 +255,6 @@ class SequenceGenerator(object):
         agent_pos = self.agent.game_state.position
 
         success_distance = 0.40 
-        #print ("agent position" , agent_pos)
         #print ("goal point : ", object_nearest_point)
         nav_success = self.agent.nav.go_to_goal(object_nearest_point, self.agent, success_distance) 
 
@@ -274,7 +269,7 @@ class SequenceGenerator(object):
         action = {'action':"PickupObject", 'x': x, 'y':y}
         self.agent.game_state.step(action)
 
-        if self.update_picked_up() :        
+        if self.update_picked_up(target_obj) :        
             return 
                 
         going_closer_counter = 0
@@ -291,7 +286,7 @@ class SequenceGenerator(object):
             action = {'action':"PickupObject", 'x': x, 'y':y}
             self.agent.game_state.step(action)
 
-            if self.update_picked_up() :        
+            if self.update_picked_up(target_obj) :        
                 return 
 
             going_closer_counter += 1
@@ -306,7 +301,7 @@ class SequenceGenerator(object):
     If the pick up was not successfull - we update the object with whatever info we get    
 
     '''
-    def update_picked_up(self):          
+    def update_picked_up(self,target_obj):          
         if self.agent.game_state.event.return_status == "SUCCESSFUL" :
             if self.agent.game_state.event.reward > -1* (self.agent.game_state.number_actions*0.001) +0.5 :
                 self.agent.game_state.trophy_picked_up = True
@@ -315,12 +310,14 @@ class SequenceGenerator(object):
                 self.update_object_picked_up(target_obj,True)
                 action = {'action':'DropObject'}
                 self.agent.game_state.step(action)
+                self.look_straight()
             return True
                 
         elif self.agent.game_state.event.return_status == "NOT_INTERACTABLE" or  \
                 self.agent.game_state.event.return_status == "NOT_OBJECT" or  \
                 self.agent.game_state.event.return_status == "NOT_PICKUPABLE" :
             self.update_object_picked_up(target_obj,True)
+            self.look_straight()
             return True
 
         else :
@@ -329,8 +326,10 @@ class SequenceGenerator(object):
     def update_object_picked_up(self,target_obj,pick_up_status):
         for i,obstacle in enumerate(self.agent.game_state.global_obstacles) :
             if target_obj.id == obstacle.id :
-                self.agent.game_state.global_obstacles[i].is_picked_and_not_trophy = pick_up_stauts
+                self.agent.game_state.global_obstacles[i].is_picked_and_not_trophy = pick_up_status
                 return 
+
+
 
     def get_obj_pixels(self,target_obj):
         arr_mask = np.array(self.agent.game_state.event.object_mask_list[-1])
@@ -451,7 +450,6 @@ class SequenceGenerator(object):
         nav_success = self.agent.nav.go_to_goal(object_nearest_point, self.agent, success_distance) 
         self.face_object(target_obj)
 
-
         x,y = self.get_obj_pixels (target_obj)
         action = {'action':"OpenObject", 'x': x, 'y':y}
         self.agent.game_state.step(action)
@@ -461,45 +459,59 @@ class SequenceGenerator(object):
             #print ("found goal in the middle of looking into containers")
             return
 
-        if self.agent.game_state.event.return_status == "NOT_OPENABLE":
-            return 
-
+        if  not self.update_opened_up(target_obj):
+            return
+    
         #print ("done opening object ")
         self.look_straight()
         nav_success = self.agent.nav.go_to_goal(object_farthest_point, self.agent, success_distance) 
         self.face_object(target_obj)
-    
+
+    def update_opened_up(self,target_obj):          
+        if self.agent.game_state.event.return_status == "SUCCESSFUL" :
+            for i,obstacle in enumerate(self.agent.game_state.global_obstacles) :
+                if target_obj.id == obstacle.id :
+                    self.agent.game_state.global_obstacles[i].is_opened = True
+                    return  True
+        if self.agent.game_state.event.return_status == "NOT_OPENABLE":
+            return False 
+
+
     def explore_all_objects(self):
         #print ("number of gloabal obstacles", len(self.agent.game_state.global_obstacles))
-        for i,obstacle in enumerate(self.agent.game_state.global_obstacles) :
-            #print ("obj height ", obstacle.height)
+        for i,obstacle in enumerate(self.agent.game_state.global_obstacles[2:]) :
+            print ("obj height ", obstacle.height)
             #print ("obj centre ", obstacle.get_centre())
             #if self.obstacle_is_possible_container(obstacle):
             if obstacle.is_possible_container():
                 self.go_to_object_and_open(obstacle)
-                self.agent.game_state.global_obstacles[i].is_opened = True
                 print ("after go to object and open is done")
                 #print ("goal object visible",self.agent.game_state.goal_object_visible)
                 # This is not always right- Can be wrong if object is visible in oracle mode
                 #  but not in global map for some reason
                 #if self.agent.game_state.goal_object_visible : 
                 if self.agent.game_state.goals_found : 
-                    #self.go_to_goal_and_pick()
                     self.pick_up_obstacles(possible_trophy_obstacles=True)
                     return 
                 self.look_straight()
 
     def pick_up_obstacles(self,obstacle_ids=None,all_obstacles=False,possible_trophy_obstacles=False):
+
+        #print ("In pick up obstacles ", all_obstacles)
+
         if all_obstacles == True :
-            for obstacle in self.agent.game_state.global_obstacles :
+            for obstacle in reversed(self.agent.game_state.global_obstacles) :
                 #if self.is_possible_trophy(obstacle):
+                print (" for each obejct height", obstacle.height)
                 if obstacle.is_possible_trophy():
-                    self.go_to_object_and_pick(obstacle.id)
+                    self.go_to_object_and_pick(obstacle)
+                if self.agent.game_state.trophy_picked_up == True:
+                    return
             return
 
         obstacles = []
         if possible_trophy_obstacles == True :
-            print ("trying to go to all possible goal objects")
+            #print ("trying to go to all possible goal objects")
             for obstacle_id in self.agent.game_state.goal_ids :
                 obstacles.append(self.get_target_obj(obstacle_id))
         else :
@@ -509,6 +521,8 @@ class SequenceGenerator(object):
             #if self.is_possible_trophy(obstacle):
             if obstacle.is_possible_trophy():
                 self.go_to_object_and_pick(obstacle)
+            if self.agent.game_state.trophy_picked_up == True:
+                return
             
 
     def get_outermost_map_sorted_coords(self):
