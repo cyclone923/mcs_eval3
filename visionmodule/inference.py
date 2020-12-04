@@ -75,6 +75,7 @@ class MaskAndClassPredictor(object):
                 depthI -- [ht, wd] with value 0 - 255
         '''
         height, width = bgrI.shape[:2]
+        depthI = ((depthI*255.)/(depthI.max()+0.01)).astype(np.uint8)
         normI = self.transform_input(bgrI, depthI) # [ht, wd, ch]
         batch = torch.from_numpy(normI[None, ...]).permute(0, 3, 1, 2) # [1, ch, ht, wd]
         if self.cuda:
