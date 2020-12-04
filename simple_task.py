@@ -25,7 +25,7 @@ if __name__ == "__main__":
     exploration_success = 0
     negative_reward = 0
     number_tasks_success = 0 
-    number_scenes = 15
+    number_scenes = 200
     negative_rewards = 0
     failure_return_status = {}
     print ("Start scene number = ", start_scene_number)
@@ -44,9 +44,6 @@ if __name__ == "__main__":
         #    print ("crash happened")
         #    pass
 
-        sys.stdout.flush()
-        collector.reset()
-
         #result = metaController.excecute()
         if env.step_output.reward > 0 :
             number_tasks_success +=1
@@ -56,7 +53,9 @@ if __name__ == "__main__":
             negative_rewards += env.step_output.reward
             failure_return_status[env.current_scene] = env.step_output.return_status
             print ("SCENE FAIL : Action status return  :", env.step_output.return_status)
-            
+
+        sys.stdout.flush()
+        collector.reset()
 
         print ("reward from current scene = ", env.step_output.reward)
         number_tasks_attempted +=1
