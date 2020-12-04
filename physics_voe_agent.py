@@ -1,10 +1,13 @@
 from physicsvoe.data.data_gen import convert_output
 from physicsvoe import framewisevoe, occlude
 from physicsvoe.timer import Timer
+
 from tracker import track
+import visionmodule.inference as vision
+
+
 from pathlib import Path
 from PIL import Image
-
 import numpy as np
 
 DEFAULT_CAMERA = {'vfov': 42.5, 'pos': [0, 1.5, -4.5]}
@@ -21,6 +24,9 @@ class VoeAgent:
         folder_name.mkdir()
         print(folder_name)
         self.track_info = {}
+        self.visionmodel = vision.MaskAndClassPredictor(dataset='mcsvideo3_voe',
+                                                        config='plus_resnet50_config_depth_MC',
+                                                        weights='./visionmodule/dvis_resnet50_mc_voe.pth')
         self.detector = \
             framewisevoe.FramewiseVOE(min_hist_count=3, max_hist_count=8,
                                       dist_thresh=0.5)
@@ -41,9 +47,14 @@ class VoeAgent:
         return scene_voe_detected
 
     def calc_voe(self, step_output, frame_num, scene_name):
-        frame = convert_output(step_output)
         # TODO: calculate object masks
-        masks = frame.obj_mask
+        depth_img = step_output.depth_map_list[-1]
+        rgb_img = np.array(step_output.image_list[-1])
+        bgr_img = rgb_img[:, :, [2, 1, 0]]
+        frame = convert_output(step_output)
+        result = self.visionmodel.step(bgr_img, depth_img)
+        masks = prob_to_mask(result['mask_prob'], result['fg_stCh'])
+        #masks = frame.obj_mask
         # Calculate tracking info
         self.track_info = track.track_objects(masks, self.track_info)
         all_obj_ids = list(range(self.track_info['object_index']))
@@ -73,6 +84,13 @@ def squash_masks(ref, mask_l, ids):
     for m, id_ in zip(mask_l, ids):
         flat_mask[m] = id_
     return flat_mask
+
+def prob_to_mask(prob, cutoff):
+    am = np.argmax(prob, axis=0)
+    am -= cutoff
+    am[am<0] = -1
+    print(cutoff, np.unique(am))
+    return am
 
 def plausible_str(violation_detected):
     return 'implausible' if violation_detected else 'plausible'
