@@ -13,8 +13,6 @@ def detect_occlusion(depth, mask, id_):
         return False
     if at_edge(obj_mask):
         return True
-    if behind_object(obj_mask, depth, 0.5):
-        return True
     return False
 
 def at_edge(mask):

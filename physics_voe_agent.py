@@ -14,10 +14,12 @@ class VoeAgent:
         self.controller = controller
         self.level = level
 
-    def run_scene(self, config):
-        name = Path(config['name']).name
-        Path(name).mkdir()
-        print(name)
+    def run_scene(self, config, desc_name):
+        folder_name = Path(Path(desc_name).stem)
+        if folder_name.exists():
+            return None
+        folder_name.mkdir()
+        print(folder_name)
         self.track_info = {}
         self.detector = \
             framewisevoe.FramewiseVOE(min_hist_count=3, max_hist_count=8,
@@ -26,7 +28,7 @@ class VoeAgent:
         scene_voe_detected = False
         for i, x in enumerate(config['goal']['action_list']):
             step_output = self.controller.step(action=x[0])
-            voe_detected, voe_heatmap = self.calc_voe(step_output, i, name)
+            voe_detected, voe_heatmap = self.calc_voe(step_output, i, folder_name)
             scene_voe_detected = scene_voe_detected or voe_detected
             choice = plausible_str(voe_detected)
             assert choice in config['goal']['metadata']['choose'] # Sanity check

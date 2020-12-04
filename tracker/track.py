@@ -51,7 +51,7 @@ def track_objects(frame_mask, track_info={}):
             track_info['object_index'] += 1
             if 'objects' not in track_info:
                 track_info['objects'] = {}
-            track_info['objects'][_key] = {'position_history': []}
+            track_info['objects'][_key] = {'position_history': [], 'area_history': {}, 'hidden_for': 0}
 
         else:
             _, _, _key = min(track_to_exist_obj)
@@ -60,13 +60,16 @@ def track_objects(frame_mask, track_info={}):
         track_info['objects'][_key]['bounding_box'] = (top_left_x, top_left_y, bottom_right_x, bottom_right_y)
         track_info['objects'][_key]['position_history'].append(position)
         track_info['objects'][_key]['mask'] = frame_obj_mask
+        track_info['objects'][_key]['area_history'] = frame_obj_mask.sum()
         track_info['objects'][_key]['visible'] = True
+        track_info['objects'][_key]['hidden_for'] = 0
 
     for obj_key, obj in track_info['objects'].items():
         if obj_key not in resolved_objs:
             obj['visible'] = False
             prev_mask = track_info['objects'][obj_key]['mask']
             track_info['objects'][obj_key]['mask'] = np.zeros_like(prev_mask)
+            track_info['objects'][obj_key]['hidden_for'] += 1
 
     visible_obj_tracked = len([o for o in track_info['objects'].values() if o['visible']])
     assert objs == visible_obj_tracked, \

@@ -144,6 +144,8 @@ class PresenceViolation:
         return hmap + self.mask
 
     def ignore(self, depth, camera):
+        if self.mask.sum() < 20: #Off screen!
+            return True
         scene_depth = du.query_depth(depth, self.mask)
         pred_vec = self.pred_pos - torch.tensor(camera.position)
         pred_depth = pred_vec[2]
