@@ -4,9 +4,12 @@ import numpy as np
 import torch
 from torch.nn import functional as F
 
-from vision.instSeg import data
-from vision.instSeg.dvis_network import DVIS
-from vision.instSeg.utils.augmentations import BaseTransform
+import sys
+sys.path.append('./vision/instSeg')
+
+import data
+from dvis_network import DVIS
+from utils.augmentations import BaseTransform
 
 class MaskAndClassPredictor(object):
     '''
@@ -17,7 +20,7 @@ class MaskAndClassPredictor(object):
                        weights=None):
         '''
         @Param: dataset -- 'mcsvideo3_inter | mcsvideo3_voe | mcsvideo_inter | mcsvideo_voe'
-                config -- check the config files in data for more configurations.
+                config -- check the config files in data for more other configurations.
                 weights -- file for loading model weights
         '''
         cfg, set_cfg = data.dataset_specific_import(dataset)
