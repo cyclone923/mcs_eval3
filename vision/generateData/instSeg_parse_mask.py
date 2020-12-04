@@ -6,40 +6,58 @@ from easydict import EasyDict as edict
 from vision.generateData.save_tool import SaveTool
 
 imgSaver = SaveTool()
-cfg = edict()
-
-"""
-todo:: modification::
-    wall to be FG objects,
-       -- left|right|front|back wall to be different objects
-    other objects, like chair, desk, trophy, etc.
-       -- their real categories are not important
-       -- identify trophy | box | others
-
-    panoptic segmentation:
-    In summary: FG instance categories: wall | tropy | box | others
-                BG semantic: others | ceiling | floor
-"""
 
 
-cfg.bg_classes      = ['floor', 'ceiling', 'wall']
-cfg.ignore_fg       = ['shelf']
-cfg.object_classes  = ['trophy', 'box', 'occluder_pole', 'occluder_wall']
-#object_list = ['changing table', 'duck', 'drawer', 'box', 'bowl', \
-#               'sofa chair', 'pacifier', 'number block cube', 'crayon', 'ball', \
-#               'blank block cube', 'chair', 'plate', 'sofa', 'stool', \
-#               'racecar', 'blank block cylinder', 'cup', 'apple', 'table']
-cfg.sem_lut    = {'others_bg': 0}
-for ele in cfg.bg_classes:
-    cfg.sem_lut[ele] = len(cfg.sem_lut.keys())
+def setup_configuration(task='voe', fg_class_en=True):
+    """
+    @Param: task -- 'voe' | 'interact' | 'combine'
+            fg_class_en -- if True, specify the shape of FG objects in detail.
+    """
+    config = edict()
+    config.ignore_fg       = ['shelf']
 
-cfg.sem_lut['others_fg'] = len(cfg.sem_lut.keys())
-for ele in cfg.object_classes:
-    cfg.sem_lut[ele] = len(cfg.sem_lut.keys())
+    # task specification setting
+    if task == 'voe':
+        config.bg_classes      = []
+        if not fg_class_en:
+            config.object_classes = ['occluder_pole', 'occluder_wall']
+        else:
+            config.object_classes  = ['occluder_pole', 'occluder_wall', 'duck', 'cylinder', 'turtle','car', 'sphere', 'cube', 'cone',
+                                   'square frustum', 'cylinder']
+    elif task == 'interact':
+        config.bg_classes      = ['floor', 'ceiling', 'wall']
+        if not fg_class_en:
+            config.object_classes  = ['trophy', 'box']
+        else:
+            config.object_classes = ['trophy', 'box', 'changing table', 'drawer', 'shelf',
+                                  'blank block cube', 'plate', 'duck', 'sofa chair', 'bowl',
+                                  'pacifier', 'crayon', 'number block cube', 'sphere', 'chair',
+                                  'sofa', 'stool', 'car', 'blank block cylinder', 'cup', 'apple',
+                                  'table', 'crib', 'potted plant']
+    else:
+        config.bg_classes      = ['floor', 'ceiling', 'wall']
+        if not fg_class_en:
+            config.object_classes  = ['trophy', 'box', 'occluder_pole', 'occluder_wall']
+        else:
+            config.object_classes = ['trophy', 'box', 'changing table', 'drawer', 'shelf',
+                                  'blank block cube', 'plate', 'duck', 'sofa chair', 'bowl',
+                                  'pacifier', 'crayon', 'number block cube', 'sphere', 'chair',
+                                  'sofa', 'stool', 'car', 'blank block cylinder', 'cup', 'apple',
+                                  'table', 'crib', 'potted plant', 'turtle', 'cone', 'square frustum']
+
+    # construct the semantic look-up-table
+    config.sem_lut    = {'others_bg': 0}
+    for ele in config.bg_classes:
+        config.sem_lut[ele] = len(config.sem_lut.keys())
+
+    config.sem_lut['others_fg'] = len(config.sem_lut.keys())
+    for ele in config.object_classes:
+        config.sem_lut[ele] = len(config.sem_lut.keys())
+
+    return config
 
 
-
-def parse_label_info(mask_clrI, uuid_list, shape_list, result_dir='', sname='-dummy'):
+def parse_label_info(cfg, mask_clrI, uuid_list, shape_list, result_dir='', sname='-dummy'):
     """
     @Param: mask_clrI -- mask in RGB mode, [ht, wd, 3]
             uuid_list -- list of object information, that specify by uuid, default to be BG

@@ -2,7 +2,7 @@ from frame_processing import *
 from shapely.geometry import Point, MultiPoint
 
 class Obstacle():
-    def __init__(self,obj_id,obj_height,map_points,size,scale,displacement):
+    def __init__(self,obj_id,obj_height,map_points,size,scale,displacement,trophy_prob =None, number_pixel_points=0):
         self.id = obj_id
         self.occupancy_map_points = map_points[:]
         self.height = obj_height
@@ -17,7 +17,15 @@ class Obstacle():
         self.calculate_bounding_box(size,scale, displacement)
         self.calculate_centre()
         self.parent_id = -1
-        self.is_picked = False
+        self.is_picked_and_not_trophy = False
+        self.number_pixel_points = [number_pixel_points]
+        if trophy_prob == None :
+            self.trophy_prob = 0
+            self.trophy_prob_per_frame = []
+        else :
+            self.trophy_prob = trophy_prob
+            self.trophy_prob_per_frame = [trophy_prob]
+        #self.agent_pos_per_frame = [agent_pos]
 
     def expand_obstacle(self, current_scene_map_points,size,scale,displacement):
         obstacle_len = len(self.occupancy_map_points)
@@ -53,6 +61,19 @@ class Obstacle():
             exterior_coords = self.bounding_box.exterior.coords.xy
 
         return exterior_coords
+
+    def calculate_trophy_prob(self):
+        number_top_elem = 3
+        sorted_trophy_prob = sorted(self.trophy_prob_per_frame,reverse=True)
+        if len(sorted_trophy_prob) == 0 :
+            self.trophy_prob = 0
+            return
+    
+        if len(sorted_trophy_prob) > number_top_elem :
+            self.trophy_prob = sum(sorted_trophy_prob[:number_top_elem])/number_top_elem
+        else :
+            self.trophy_prob = sum(sorted_trophy_prob)/len(sorted_trophy_prob)
+            
         
     def get_occupancy_map_points(self):
         return self.occupancy_map_points
@@ -65,6 +86,24 @@ class Obstacle():
 
     def get_height(self):
         return self.height
+
+    def is_possible_trophy (self) :
+        if self.is_picked_and_not_trophy :
+            return False
+        if self.height > 2.5 : #Need to change this to trophy height threshold
+            return False
+        if self.is_opened == True :
+            return False
+        return True
+
+    def is_possible_container(self):
+        if self.height < 0.1 :
+            return False
+        if self.height > 2.5 :#Need go change this to container height threshold
+            return False
+        if self.is_opened == True :
+            return False
+        return True
     
     def union(self, a, b):
         """ return the union of two lists """

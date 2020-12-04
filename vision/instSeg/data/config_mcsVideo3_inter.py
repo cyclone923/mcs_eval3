@@ -9,7 +9,7 @@ MCSVIDEO_INTER_LABEL_FG  = {4:4, 5:5, 6:6}
 MCSVIDEO_INTER_LABEL_MAP = { 0:0, 1:1, 2:2, 3:3, 255:255}
 MCSVIDEO_INTER_LABEL_MAP.update(MCSVIDEO_INTER_LABEL_FG)
 
-MCSVIDEO_INTER_SEM_WEIGHTS = { 0:1.0, 255:0.0}
+MCSVIDEO_INTER_SEM_WEIGHTS = { 0:1.0, 255:0.0, 5:4.12, 6:3.78}
 for key in MCSVIDEO_INTER_LABEL_MAP:
     if key in MCSVIDEO_INTER_SEM_WEIGHTS:
         continue
@@ -35,13 +35,14 @@ mcsvideo_dataset_base = Config({
     # Whether or not to load GT. If this is False, eval.py quantitative evaluation won't work.
     'has_gt': True,
     'ignore_label': 255,
+    'select_semids': [5],
 
     # A list of names for each of you classes.
     'class_names': None,
     'label_map': None,
     'sem_weights': None,
 
-    'sem_fg_stCH': len(MCSVIDEO_INTER_CLASSES_BG),
+    'sem_fg_stCH': 1,
     'extra_input': False
 })
 
@@ -60,9 +61,7 @@ mcsvideo3_interact_dataset = mcsvideo_dataset_base.copy({
 
     'sem_fg_stCH': len(MCSVIDEO_INTER_CLASSES_BG),
     'extra_input': False
-
 })
-
 
 mcsvideo3_interact_depth_dataset = mcsvideo_dataset_base.copy({
     'name': 'mcs interaction',
@@ -79,7 +78,6 @@ mcsvideo3_interact_depth_dataset = mcsvideo_dataset_base.copy({
 
     'sem_fg_stCH': len(MCSVIDEO_INTER_CLASSES_BG),
     'extra_input': True
-
 })
 
 
@@ -201,7 +199,7 @@ mcsvideo3_base_config = Config({
 
 base_network_config = setup_network_base_config(mcsvideo3_base_config,
                             mcsvideo3_interact_dataset,
-                            lr_steps=[100000, 200000, 500000, 700000, 750000],
+                            lr_steps=[40000, 70000, 90000, 110000, 150000],
                             max_size=513)
 
 plus_resnet50_config  = change_backbone_resnet50_dcn(base_network_config)
@@ -224,7 +222,7 @@ plus_resnet101_config_MC = change_instance_output(plus_resnet101_config,
 # -------------------------------------------------------#
 base_network_config_depth = setup_network_base_config(mcsvideo3_base_config,
                             mcsvideo3_interact_depth_dataset,
-                            lr_steps=[100000, 200000, 500000, 700000, 750000],
+                            lr_steps=[40000, 70000, 90000, 110000, 150000],
                             max_size=513)
 base_network_config_depth  = change_instance_input(base_network_config_depth,
                                                  extra_input=True,

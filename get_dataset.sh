@@ -5,9 +5,9 @@ wget https://evaluation2-training-scenes.s3.amazonaws.com/interaction-scenes.zip
 unzip interaction-scenes.zip
 unzip training-passive-physics.zip
 
-mkdir interaction_scenes/retrieval
-mkdir interaction_scenes/traversal
-mkdir interaction_scenes/transferral
+mkdir -p interaction_scenes/retrieval
+mkdir -p interaction_scenes/traversal
+mkdir -p interaction_scenes/transferral
 
 mv interaction_scenes/retrieval*.json interaction_scenes/retrieval
 mv interaction_scenes/traversal*.json interaction_scenes/traversal
@@ -19,9 +19,11 @@ rm interaction-scenes.zip
 
 wget https://evaluation-training-scenes.s3.amazonaws.com/eval3/training-passive-physics.zip
 
-mkdir evaluation3Training/object_permanence
-mkdir evaluation3Training/shape_constancy
-mkdir evaluation3Training/spatio_temporal_continuity
+unzip training-passive-physics.zip
+
+mkdir -p evaluation3Training/object_permanence
+mkdir -p evaluation3Training/shape_constancy
+mkdir -p evaluation3Training/spatio_temporal_continuity
 
 mv evaluation3Training/*ObjectPermanence*.json evaluation3Training/object_permanence
 mv evaluation3Training/*ShapeConstancy*.json evaluation3Training/shape_constancy

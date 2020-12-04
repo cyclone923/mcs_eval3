@@ -347,8 +347,8 @@ def explore_initial_point(x,y, agent,obstacles):
     #event = agent.game_state.event
     #camera_field_of_view = agent.game_state.event.camera_field_of_view
     explore_point(x,y,agent,obstacles)
-    if agent.game_state.goals_found == True:
-        return
+    #if agent.game_state.goals_found == True:
+    #    return
     return
     directions = 30 // 10
     action = {'action': 'LookDown'}
@@ -373,8 +373,8 @@ def explore_point(x, y, agent, obstacles):
         start_time = time.time()
         update_seen(x , y ,agent.game_state,rotation,camera_field_of_view, agent.nav.scene_obstacles_dict.values() )
         #print ("time taken to update seen",time.time()-start_time)
-        if agent.game_state.goals_found == True :
-            return
+        #if agent.game_state.goals_found == True :
+        #    return
     #action = {'action':'RotateLook', 'horizon':-1}
     #agent.game_state.step(action)
 

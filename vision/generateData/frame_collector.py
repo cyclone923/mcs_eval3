@@ -1,22 +1,27 @@
 import os
 import numpy as np
 from vision.generateData.instSeg_parse_mask import parse_label_info, save_depth_image
+from vision.generateData.instSeg_parse_mask import setup_configuration
 
 class Frame_collector:
 
-    def __init__(self, scene_dir, start_scene_number):
+    def __init__(self, scene_dir, start_scene_number,
+                       scene_type='voe', fg_class_en=False):
+        """
+        @Param: scene_dir -- directory to saveout data
+                start_scene_number -- INT
+                task -- 'voe' | 'interact' | 'combine'
+                fg_class_en -- if True, specify the shape of FG objects in detail.
+        """
         self.scene_number = start_scene_number
         self.step = 0
         self.scene_dir = scene_dir
         self.result_dir = os.path.join(self.scene_dir, 'scene_'+str(self.scene_number))
         os.makedirs(self.result_dir, exist_ok=True)
+        self.parse_cfg = setup_configuration(task=scene_type, fg_class_en=fg_class_en)
 
-        # self.shape_keys  = ['changing table', 'duck', 'drawer', 'box', 'bowl', \
-        #                     'sofa chair', 'pacifier', 'number block cube', 'crayon', 'ball', \
-        #                     'blank block cube', 'chair', 'plate', 'sofa', 'stool', \
-        #                     'racecar', 'blank block cylinder', 'cup', 'apple', 'table']
-        self.shape_keys  = ['trophy', 'box']
-        self.uuid_keys = ['floor', 'ceiling', 'occluder_pole', 'occluder_wall', 'wall']
+        self.shape_keys  = self.parse_cfg.object_classes
+        self.uuid_keys = self.parse_cfg.bg_classes
 
         self.shap_new_keys   = []
         self.stru_new_keys   = []
@@ -31,16 +36,18 @@ class Frame_collector:
             for j in range(len(step_output.image_list)):
                 step_output.image_list[j].save(f'{self.result_dir}/original-{self.step}-{j}.jpg')
                 maskI = np.asarray(step_output.object_mask_list[j]) # [ht, wd, 3] in RGB
-                parse_label_info(maskI,
+                parse_label_info(self.parse_cfg,
+                                 maskI,
                                  step_output.structural_object_list,
                                  step_output.object_list,
                                  result_dir=self.result_dir, sname=f'-{self.step}-{j}')
 
-                save_depth_image(np.asarray(step_output.depth_mask_list[j]),
+                save_depth_image(np.asarray(step_output.depth_map_list[j]),
                                             result_dir = self.result_dir, sname=f'-{self.step}-{j}')
             self.step += 1
         else:
             pass
+
         # for checking the FG objects and BG objects
         for i in step_output.object_list:
             if i.shape not in (self.shape_keys+self.shap_new_keys):
@@ -60,7 +67,7 @@ class Frame_collector:
         self.result_dir = os.path.join(self.scene_dir, 'scene_'+str(self.scene_number))
         os.makedirs(self.result_dir, exist_ok=True)
         print("Reset, Current Scene: {}".format(self.scene_number))
-        print("un-set uuid key including: ", self.stru_new_keys)
-        print("un-set shape key including: ", self.shap_new_keys)
+        #print("un-set uuid key including: ", self.stru_new_keys)
+        #print("un-set shape key including: ", self.shap_new_keys)
         print("statistical shape key counts: ", self.count_hist)
         print("--------------------------------------------------------")

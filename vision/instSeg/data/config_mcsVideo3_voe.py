@@ -3,18 +3,24 @@ from data.base_config import *
 # ----------------------- DATASETS ----------------------- #
 
 MCSVIDEO_VOE_CLASSES_BG = ['bg']
-MCSVIDEO_VOE_CLASSES_FG = ['wall', 'pole', 'objects']
+MCSVIDEO_VOE_CLASSES_FG = ['objects', 'oc-pole', 'oc-wall']
 MCSVIDEO_VOE_CLASSES = MCSVIDEO_VOE_CLASSES_BG + MCSVIDEO_VOE_CLASSES_FG
 
 
-MCSVIDEO_VOE_LABEL_FG = {1:1, 2:2, 3:3, 4:4}
+MCSVIDEO_VOE_LABEL_FG = {1:1, 2:2, 3:3}
 MCSVIDEO_VOE_LABEL_MAP = { 0:0, 255:255}
 MCSVIDEO_VOE_LABEL_MAP.update(MCSVIDEO_VOE_LABEL_FG)
 
-MCSVIDEO_VOE_SEM_WEIGHTS = { 0:1.0000,  1:1.0549,  2:1.1200,  3:0.9519,  4:1.0380, 255:0.0}
+MCSVIDEO_VOE_SEM_WEIGHTS = { 0:1.0000, 255:0.0, 2:2.0, 3:2.0}
+for key in MCSVIDEO_VOE_LABEL_MAP:
+    if key in MCSVIDEO_VOE_SEM_WEIGHTS:
+        continue
+    elif key in MCSVIDEO_VOE_LABEL_FG:
+        MCSVIDEO_VOE_SEM_WEIGHTS[key]  = 5.0
+    else:
+        MCSVIDEO_VOE_SEM_WEIGHTS[key]  = 2.0
 
 # ----------------------- DATASETS ----------------------- #
-
 mcsvideo_dataset_base = Config({
     'name': 'MCSVIDEO Dataset',
 
@@ -28,38 +34,57 @@ mcsvideo_dataset_base = Config({
 
     # Whether or not to load GT. If this is False, eval.py quantitative evaluation won't work.
     'has_gt': True,
+    'ignore_label': 255,
+    'select_semids': [1],
 
     # A list of names for each of you classes.
     'class_names': None,
-    'ignore_label': 255,
-    'select_semids': [3],
-
-    # MCSVIDEO class ids aren't sequential, so this is a bandage fix. If your ids aren't sequential,
-    # provide a map from category_id -> index in class_names + 1 (the +1 is there because it's 1-indexed).
-    # If not specified, this just assumes category ids start at 1 and increase sequentially.
     'label_map': None,
-    'sem_fg_stCH': len(MCSVIDEO_VOE_CLASSES_BG),
+    'sem_weights': None,
+
+    'sem_fg_stCH': 1,
     'extra_input': False
 })
 
-mcsvideo_voe_dataset = mcsvideo_dataset_base.copy({
+mcsvideo3_voe_dataset = mcsvideo_dataset_base.copy({
     'name': 'mcs video voe',
 
     'train_images': '../dataset/mcsvideo/',
-    'train_info': '../dataset/mcsvideo/VOE_scenes/train.txt',
+    'train_info': '../dataset/mcsvideo3/intphy_scenes/train.txt',
 
     'valid_images': '../dataset/mcsvideo/',
-    'valid_info': '../dataset/mcsvideo/VOE_scenes/val.txt',
+    'valid_info': '../dataset/mcsvideo3/intphy_scenes/val.txt',
 
     'class_names': MCSVIDEO_VOE_CLASSES,
     'label_map': MCSVIDEO_VOE_LABEL_MAP,
     'sem_weights': MCSVIDEO_VOE_SEM_WEIGHTS,
+
+    'sem_fg_stCH': len(MCSVIDEO_VOE_CLASSES_BG),
+    'extra_input': False
 })
+
+mcsvideo3_voe_depth_dataset = mcsvideo_dataset_base.copy({
+    'name': 'mcs video voe',
+
+    'train_images': '../dataset/mcsvideo3/',
+    'train_info': '../dataset/mcsvideo3/intphy_scenes/train.txt',
+
+    'valid_images': '../dataset/mcsvideo3/',
+    'valid_info': '../dataset/mcsvideo3/intphy_scenes/val.txt',
+
+    'class_names': MCSVIDEO_VOE_CLASSES,
+    'label_map': MCSVIDEO_VOE_LABEL_MAP,
+    'sem_weights': MCSVIDEO_VOE_SEM_WEIGHTS,
+
+    'sem_fg_stCH': len(MCSVIDEO_VOE_CLASSES_BG),
+    'extra_input': True
+})
+
 
 # ----------------------- CONFIG DEFAULTS ----------------------- #
 
-mcsvideo_base_config = Config({
-    'dataset': mcsvideo_voe_dataset,
+mcsvideo3_base_config = Config({
+    'dataset': mcsvideo3_voe_dataset,
     'num_classes': len(MCSVIDEO_VOE_CLASSES), # This should include the background class
     'num_bg_classes': len(MCSVIDEO_VOE_CLASSES_BG),
     'num_fg_classes': len(MCSVIDEO_VOE_CLASSES_FG),
@@ -164,6 +189,7 @@ mcsvideo_base_config = Config({
     # Use command-line arguments to set this.
     'no_jit': False,
 
+    'net_in_channels': 3,
     'backbone': None,
     'name': 'base_config',
 })
@@ -171,10 +197,10 @@ mcsvideo_base_config = Config({
 
 #-----------------Network config -------------------------------#
 
-base_network_config = setup_network_base_config(mcsvideo_base_config,
-                            mcsvideo_voe_dataset,
-                            lr_steps=[100000, 200000, 500000, 700000, 750000],
-                            max_size=513)
+base_network_config = setup_network_base_config(mcsvideo3_base_config,
+                            mcsvideo3_voe_dataset,
+                            lr_steps=[40000, 70000, 90000, 110000, 150000],
+                            max_size=600)
 
 plus_resnet50_config  = change_backbone_resnet50_dcn(base_network_config)
 plus_resnet101_config = change_backbone_resnet101_dcn(base_network_config)
@@ -183,15 +209,39 @@ plus_resnet101_config = change_backbone_resnet101_dcn(base_network_config)
 # ------------Network config for multiple channel output-----------------#
 
 plus_resnet50_config_MC = change_instance_output(plus_resnet50_config,
-                                            mask_out_ch=16, mask_out_level=[0],
+                                            mask_out_ch=13, mask_out_level=[0],
                                             classify_en=1, classify_rs_size=7)
 
 plus_resnet101_config_MC = change_instance_output(plus_resnet101_config,
-                                            mask_out_ch=16, mask_out_level=[0],
+                                            mask_out_ch=13, mask_out_level=[0],
                                             classify_en=1, classify_rs_size=7)
 
 
-# ------------change_dataset-----------------#
+# -------------------------------------------------------#
+# ------------using depth or not-----------------#
+# -------------------------------------------------------#
+base_network_config_depth = setup_network_base_config(mcsvideo3_base_config,
+                            mcsvideo3_voe_depth_dataset,
+                            lr_steps=[40000, 70000, 90000, 110000, 150000],
+                            max_size=600)
+base_network_config_depth  = change_instance_input(base_network_config_depth,
+                                                 extra_input=True,
+                                                 net_in_channels=4)
+
+plus_resnet50_config_depth  = change_backbone_resnet50_dcn(base_network_config_depth)
+plus_resnet101_config_depth = change_backbone_resnet101_dcn(base_network_config_depth)
+
+
+# ------------Network config for multiple channel output-----------------#
+
+plus_resnet50_config_depth_MC = change_instance_output(plus_resnet50_config_depth,
+                                            mask_out_ch=13, mask_out_level=[0],
+                                            classify_en=1, classify_rs_size=7)
+
+plus_resnet101_config_depth_MC = change_instance_output(plus_resnet101_config_depth,
+                                            mask_out_ch=13, mask_out_level=[0],
+                                            classify_en=1, classify_rs_size=7)
+
 
 # Default config
 cfg = plus_resnet50_config.copy()

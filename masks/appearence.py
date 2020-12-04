@@ -13,7 +13,37 @@ from torch.utils.data import Dataset, DataLoader
 from torch.optim import Adam
 from torch.utils.tensorboard import SummaryWriter
 import torch.nn as nn
+import cv2
 from tqdm import tqdm
+import webcolors
+
+
+def closest_colour(requested_colour):
+    min_colours = {}
+    for key, name in webcolors.css3_hex_to_names.items():
+        r_c, g_c, b_c = webcolors.hex_to_rgb(key)
+        rd = (r_c - requested_colour[0]) ** 2
+        gd = (g_c - requested_colour[1]) ** 2
+        bd = (b_c - requested_colour[2]) ** 2
+        min_colours[(rd + gd + bd)] = name
+    return min_colours[min(min_colours.keys())]
+
+
+def getNearestWebSafeColor(x):
+    r, g, b = x
+    r = int(round((r / 255.0) * 5) * 51)
+    g = int(round((g / 255.0) * 5) * 51)
+    b = int(round((b / 255.0) * 5) * 51)
+    return (r, g, b)
+
+
+def get_colour_name(requested_colour):
+    try:
+        closest_name = actual_name = webcolors.rgb_to_name(requested_colour)
+    except ValueError:
+        closest_name = closest_colour(requested_colour)
+        actual_name = None
+    return actual_name, closest_name
 
 
 def obj_image_to_tensor(obj_image):
@@ -25,50 +55,132 @@ def obj_image_to_tensor(obj_image):
 
 
 class AppearanceMatchModel(nn.Module):
-    def __init__(self, labels):
+    def __init__(self, shape_labels, color_labels):
         super(AppearanceMatchModel, self).__init__()
 
-        self._labels = labels
+        self._shape_labels = shape_labels
+        self._color_labels = color_labels
         self.feature = nn.Sequential(nn.Conv2d(3, 6, 2),
                                      nn.LeakyReLU(),
                                      nn.Conv2d(6, 6, 3),
                                      nn.LeakyReLU())
-        self.shape_classifier = nn.Sequential(nn.Linear(13254, len(self._labels)))
 
-    def label(self, id):
-        return self._labels[id]
+        self.color_feature = nn.Sequential(nn.Conv2d(3, 6, 2),
+                                     nn.LeakyReLU(),
+                                     nn.Conv2d(6, 6, 3),
+                                     nn.LeakyReLU())
+
+        self.shape_classifier = nn.Sequential(nn.Linear(13254, len(self._shape_labels)))
+        self.color_classifier = nn.Sequential(nn.Linear(13254, len(self._color_labels)))
+
+    def shape_label(self, id):
+        return self._shape_labels[id]
+
+    def shape_labels(self):
+        return self._shape_labels
+
+    def color_label(self, id):
+        return self._color_labels[id]
+
+    def color_labels(self):
+        return self._color_labels
 
     def forward(self, x):
         feature = self.feature(x)
+        color_feature = self.color_feature(x)
         feature = feature.flatten(1)
-        return feature, self.shape_classifier(feature)
+        color_feature = color_feature.flatten(1)
+        return feature, self.shape_classifier(feature), self.color_classifier(color_feature)
 
 
-def object_appearance_match(appearance_model, frame, objects_info, device='cpu'):
+def object_appearance_match(appearance_model, image, objects_info, device='cpu'):
     for obj_key in objects_info:
 
         top_x, top_y, bottom_x, bottom_y = objects_info[obj_key]['bounding_box']
-        obj_current_image = frame.image.crop((top_y, top_x, bottom_y, bottom_x))
-        obj_current_image = obj_image_to_tensor(obj_current_image).to(device)
-        obj_current_image = obj_current_image.unsqueeze(0)
+        obj_current_image = image.crop((top_y, top_x, bottom_y, bottom_x))
 
-        _, object_shape_logit = appearance_model(obj_current_image)
-        object_shape_logit = object_shape_logit.squeeze(0)
-        object_shape_prob = torch.softmax(object_shape_logit, dim=0)
+        with torch.no_grad():
+            obj_current_image_tensor = obj_image_to_tensor(obj_current_image).to(device)
+            obj_current_image_tensor = obj_current_image_tensor.unsqueeze(0)
+
+            # extract appearance ( shape) info
+            _, object_shape_logit, object_color_logit = appearance_model(obj_current_image_tensor)
+            object_shape_logit = object_shape_logit.squeeze(0)
+            object_shape_prob = torch.softmax(object_shape_logit, dim=0)
+
+            object_color_logit = object_color_logit.squeeze(0)
+            object_color_prob = torch.softmax(object_color_logit, dim=0)
+
         current_object_shape_id = torch.argmax(object_shape_prob).item()
+        current_object_color_id = torch.argmax(object_color_prob).item()
 
-        if 'base_image' not in objects_info[obj_key]:
+        base_image = np.array(image)
+        mask_image = np.zeros(objects_info[obj_key]['mask'].shape, dtype=base_image.dtype)
+        mask_image[objects_info[obj_key]['mask']] = 255
+
+        obj_clr_hist_0 = cv2.calcHist([np.array(image)], [0], mask_image, [10], [0, 256])
+        obj_clr_hist_1 = cv2.calcHist([np.array(image)], [1], mask_image, [10], [0, 256])
+        obj_clr_hist_2 = cv2.calcHist([np.array(image)], [2], mask_image, [10], [0, 256])
+        obj_clr_hist = (obj_clr_hist_0 + obj_clr_hist_1 + obj_clr_hist_2) / 3
+
+        from colorthief import ColorThief
+        from webcolors import rgb_to_name
+        import io
+        from PIL import Image
+        with io.BytesIO() as file_object:
+            (top_left_x, top_left_y), (bottom_right_x, bottom_right_y) = get_mask_box(objects_info[obj_key]['mask'])
+            _mask_image = image.crop((top_left_y, top_left_x, bottom_right_y, bottom_right_x))
+            # _mask_image = Image.fromarray(mask_image)
+            # _mask_image.save(file_object, "PNG")
+            # dominant_color_rgb = ColorThief(file_object).get_color(quality=1)
+            # dominant_color_name = rgb_to_name(getNearestWebSafeColor(dominant_color_rgb))
+            try:
+                dominant_color_rgb = max(_mask_image.getcolors())
+            except:
+                pass
+
+        if 'base_image' not in objects_info[obj_key] or len(objects_info[obj_key]['position_history']) < 5:
             objects_info[obj_key]['base_image'] = {}
             objects_info[obj_key]['appearance'] = {}
-
             objects_info[obj_key]['base_image']['shape_id'] = current_object_shape_id
-            objects_info[obj_key]['base_image']['shape'] = model.label(current_object_shape_id)
-            objects_info[obj_key]['appearance']['match'] = True
-            objects_info[obj_key]['appearance']['prob'] = object_shape_prob[current_object_shape_id].item()
+            objects_info[obj_key]['base_image']['shape'] = model.shape_label(current_object_shape_id)
+            objects_info[obj_key]['base_image']['color_id'] = current_object_shape_id
+            objects_info[obj_key]['base_image']['color'] = model.color_label(current_object_color_id)
+
+            objects_info[obj_key]['base_image']['histogram'] = obj_clr_hist
+            base_shape_id = current_object_shape_id
+            base_color_id = current_object_color_id
         else:
             base_shape_id = objects_info[obj_key]['base_image']['shape_id']
-            objects_info[obj_key]['appearance']['prob'] = object_shape_prob[base_shape_id].item()
-            objects_info[obj_key]['appearance']['match'] = current_object_shape_id == base_shape_id
+            base_color_id = objects_info[obj_key]['base_image']['color_id']
+
+        # shape match
+        objects_info[obj_key]['appearance']['shape_match_quotient'] = object_shape_prob[base_shape_id].item()
+        objects_info[obj_key]['appearance']['shape_prob'] = object_shape_prob.numpy()
+        objects_info[obj_key]['appearance']['shape_prob_labels'] = model.shape_labels()
+
+        # color match
+        objects_info[obj_key]['appearance']['color_hist'] = obj_clr_hist
+        objects_info[obj_key]['appearance']['color_match_quotient'] = object_color_prob[base_color_id].item()
+        objects_info[obj_key]['appearance']['color_prob'] = object_color_prob.numpy()
+        objects_info[obj_key]['appearance']['color_prob_labels'] = model.color_labels()
+
+        # objects_info[obj_key]['appearance']['color'] = current_object_color_id
+        # objects_info[obj_key]['appearance']['color_id'] = current_object_color_id
+        # objects_info[obj_key]['appearance']['dominant_color_name'] = dominant_color_name
+        # objects_info[obj_key]['appearance']['dominant_color_rgb'] = dominant_color_rgb
+
+        objects_info[obj_key]['appearance']['color_hist_quotient'] = cv2.compareHist(obj_clr_hist,
+                                                                                     objects_info[obj_key][
+                                                                                         'base_image']['histogram'],
+                                                                                     cv2.HISTCMP_CORREL)
+
+        # Todo: size match?
+
+        # match
+        shape_matches = current_object_shape_id == base_shape_id
+        color_matches = current_object_color_id == base_color_id
+        objects_info[obj_key]['appearance']['match'] = shape_matches and color_matches
 
     return objects_info
 
@@ -77,8 +189,8 @@ def process_video(video_data, appearance_model, save_path=None, save_mp4=False, 
     track_info = {}
     processed_frames = []
     for frame_num, frame in enumerate(video_data):
-        track_info = track_objects(frame, track_info)
-        track_info['objects'] = object_appearance_match(appearance_model, frame,
+        track_info = track_objects(frame.obj_mask, track_info)
+        track_info['objects'] = object_appearance_match(appearance_model, frame.image,
                                                         track_info['objects'], device)
 
         img = draw_bounding_boxes(frame.image, track_info['objects'])
@@ -102,18 +214,40 @@ class ObjectDataset(Dataset):
 
     def __init__(self, data):
         self.data = data
-        self._labels = {name: id for id, name in enumerate(sorted(set(data['shapes'])))}
-        self.data['shapes'] = np.array(self.data['shapes'])
+        self.shape_labels = sorted(set(data['shapes']))
+        self.color_labels = sorted(set(np.array(data['textures']).squeeze(1)))
 
-        for shape, shape_id in self._labels.items():
+        self.data['shapes'] = np.array(self.data['shapes'])
+        self.data['color'] = np.array(data['textures']).squeeze(1)
+
+        for shape_id, shape in enumerate(self.shape_labels):
             self.data['shapes'][self.data['shapes'] == shape] = shape_id
 
-    def get_label(self, id):
-        return self._labels[id]
+        for color_id, color in enumerate(self.color_labels):
+            self.data['color'][self.data['color'] == color] = color_id
 
-    @property
-    def labels(self):
-        return sorted([k for k in self._labels])
+        self.data['shapes'] = self.data['shapes'].astype(np.int)
+        self.data['color'] = self.data['color'].astype(np.int)
+
+    def shape_label_name(self, label_id):
+        return self.shape_labels[label_id]
+
+    def shape_labels_count(self):
+        _labels, counts = np.unique(self.data['shapes'], return_counts=True)
+        return [counts[_labels == label_i][0] for label_i, _ in enumerate(self.shape_labels)]
+
+    def color_label_name(self, label_id):
+        return self.color_labels[label_id]
+
+    def color_labels_count(self):
+        _labels, counts = np.unique(self.data['color'], return_counts=True)
+        return [counts[_labels == label_i][0] for label_i, _ in enumerate(self.shape_labels)]
+
+    def get_dataset_weights(self, label_probs):
+        weights = np.random.randn(self.__len__())
+        for label_i, prob in enumerate(label_probs):
+            weights[self.data['shapes'] == label_i] = prob
+        return weights
 
     def __len__(self):
         return len(self.data['images'])
@@ -123,7 +257,8 @@ class ObjectDataset(Dataset):
             idx = idx.tolist()
 
         return {'images': self.data['images'][idx],
-                'shapes': int(self.data['shapes'][idx])}
+                'shapes': self.data['shapes'][idx],
+                'color': self.data['color'][idx]}
 
 def generate_data(scenes_files):
     data = {'images': [], 'shapes': [], 'materials': [], 'textures': []}
@@ -175,21 +310,34 @@ def train_appearance_matching(dataloader, model, optimizer, epochs: int, writer,
 
     model.train()
     for epoch in range(init_epoch, epochs):
-        batch_losses = {'shape': []}
+        batch_losses = {'shape': [], 'color': []}
+        batch_acc = {'shape': [], 'color': []}
         for i_batch, batch in enumerate(dataloader):
             object_image = batch['images']
             object_shape = batch['shapes']
+            object_color = batch['color']
 
             object_image = object_image.float()
-            feature, shape_logits = model(object_image)
+            feature, shape_logits, color_logits = model(object_image)
 
             shape_loss = nn.CrossEntropyLoss()(shape_logits, object_shape)
+            color_loss = nn.CrossEntropyLoss()(color_logits, object_color)
+            shape_acc = sum(torch.argmax(shape_logits, dim=1) == object_shape).item() / len(object_shape)
+            color_acc = sum(torch.argmax(color_logits, dim=1) == object_color).item() / len(object_color)
             batch_losses['shape'].append(shape_loss.item())
+            batch_acc['shape'].append(shape_acc)
+            batch_losses['color'].append(color_loss.item())
+            batch_acc['color'].append(color_acc)
+
+            # optimize
             optimizer.zero_grad()
-            shape_loss.backward()
+            (shape_loss + color_loss).backward()
             optimizer.step()
 
-        writer.add_scalar('losses/shape', np.mean(batch_losses['shape']), epoch)
+        writer.add_scalar('train/shape_loss', np.mean(batch_losses['shape']), epoch)
+        writer.add_scalar('train/shape_accuracy', np.mean(batch_acc['shape']), epoch)
+        writer.add_scalar('train/color_loss', np.mean(batch_losses['color']), epoch)
+        writer.add_scalar('train/color_accuracy', np.mean(batch_acc['color']), epoch)
 
         if (epoch % checkpoint_interval) == 0:
             torch.save({
@@ -202,14 +350,15 @@ def train_appearance_matching(dataloader, model, optimizer, epochs: int, writer,
             torch.save(model.state_dict(), model_path)
 
         if epoch % log_interval == 0:
-            print('Epoch: {} Shape Loss: {}'.format(epoch, np.mean(batch_losses['shape'])))
+            print('Epoch: {} Shape Loss: {} Shape Accuracy:{} Color Acc: {}'.format(
+                epoch, np.mean(batch_losses['shape']), np.mean(batch_acc['shape']),
+                np.mean(batch_acc['color'])))
 
 
 def make_parser():
     parser = ArgumentParser()
     parser.add_argument('--test-scenes-path', required=True, type=Path)
     parser.add_argument('--train-scenes-path', required=True, type=Path)
-
     parser.add_argument('--train-dataset-path', required=False, type=Path,
                         default=os.path.join(os.getcwd(), 'train_object_dataset.p'))
     parser.add_argument('--test-dataset-path', required=False, type=Path,
@@ -252,9 +401,14 @@ if __name__ == '__main__':
         # flush every 1 minutes
         summary_writer = SummaryWriter(log_path, flush_secs=60 * 1)
 
-        object_dataset = ObjectDataset(pickle.load(open(args.train_dataset_path, 'rb')))
-        dataloader = DataLoader(object_dataset, batch_size=args.batch_size, shuffle=True, num_workers=1)
-        model = AppearanceMatchModel(object_dataset.labels)
+        # create balanced distribution
+        train_object_dataset = ObjectDataset(pickle.load(open(args.train_dataset_path, 'rb')))
+        probs = 1 / torch.Tensor(train_object_dataset.shape_labels_count())
+        weights = train_object_dataset.get_dataset_weights(probs)
+        sampler = torch.utils.data.sampler.WeightedRandomSampler(weights, len(weights), replacement=True)
+        dataloader = DataLoader(train_object_dataset, batch_size=args.batch_size, shuffle=False, num_workers=1,
+                                sampler=sampler)
+        model = AppearanceMatchModel(train_object_dataset.shape_labels, train_object_dataset.color_labels)
         optimizer = Adam(model.parameters(), lr=args.lr)
 
         # train
@@ -267,7 +421,7 @@ if __name__ == '__main__':
 
         # Todo: Don't load dataset over here. It's only required for label count
         train_object_dataset = ObjectDataset(pickle.load(open(args.train_dataset_path, 'rb')))
-        model = AppearanceMatchModel(train_object_dataset.labels)
+        model = AppearanceMatchModel(train_object_dataset.shape_labels, train_object_dataset.color_labels)
         model.load_state_dict(torch.load(model_path, map_location=torch.device('cpu')))
         model = model.to(args.device)
 

@@ -1,4 +1,4 @@
-from vision.instSeg.data.base_config import *
+from data.base_config import *
 
 # ----------------------- DATASETS ----------------------- #
 MCSVIDEO_INTER_CLASSES_BG = ['floor', 'wall', 'ceiling', 'occluder', 'others_bg'] #0~4
@@ -36,6 +36,7 @@ mcsvideo_dataset_base = Config({
     # Whether or not to load GT. If this is False, eval.py quantitative evaluation won't work.
     'has_gt': True,
     'ignore_label': 255,
+    'select_semids': None,
 
     # A list of names for each of you classes.
     'class_names': None,

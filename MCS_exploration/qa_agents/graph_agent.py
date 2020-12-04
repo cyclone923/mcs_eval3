@@ -19,7 +19,7 @@ class GraphAgent(object):
             self.game_state.get_obstacles = self.nav.get_obstacles
         else:
             self.game_state = game_state
-        self.action_util = self.game_state.action_util
+        #self.action_util = self.game_state.action_util
         self.gt_graph = None
         #self.sess = sess
         self.num_steps = 0
@@ -35,7 +35,7 @@ class GraphAgent(object):
             if self.game_state.env is not None and type(self.game_state) == GameState:
                 self.game_state.reset(scene_name, use_gt=False, seed=seed,config_filename=config_filename,event=event)
             self.bounds = None
-            self.action = np.zeros(self.action_util.num_actions)
+            #self.action = np.zeros(self.action_util.num_actions)
             self.memory = np.zeros((constants.SPATIAL_MAP_HEIGHT, constants.SPATIAL_MAP_WIDTH, constants.MEMORY_SIZE))
             self.gru_state = np.zeros((1, constants.GRU_SIZE))
             self.pose = self.game_state.pose

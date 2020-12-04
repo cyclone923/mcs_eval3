@@ -1,27 +1,29 @@
-from vision.mcs_base import McsEnv
-from meta_controller.meta_controller import MetaController
+from MCS_exploration.gym_ai2thor.envs.mcs_env import McsEnv
+from MCS_exploration.meta_controller.meta_controller import MetaController
+from MCS_exploration.frame_collector import Frame_collector
 import sys
-from vision.generateData.frame_collector import Frame_collector
 
-
+DEBUG = False
 
 if __name__ == "__main__":
-    start_scene_number, end_scene_number = 0, -1
-    task, scene_type = "interaction_scenes", "transferral"
-    collector = Frame_collector(scene_dir="instSeg/"+task+"/"+scene_type, start_scene_number=start_scene_number)
+    start_scene_number = 0
+    collector = Frame_collector(scene_dir="simple_task_img", start_scene_number=start_scene_number)
     env = McsEnv(
-        task=task, scene_type=scene_type, seed=50,
-        start_scene_number=start_scene_number, frame_collector=collector, set_trophy=True
-    )
+        task="interaction_scenes", scene_type="retrieval" if not DEBUG else "debug", seed=50,
+        start_scene_number=start_scene_number, frame_collector=collector, set_trophy=True if not DEBUG else False,
+        trophy_prob=0
+    )  # trophy_prob=1 mean the trophy is 100% outside the box, trophy_prob=0 mean the trophy is 100% inside the box,
     metaController = MetaController(env)
 
-    if end_scene_number == -1:
-        end_scene_number = len(env.all_scenes)
-    else:
-        end_scene_number = min(end_scene_number, len(env.all_scenes))
-
-    while env.current_scene < end_scene_number - 1:
+    while env.current_scene < len(env.all_scenes) - 1:
         env.reset()
-        result = metaController.excecute()
+        try:
+            result = metaController.excecute()
+        except:
+            pass
+        print("final reward {}".format(env.step_output.reward))
+
         sys.stdout.flush()
         collector.reset()
+
+

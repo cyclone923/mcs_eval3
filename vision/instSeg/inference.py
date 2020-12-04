@@ -4,9 +4,12 @@ import numpy as np
 import torch
 from torch.nn import functional as F
 
-from vision.instSeg import data
-from vision.instSeg.dvis_network import DVIS
-from vision.instSeg.utils.augmentations import BaseTransform
+import sys
+sys.path.append('./vision/instSeg')
+
+import data
+from dvis_network import DVIS
+from utils.augmentations import BaseTransform
 
 class MaskAndClassPredictor(object):
     '''
@@ -16,8 +19,8 @@ class MaskAndClassPredictor(object):
                        config='plus_resnet50_config_depth_MC',
                        weights=None):
         '''
-        @Param: dataset -- 'mcsvideo3_inter | mcsvideo_inter | mcsvideo_voe'
-                config -- check the config files in data for more configurations.
+        @Param: dataset -- 'mcsvideo3_inter | mcsvideo3_voe | mcsvideo_inter | mcsvideo_voe'
+                config -- check the config files in data for more other configurations.
                 weights -- file for loading model weights
         '''
         cfg, set_cfg = data.dataset_specific_import(dataset)
@@ -65,6 +68,7 @@ class MaskAndClassPredictor(object):
             img    = np.concatenate([img, depthI], axis=-1)
         return img
 
+    @torch.no_grad()
     def step(self, bgrI, depthI=None):
         '''
         @Param: bgrI -- [ht, wd, 3] in 'BGR' color space
@@ -95,9 +99,9 @@ class MaskAndClassPredictor(object):
         bg_probs   = preds_score[:self.fg_stCh, :, :]
 
         if len(obj_idxes) > 0:
-            fg_probs   = preds_score[self.fg_stCh:, :, :][obj_idxes[0], :, :]
-            out_probs  = torch.cat([bg_probs, fg_probs], axis=0)
-            out_scores = cls_score[self.fg_stCh:, :][obj_idxes[0], :]
+            fg_probs   = preds_score[self.fg_stCh:, :, :][obj_idxes, :, :][:, 0, :, :] #[n, ht, wd]
+            out_probs  = torch.cat([bg_probs, fg_probs], axis=0) #[BG_cls+n, ht, wd]
+            out_scores = cls_score[self.fg_stCh:, :][obj_idxes, :][:, 0, : ]  #[n, k]
         else:
             out_probs, out_scores = bg_probs, cls_score[:0, :]
 
@@ -116,26 +120,70 @@ class MaskAndClassPredictor(object):
                 'net-mask': net_mask}
 
 
-if __name__=='__main__':
-    import cv2
-    import scipy.misc as smisc  # scipy in version <= 1.2.0
+#################################################################
+'''
+       ******  Demo scripts in below  ******
+'''
+#################################################################
+def display_segment_result(bgrI, depthI, net_out):
     from matplotlib import pyplot as plt
 
-    bgrI   = cv2.imread('./vision/instSeg/demo/original-24-0.jpg')
-    depthI = smisc.imread('./vision/instSeg/demo/depth-24-0.png', mode='P')
-
-    model = MaskAndClassPredictor()
-    ret   = model.step(bgrI, depthI)
+    print('-- object class score: \n', np.round(net_out['obj_class_score'], 3))
 
     fig, ax = plt.subplots(2,2)
     ax[0,0].imshow(bgrI[..., [2,1,0]])
-    ax[0,0].set_title('RGB image')
     ax[0,1].imshow(depthI, cmap='gray')
+    ax[1,0].imshow(net_out['net-mask'])
+    ax[1,1].imshow(net_out['mask_prob'].argmax(axis=0))
+
+    ax[0,0].set_title('RGB image')
     ax[0,1].set_title('depth image')
-    ax[1,0].imshow(ret['net-mask'])
     ax[1,0].set_title('net predict mask')
-    ax[1,1].imshow(ret['mask_prob'].argmax(axis=0))
     ax[1,1].set_title('final mask (with cls-score)')
     plt.show()
 
+def demo_interact_segmentation():
+    import glob
+    import cv2
+    import scipy.misc as smisc  # scipy in version <= 1.2.0
+
+    model = MaskAndClassPredictor(dataset='mcsvideo3_inter',
+                                  config='plus_resnet50_config_depth_MC',
+                                  weights='./vision/instSeg/dvis_resnet50_mc.pth')
+
+    img_list = glob.glob('./vision/instSeg/demo/interact/*.jpg')
+    for rgb_file in img_list:
+        depth_file = rgb_file.replace('original', 'depth')[:-4] + '.png'
+
+        bgrI   = cv2.imread(rgb_file)
+        depthI = smisc.imread(depth_file, mode='P')
+        ret    = model.step(bgrI, depthI)
+
+        display_segment_result(bgrI, depthI, ret)
+
+def demo_voe_segmentation():
+    import glob
+    import cv2
+    import scipy.misc as smisc  # scipy in version <= 1.2.0
+
+    model = MaskAndClassPredictor(dataset='mcsvideo3_voe',
+                                  config='plus_resnet50_config_depth_MC',
+                                  weights='./vision/instSeg/dvis_resnet50_mc_voe.pth')
+
+    img_list = glob.glob('./vision/instSeg/demo/voe/*.jpg')
+    for rgb_file in img_list:
+        depth_file = rgb_file.replace('original', 'depth')[:-4] + '.png'
+
+        bgrI   = cv2.imread(rgb_file)
+        depthI = smisc.imread(depth_file, mode='P')
+        ret    = model.step(bgrI, depthI)
+
+        display_segment_result(bgrI, depthI, ret)
+
+
+if __name__=='__main__':
+
+    demo_voe_segmentation()
+
+    demo_interact_segmentation()
 

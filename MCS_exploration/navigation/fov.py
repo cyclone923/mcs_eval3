@@ -51,8 +51,8 @@ class FieldOfView:
 		if True:
 			# find any points in the FoV
 			for obs in self.obstacle:
-				#obs = obs.simplify(0.08)
-				#obs = ObstaclePolygon(obs.exterior.coords.xy[0],obs.exterior.coords.xy[1])
+				obs = obs.simplify(0.08)
+				obs = ObstaclePolygon(obs.exterior.coords.xy[0],obs.exterior.coords.xy[1])
 
 				#check if any point lies in the viewing window
 				for x,y in zip(obs.x_list, obs.y_list):
@@ -109,8 +109,6 @@ class FieldOfView:
 			else:
 				print(intersections)
 				raise ValueError(type(intersections))
-
-
 
 	def castRay(self, angle, maxLen, clr="-g"):
 		p1 = Geometry.Point(float(self.agentX), float(self.agentY))
