@@ -4,15 +4,16 @@ import numpy as np
 import torch
 import torch.nn.functional as F
 
-def detect_occlusions(depth, mask):
-    all_ids = [x for x in np.unique(mask) if x != -1]
+def detect_occlusions(depth, mask, all_ids):
     return [detect_occlusion(depth, mask, i) for i in all_ids]
 
 def detect_occlusion(depth, mask, id_):
     obj_mask = (mask == id_)
+    if obj_mask.sum() == 0:
+        return False
     if at_edge(obj_mask):
         return True
-    if behind_object(obj_mask, depth, 1):
+    if behind_object(obj_mask, depth, 0.5):
         return True
     return False
 
@@ -36,9 +37,8 @@ def mask_around(mask):
 
 def behind_object(mask, depth, thresh):
     around = mask_around(mask)
-    adj_depths = depth[around]
     obj_depths = depth[mask]
-    adj_depth = np.percentile(adj_depths, 0.01)
-    obj_depth = np.percentile(obj_depths, 0.1)
-    print(adj_depth, obj_depth)
-    return (adj_depth+thresh) < obj_depth
+    obj_depth = np.percentile(obj_depths, 0.5)
+    adj_depths = depth[around]
+    adj_depth = np.percentile(adj_depths, 0.3)
+    return obj_depth > adj_depth

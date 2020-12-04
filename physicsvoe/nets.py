@@ -12,109 +12,6 @@ def next_dim(kernel, stride, in_):
     padding = 0
     return math.floor(1 + (in_ + 2*padding - dilation*(kernel-1) - 1)/stride)
 
-class _ThorBase:
-    def make_conv(self, in_size, conv_info, out_size, img_size):
-        self.depth_convs = nn.ModuleList()
-        dims = list(img_size)
-        first = True
-        for kernel, next_size, stride in conv_info:
-            layers = []
-            if not first:
-                layers.append(nn.BatchNorm2d(in_size))
-            first = False
-            layers.append(nn.Conv2d(in_size, next_size, kernel, stride))
-            layers.append(nn.ReLU())
-            block = nn.Sequential(*layers)
-            self.depth_convs.append(block)
-            dims = [next_dim(kernel, stride, x) for x in dims]
-            in_size = next_size
-        flat_size = dims[0]*dims[1]*in_size
-        comp_layers = []
-        comp_layers.append(nn.BatchNorm1d(flat_size))
-        comp_layers.append(nn.Linear(flat_size, out_size))
-        comp_layers.append(nn.ReLU())
-        comp_layers.append(nn.BatchNorm1d(out_size))
-        comp_layers.append(nn.Linear(out_size, out_size))
-        self.depth_compress = nn.Sequential(*comp_layers)
-
-    def make_obj_encoder(self, latent_sizes,
-                         weight_hidden, c_mid, final_hidden,
-                         combine_hidden, in_size, space_dim):
-        self.time_convs = nn.ModuleList()
-        self.combine_mlps = nn.ModuleList()
-        default_args = {'weight_hidden': weight_hidden, 'c_mid': c_mid,
-                        'final_hidden': final_hidden}
-        for latent_sz in latent_sizes:
-            args = dict(default_args)
-            args.update({'neighbors': -1, 'c_in': in_size, 'c_out': latent_sz,
-                         'dim': self.time_encode.out_dim+space_dim})
-            pc = pointconv.PointConv(**args)
-            self.time_convs.append(pc)
-            mlp_args = {'in_size': in_size+latent_sz, 'out_size': latent_sz,
-                        'hidden_sizes': combine_hidden, 'reduction': 'none',
-                        'deepsets': False}
-            pn = pointnet.SetTransform(**mlp_args)
-            self.combine_mlps.append(pn)
-            in_size = latent_sz
-
-    def make_target_encoder(self, latent_sz, pred_latent):
-        weight_hidden = [2**6]*4
-        c_mid = 2**7
-        final_hidden = [2**7]*4
-        args = {'weight_hidden': weight_hidden, 'c_mid': c_mid,
-                'final_hidden': final_hidden, 'neighbors': -1,
-                'c_in': latent_sz, 'c_out': pred_latent,
-                'dim': self.time_encode.out_dim}
-        self.pred_pc = pointconv.PointConv(**args)
-
-    def make_decoder(self, pred_latent, pred_hidden, out_size):
-        mlp_args = {'in_size': pred_latent, 'out_size': out_size,
-                    'hidden_sizes': pred_hidden, 'reduction': 'none',
-                    'deepsets': False}
-        self.predict_mlp = pointnet.SetTransform(**mlp_args)
-
-    def depth_encode(self, depths, obj_masks_l):
-        # Depths:
-        #  Batch x Timestep x Height x Width
-        # combined:
-        #  Batch x Object x Timestep x Channels x Height x Width
-        obj_masks = torch.stack(obj_masks_l, dim=1).float()
-        exp_depth = depths.unsqueeze(1).unsqueeze(3).expand(-1, obj_masks.size(1), -1, -1, -1, -1)
-        combined = torch.cat((exp_depth, obj_masks), dim=3)
-        orig_size = combined.shape[:3]
-        # comb_flat:
-        #  (...) x Channels x Height x Width
-        comb_flat = combined.view(-1, *combined.shape[3:])
-        # Apply convolution
-        x = comb_flat
-        for depth_conv_block in self.depth_convs:
-            x = depth_conv_block(x)
-        # Flatten output
-        out_flat = x.view(x.shape[0], -1)
-        out_comp = self.depth_compress(out_flat)
-        out = out_comp.view(*orig_size, out_comp.shape[-1])
-        return out
-
-    def flatten_info(self, objs, ts, mask, obj_ids):
-        exp_ts = ts.unsqueeze(1).expand(-1, objs.size(1), -1)
-        exp_mask = mask.unsqueeze(1).expand(-1, objs.size(1), -1)
-        flat_ts = exp_ts.reshape(exp_ts.size(0), -1)
-        flat_mask = exp_mask.reshape(exp_mask.size(0), -1)
-        flat_objs = objs.view(objs.size(0), -1, objs.size(-1))
-        exp_ids = torch.tensor(obj_ids).to(objs.device).view(1, -1, 1).expand(objs.size(0), -1, objs.size(2))
-        flat_ids = exp_ids.reshape(exp_ids.size(0), -1)
-        return flat_objs, flat_ts, flat_mask, flat_ids
-
-    def obj_encode(self, flat_objs, flat_ts, flat_mask, flat_ids):
-        in_feats = flat_objs
-        time_dist_fn = partial(time_dist, flat_ids, flat_mask, flat_objs, self.time_encode)
-        for time_pc, combine_mlp in zip(self.time_convs, self.combine_mlps):
-            time_nei = time_pc(flat_ts, flat_ts, in_feats, time_dist_fn)
-            combine_in = torch.cat([in_feats, time_nei], dim=-1)
-            next_feats = combine_mlp(combine_in)
-            in_feats = next_feats
-        return next_feats
-
 class ThorNLLS:
     def __init__(self, oracle, model_cache=True):
         self.camera_info = {'vfov': 42.5,
@@ -182,9 +79,9 @@ class ThorNLLS:
         p0 = ps[closest].clone().detach().requires_grad_()
         v0 = torch.zeros(3, requires_grad=True, device=d)
         a = torch.zeros(3, requires_grad=True, device=d)
-        params = [p0, v0, a]
+        params = [p0, v0]
         opt = torch.optim.SGD(params, lr=0.001, momentum=0.9, nesterov=True)
-        for _ in range(100):
+        for _ in range(5000):
             errs = []
             preds = self.model(p0, v0, a, floor, ref_time, ts)
             opt.zero_grad()

@@ -7,6 +7,7 @@ from collections import defaultdict
 from pathlib import Path
 from argparse import ArgumentParser
 
+from matplotlib import pyplot as plt
 import torch
 import numpy as np
 
@@ -20,9 +21,9 @@ class FramewiseVOE:
         self.max_hist_count = max_hist_count
         self.net = ThorNLLS(oracle=True)
 
-    def record_obs(self, time, ids, pos, present):
+    def record_obs(self, time, ids, pos, present, occluded):
         assert time not in self.frame_history
-        self.frame_history[time] = (ids, pos, present)
+        self.frame_history[time] = (ids, pos, present, occluded)
         self.all_ids = self.all_ids.union(ids)
 
     def predict(self, time):
@@ -37,7 +38,7 @@ class FramewiseVOE:
         mask_l = [i in obj_ids for i in ids_l]
         return ids_l, pred_l, mask_l
 
-    def detect(self, time, actual_poss, actual_ids, depth, camera):
+    def detect(self, time, actual_poss, occluded, actual_ids, depth, camera):
         violations = []
         pred_info = self.predict(time)
         if pred_info is None:
@@ -48,6 +49,8 @@ class FramewiseVOE:
                 continue
             if pred_id in actual_ids:
                 _idx = actual_ids.index(pred_id)
+                if occluded[_idx]:
+                    continue
                 actual_pos = actual_poss[_idx]
                 err = torch.dist(actual_pos, pred_pos)
                 if err > self.dist_thresh:
@@ -65,8 +68,8 @@ class FramewiseVOE:
         id_l = []
         pos_l = []
         for time, frame_info in self.frame_history.items():
-            for id_, pos, present in zip(*frame_info):
-                if not present:
+            for id_, pos, present, occluded in zip(*frame_info):
+                if occluded or not present:
                     continue
                 time_l.append(time)
                 id_l.append(id_)
@@ -172,7 +175,6 @@ def output_voe(viols):
         print(v.describe())
 
 def show_scene(scene_name, frame, depth, masks, hmap, omap=None):
-    from matplotlib import pyplot as plt
     trip = np.repeat(depth[:, :, np.newaxis], axis=2, repeats=3)
     trip /= depth.max()
     trip[masks!=-1] = [0, 1, 0]
@@ -183,6 +185,7 @@ def show_scene(scene_name, frame, depth, masks, hmap, omap=None):
     trip[hidxs] = [1, 0, 0]
     plt.imshow(trip)
     plt.savefig(f'{scene_name}/{frame:02d}.png')
+    plt.close('all')
 
 ###
 
