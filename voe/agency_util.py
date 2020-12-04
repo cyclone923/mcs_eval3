@@ -5,6 +5,7 @@ import math
 import random
 import numpy as np
 from copy import deepcopy
+from skimage.feature import hog
 import matplotlib.pyplot as plt
 from pathfinding.core.grid import Grid
 from pathfinding.finder.a_star import AStarFinder
@@ -347,9 +348,150 @@ def create_arena():
         _arena.append(row)
     return _arena
 
+def get_obj_hog(obj):
+    # obj is an image
+    flat_hog = hog(obj, feature_vector=True, orientations=8, multichannel=True)
+    #print("flat hog shape:", flat_hog.shape)
+    flat_hog = np.array(flat_hog)
+    # there are 72 bin features/freq's for each subsection of the image 
+    avg_hog_block = np.mean(flat_hog.reshape(-1, 72), axis=0)
+    return avg_hog_block
+
+def dist_agent_obj(a_pos, obj):
+    a_x, a_y = a_pos
+    o_x, o_y = get_obj_pos(obj)
+    euclid_dist = ((o_x - a_x)**2 + (o_y - a_y)**2)**0.5
+    return euclid_dist
+
+# @TODO return a confidence and integrate with existing conf calculations
+def get_pref_obj_pos(history, o_1, o_2, a_pos):    
+    chosen = history["chosen"]
+    o_1_d = history["obj_1_dist"]
+    o_2_d = history["obj_2_dist"]
+    o_1_c = history["obj_1_color"]
+    o_2_c = history["obj_2_color"]
+    o_1_h = history["obj_1_hog"]
+    o_2_h = history["obj_2_hog"]
+    num_trials = len(o_1_d)
+
+    # calculate short_dist classifier accuracy
+    dist_acc = 0
+    for i in range(num_trials):
+        if o_1_d[i] < o_2_d[i]:
+            closest = 1 
+        else:
+            closest = 2
+
+        if closest == chosen[i]:
+            dist_acc += 1
+    dist_acc /= num_trials
+    short_acc = dist_acc
+    far_acc = 1 - dist_acc
+
+    # calculate color classifier accuracy with k-fold x-validation 
+    color_acc = 0
+    for i in range(num_trials):
+        # needs to be an average of the chosen color!
+        avg_chosen_c = []
+        for j in range(num_trials):
+            # leave one out for the gt label
+            if j == i: continue
+            if chosen[j] == 1:
+                avg_chosen_c.append(o_1_c[j])
+            else:
+                avg_chosen_c.append(o_2_c[j])
+        
+        # need to do this per channel :-/ ...
+        avg_chosen_c = np.array(avg_chosen_c)
+        #print("avg_chosen_c.shape:", avg_chosen_c.shape)
+        avg_chosen_c = avg_chosen_c.sum(axis=0)
+        avg_chosen_c /= num_trials
+        #print("avg_chosen_c.shape:", avg_chosen_c.shape)
+        assert avg_chosen_c.shape[0] == 3
+        
+        dist_1 = np.absolute(o_1_c[i] - avg_chosen_c).sum()
+        dist_2 = np.absolute(o_2_c[i] - avg_chosen_c).sum()
+        if dist_1 < dist_2:
+            closest = 1
+        else:
+            closest = 2
+
+        if closest == chosen[i]:
+            color_acc += 1
+    color_acc /= num_trials
+
+    # calculate shape/HOG classifier accuracy with k-fold x-validation 
+    hog_acc = 0
+    for i in range(num_trials):
+        avg_chosen_h = []
+        for j in range(num_trials):
+            # leave one out for the gt label
+            if j == i: continue
+            if chosen[j] == 1:
+                avg_chosen_h.append(o_1_h[j])
+            else:
+                avg_chosen_h.append(o_2_h[j])
+        
+        avg_chosen_h = np.array(avg_chosen_h)
+        #print("avg_chosen_h.shape:", avg_chosen_h.shape)
+        avg_chosen_h = avg_chosen_h.sum(axis=0)
+        avg_chosen_h /= num_trials
+        #print("avg_chosen_h.shape:", avg_chosen_h.shape) # should be 1d vector
+        
+        dist_1 = np.absolute(o_1_h[i] - avg_chosen_h).sum()
+        dist_2 = np.absolute(o_2_h[i] - avg_chosen_h).sum()
+        if dist_1 < dist_2:
+            closest = 1
+        else:
+            closest = 2
+
+        if closest == chosen[i]:
+            hog_acc += 1
+    hog_acc /= num_trials
+
+    # use best classifier to determine the currently preferred object
+    hypotheses = [short_acc, far_acc, color_acc, hog_acc]
+    #print("short_acc:", short_acc)
+    #print("far_acc:", far_acc)
+    #print("color_acc:", color_acc)
+    #print("hog_acc:", hog_acc)
+    best_classifier = hypotheses.index(max(hypotheses))
+    if best_classifier == 0 or best_classifier == 1:
+        #print("preferred object is based on distance")
+        dist_1 = dist_agent_obj(a_pos, o_1["rgb"])
+        dist_2 = dist_agent_obj(a_pos, o_2["rgb"])
+        if best_classifier == 0:
+            if dist_1 < dist_2:
+                o_x, o_y = get_obj_pos(o_1["rgb"])
+            else:
+                o_x, o_y = get_obj_pos(o_2["rgb"])
+        if best_classifier == 1:
+            if dist_1 > dist_2:
+                o_x, o_y = get_obj_pos(o_1["rgb"])
+            else:
+                o_x, o_y = get_obj_pos(o_2["rgb"])
+    elif best_classifier == 2:
+        #print("preferred object is a certain color")
+        dist_1 = np.absolute(get_ch_avgs(o_1["rgb"]) - avg_chosen_c).sum()
+        dist_2 = np.absolute(get_ch_avgs(o_2["rgb"]) - avg_chosen_c).sum()
+        if dist_1 < dist_2:
+            o_x, o_y = get_obj_pos(o_1["rgb"])
+        else:
+            o_x, o_y = get_obj_pos(o_2["rgb"])
+    else:
+        #print("preferred object is a certain shape")
+        dist_1 = np.absolute(get_obj_hog(o_1["rgb"]) - avg_chosen_h).sum()
+        dist_2 = np.absolute(get_obj_hog(o_2["rgb"]) - avg_chosen_h).sum()
+        if dist_1 < dist_2:
+            o_x, o_y = get_obj_pos(o_1["rgb"])
+        else:
+            o_x, o_y = get_obj_pos(o_2["rgb"])
+
+    return o_x, o_y
+
 # instead of a recursive solution, just hardcoded one since the nested structure isn't too deep
 def jsonify_info_dict(info):    
-    keys_to_keep = ["trial_err", "step_num", "arena", "agent_ch_avgs", "objs_ch_avgs", "trial_1_objs_pos", "path", "wall_i_s", "trial_err"]
+    keys_to_keep = ["pref_dict", "trial_err", "step_num", "arena", "agent_ch_avgs", "objs_ch_avgs", "trial_1_objs_pos", "path", "wall_i_s", "trial_err"]
     json_friendly = {key:val for key, val in info.items() if key in keys_to_keep}
     for key, value in json_friendly.items():
         if type(value) == type(np.array([])):
