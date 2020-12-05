@@ -3,7 +3,7 @@ from MCS_exploration.meta_controller.meta_controller import MetaController
 from MCS_exploration.frame_collector import Frame_collector
 import sys
 
-DEBUG = False
+DEBUG = True
 
 
 if __name__ == "__main__":
@@ -14,7 +14,7 @@ if __name__ == "__main__":
         #task="interaction_scenes", scene_type="traversal", seed=50,
         #task="interaction_scenes", scene_type="transferral", seed=50,
         #task="interaction_scenes", scene_type="experiment", seed=50,
-        start_scene_number=start_scene_number, frame_collector=None, set_trophy=True if not DEBUG else False, trophy_prob=1
+        start_scene_number=start_scene_number, frame_collector=None, set_trophy=True if not DEBUG else False, trophy_prob=0
         #start_scene_number=start_scene_number, frame_collector=None, set_trophy=False, trophy_prob=1
     ) # trophy_prob=1 mean the trophy is 100% outside the box, trophy_prob=0 mean the trophy is 100% inside the box,
     metaController = MetaController(env)
@@ -25,9 +25,10 @@ if __name__ == "__main__":
     exploration_success = 0
     negative_reward = 0
     number_tasks_success = 0 
-    number_scenes = 200
+    number_scenes = 5
     negative_rewards = 0
     failure_return_status = {}
+    number_crash = 0
     print ("Start scene number = ", start_scene_number)
     print ("number of scenes to run=" ,number_scenes )
 
@@ -41,7 +42,8 @@ if __name__ == "__main__":
         try:
             result = metaController.excecute()
         except Exception as e:
-             print ("error message", e)
+            print ("error message", e)
+            number_crash += 1
         #    print ("crash happened")
         #    pass
 
@@ -77,6 +79,7 @@ if __name__ == "__main__":
     print ("Total Success envs", number_tasks_success)
     print ("Total rewards gained from successful scenes",result_total)
     print ("Failure return status",failure_return_status)
+    print ("Total crashes", number_crash)
     #print ("Total actions taken ", total_actions)
     # print(len(c.frames))
     # write_gif(c.frames, 'original.gif', fps=5)
