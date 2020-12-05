@@ -1,8 +1,9 @@
 from physicsvoe.data.data_gen import convert_output
 from physicsvoe import framewisevoe, occlude
 from physicsvoe.timer import Timer
+from physicsvoe.data.types import make_camera
 
-from tracker import track
+from tracker import track, filter_masks
 import visionmodule.inference as vision
 
 
@@ -10,7 +11,6 @@ from pathlib import Path
 from PIL import Image
 import numpy as np
 
-DEFAULT_CAMERA = {'vfov': 42.5, 'pos': [0, 1.5, -4.5]}
 
 class VoeAgent:
     def __init__(self, controller, level):
@@ -48,37 +48,61 @@ class VoeAgent:
         return scene_voe_detected
 
     def calc_voe(self, step_output, frame_num, scene_name):
-        # TODO: calculate object masks
-        depth_img = step_output.depth_map_list[-1]
-        rgb_img = np.array(step_output.image_list[-1])
-        bgr_img = rgb_img[:, :, [2, 1, 0]]
-        frame = convert_output(step_output)
-        result = self.visionmodel.step(bgr_img, depth_img)
-        masks = prob_to_mask(result['mask_prob'], result['fg_stCh'], result['obj_class_score'])
-        #masks = frame.obj_mask
+        depth_map = step_output.depth_map_list[-1]
+        rgb_image = step_output.image_list[-1]
+        camera_info = make_camera(step_output)
+        if self.level == 'oracle':
+            masks = self.oracle_masks(step_output)
+        elif self.level == 'level2':
+            in_mask = step_output.object_mask_list[-1]
+            masks = self.level2_masks(depth_map, rgb_image, in_mask)
+        elif self.level == 'level1':
+            masks = self.level1_masks(depth_map, rgb_image)
+        else:
+            raise ValueError(f'Unknown level `{self.level}`')
         # Calculate tracking info
         self.track_info = track.track_objects(masks, self.track_info)
         all_obj_ids = list(range(self.track_info['object_index']))
         masks_list = [self.track_info['objects'][i]['mask'] for i in all_obj_ids]
-        tracked_masks = squash_masks(frame.depth_mask, masks_list, all_obj_ids)
+        tracked_masks = squash_masks(depth_map, masks_list, all_obj_ids)
         # Calculate occlusion from masks
-        obj_occluded = occlude.detect_occlusions(frame.depth_mask, tracked_masks, all_obj_ids)
+        obj_occluded = occlude.detect_occlusions(depth_map, tracked_masks, all_obj_ids)
         # Calculate object level info from masks
         obj_ids, obj_pos, obj_present = \
-            framewisevoe.calc_world_pos(frame.depth_mask, tracked_masks, frame.camera)
+            framewisevoe.calc_world_pos(depth_map, tracked_masks, camera_info)
         occ_heatmap = framewisevoe.make_occ_heatmap(obj_occluded, obj_ids, tracked_masks)
         # Calculate violations
-        viols = self.detector.detect(frame_num, obj_pos, obj_occluded, obj_ids, frame.depth_mask, frame.camera)
+        viols = self.detector.detect(frame_num, obj_pos, obj_occluded, obj_ids, depth_map, camera_info)
         voe_hmap = framewisevoe.make_voe_heatmap(viols, tracked_masks)
         # Output violations
         framewisevoe.output_voe(viols)
-        framewisevoe.show_scene(scene_name, frame_num, frame.depth_mask, tracked_masks, voe_hmap, occ_heatmap)
+        framewisevoe.show_scene(scene_name, frame_num, depth_map, tracked_masks, voe_hmap, occ_heatmap)
         # Update tracker
         self.detector.record_obs(frame_num, obj_ids, obj_pos, obj_present, obj_occluded)
         # Output results
         voe_detected = viols is not None and len(viols) > 0
         voe_hmap_img = Image.fromarray(voe_hmap)
         return voe_detected, voe_hmap_img
+
+    def oracle_masks(self, step_output):
+        frame = convert_output(step_output)
+        return frame.obj_mask
+
+    def level2_masks(self, depth_img, rgb_img, mask_img):
+        in_mask = np.array(mask_img)
+        unique_cols = np.unique(in_mask.reshape(-1, 3), axis=0)
+        split_masks = [(in_mask == col).all(axis=-1) for col in unique_cols]
+        filter_result = filter_masks.filter_objects(rgb_img, depth_img, split_masks)
+        masks = -1 * np.ones(in_mask.shape[:2], dtype=np.int)
+        for i, o in enumerate(filter_result['objects']):
+            masks[o] = i
+        return masks
+
+    def level1_masks(self, depth_img, rgb_img):
+        bgr_img = np.array(rgb_img)[:, :, [2, 1, 0]]
+        result = self.visionmodel.step(bgr_img, depth_img)
+        masks = prob_to_mask(result['mask_prob'], result['fg_stCh'], result['obj_class_score'])
+        return masks
 
 def squash_masks(ref, mask_l, ids):
     flat_mask = np.ones_like(ref) * -1

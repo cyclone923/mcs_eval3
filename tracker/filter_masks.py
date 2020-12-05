@@ -7,8 +7,6 @@ from PIL import Image
 import os
 import cv2
 import sys
-train_scenes_path = '../../chengxi_scenes/tmp/'
-train_scenes = os.listdir(train_scenes_path)
 
 
 def get_mask_box(obj_mask):
