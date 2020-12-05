@@ -110,8 +110,6 @@ class FieldOfView:
 				print(intersections)
 				raise ValueError(type(intersections))
 
-
-
 	def castRay(self, angle, maxLen, clr="-g"):
 		p1 = Geometry.Point(float(self.agentX), float(self.agentY))
 		p2 = Geometry.Point(p1.x + maxLen*np.cos(angle), p1.y + maxLen*np.sin(angle))

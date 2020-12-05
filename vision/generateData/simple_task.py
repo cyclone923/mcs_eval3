@@ -3,7 +3,7 @@ from MCS_exploration.meta_controller.meta_controller import MetaController
 from MCS_exploration.frame_collector import Frame_collector
 import sys
 
-DEBUG = True
+DEBUG = False
 
 if __name__ == "__main__":
     start_scene_number = 0
@@ -25,5 +25,3 @@ if __name__ == "__main__":
 
         sys.stdout.flush()
         collector.reset()
-
-

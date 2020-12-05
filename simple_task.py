@@ -5,7 +5,6 @@ import sys
 
 DEBUG = False
 
-
 if __name__ == "__main__":
     start_scene_number = 0 
     collector = Frame_collector(scene_dir="simple_task_img", start_scene_number=start_scene_number)
@@ -25,9 +24,10 @@ if __name__ == "__main__":
     exploration_success = 0
     negative_reward = 0
     number_tasks_success = 0 
-    number_scenes = 200
+    number_scenes = 5
     negative_rewards = 0
     failure_return_status = {}
+    number_crash = 0
     print ("Start scene number = ", start_scene_number)
     print ("number of scenes to run=" ,number_scenes )
 
@@ -40,8 +40,11 @@ if __name__ == "__main__":
         #env.reset()
         try:
             result = metaController.excecute()
-        except:
-            pass
+        except Exception as e:
+            print ("error message", e)
+            number_crash += 1
+        #    print ("crash happened")
+        #    pass
 
         #result = metaController.excecute()
         if env.step_output.reward > 0 :
@@ -75,6 +78,7 @@ if __name__ == "__main__":
     print ("Total Success envs", number_tasks_success)
     print ("Total rewards gained from successful scenes",result_total)
     print ("Failure return status",failure_return_status)
+    print ("Total crashes", number_crash)
     #print ("Total actions taken ", total_actions)
     # print(len(c.frames))
     # write_gif(c.frames, 'original.gif', fps=5)

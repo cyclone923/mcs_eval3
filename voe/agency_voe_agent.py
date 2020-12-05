@@ -189,6 +189,7 @@ class AgencyVoeAgent:
                 o_x, o_y = 0, 0
                 if type(obj_2_dict["c"]) == type(None):
                     o_x, o_y = get_obj_pos(obj_1_dict["rgb"])
+                # TA2 eval note: Old way of doing it, instead of riping it out just hackily avoided it due to time constraints
                 elif info["trial_num"] != 0 and first_frame and type(obj_2_dict["c"]) != type(None):
                     # the tuple is sorted after trial #1 so the preferred object's colors is the first array of the tuple
                     pref_obj_color = objs_ch_avgs[0]
@@ -200,6 +201,22 @@ class AgencyVoeAgent:
                     else:
                         o_x, o_y = get_obj_pos(obj_2_dict["rgb"])
 
+                pd = info["pref_dict"]
+                # if the first frame of the multi-object case
+                # @TODO make running avg over all trial steps, not just first step
+                if first_frame and type(obj_2_dict["c"]) != type(None):
+                    if info["trial_num"] == 8:
+                        o_x, o_y = get_pref_obj_pos(pd, obj_1_dict, obj_2_dict, [a_x, a_y])
+                        _a_x, _a_y, = px_to_arena((a_x, a_y), home_dict["rgb"])
+                        info["path"] = calc_path(arena, (_a_x, _a_y), px_to_arena((o_x, o_y), home_dict["rgb"]))
+                    else:
+                        pd["obj_1_color"].append(list(get_ch_avgs(obj_1_dict["rgb"])))
+                        pd["obj_2_color"].append(list(get_ch_avgs(obj_2_dict["rgb"])))
+                        pd["obj_1_hog"].append(list(get_obj_hog(obj_1_dict["rgb"])))
+                        pd["obj_2_hog"].append(list(get_obj_hog(obj_2_dict["rgb"])))
+                        pd["obj_1_dist"].append(dist_agent_obj([a_x, a_y], obj_1_dict["rgb"]))
+                        pd["obj_2_dist"].append(dist_agent_obj([a_x, a_y], obj_2_dict["rgb"]))
+
                 _a_x, _a_y, = px_to_arena((a_x, a_y), home_dict["rgb"])
                 path_taken.append((_a_x, _a_y))
 
@@ -209,7 +226,7 @@ class AgencyVoeAgent:
                 choice = "expected"
                 confidence = 0.0
 
-                if first_frame:
+                if first_frame and type(best_path) == type(None):
                     if type(obj_2_dict["c"]) == type(None) or info["trial_num"] != 0:
                         best_path = calc_path(arena, (_a_x, _a_y), px_to_arena((o_x, o_y), home_dict["rgb"]))
 
@@ -257,9 +274,8 @@ class AgencyVoeAgent:
                     "step_num": i+1,
                     "trial_num": info["trial_num"],
                     "choice": choice,
-                    "heatmap": info["heatmap"],
                     "confidence": confidence,
-                    "voe_locs": info["voe_locs"] 
+                    "pref_dict": pd
                 }
 
                 return return_dict
@@ -292,10 +308,17 @@ class AgencyVoeAgent:
                     "trial_1_objs_pos": None,
                     "path": None,
                     "wall_i_s": None,
-                    "heatmap": None,
                     "choice": "expected",
                     "confidence": 1,
-                    "voe_locs": [],
+                    "pref_dict": {
+                        "obj_1_color": [],
+                        "obj_2_color": [],
+                        "obj_1_hog": [],
+                        "obj_2_hog": [],
+                        "obj_1_dist": [],
+                        "obj_2_dist": [],
+                        "chosen": []
+                    }
                 }
                 if type(trial_info) != type(None):
                     # we want to carry these over between trials
@@ -303,6 +326,7 @@ class AgencyVoeAgent:
                     init_info_dict["agent_ch_avgs"] = trial_info["agent_ch_avgs"]
                     init_info_dict["arena"] = trial_info["arena"]
                     init_info_dict["wall_i_s"] = trial_info["wall_i_s"]
+                    init_info_dict["pref_dict"] = trial_info["pref_dict"]
 
                 # trial's first step
                 trial_info = step(cam_im, mask_im, init_info_dict, True)
@@ -332,12 +356,12 @@ class AgencyVoeAgent:
                     if idx != 8:
                         self.controller.make_step_prediction(
                             choice="expected", confidence=1.0, violations_xy_list=[],
-                            heatmap_img=None, internal_state=json_friendly_info
+                            heatmap_img=None, internal_state={}
                         )
                     else:
                         self.controller.make_step_prediction(
-                            choice=trial_info["choice"], confidence=trial_info["confidence"], violations_xy_list=trial_info["voe_locs"],
-                            heatmap_img=trial_info["heatmap"], internal_state=json_friendly_info
+                            choice=trial_info["choice"], confidence=trial_info["confidence"], violations_xy_list=[],
+                            heatmap_img=None, internal_state=json_friendly_info
                         )
                     try:
                         next_action = config['goal']['action_list'][action_i][0]
@@ -355,6 +379,9 @@ class AgencyVoeAgent:
                     action_i += 1
 
                 # end of multi-object trial #1
+                # note for the TA2 evaluaters:
+                #   This was the old way of calculating the preferred object before we increased the hypothesis space
+                #   Ran out of time, didn't update for the first 8 trials, but the agent preference choice is better for validation trial #9
                 if trial_info["trial_num"] == 0 and type(trial_info["obj_2_dict"]["c"]) != type(None):
                     a_x, a_y = trial_info["agent"]["x"], trial_info["agent"]["y"]
                     o_1_x, o_1_y = trial_info["trial_1_objs_pos"][0]
@@ -387,6 +414,20 @@ class AgencyVoeAgent:
                         euclid_err = ((guess_x - a_x)**2 + (guess_y - a_y)**2) ** 0.5
                         trial_err += euclid_err
                     trial_info["trial_err"] = trial_err
+
+                # if multiple object trial
+                if type(trial_info["obj_2_dict"]["c"]) != type(None):
+                    # set nearest object to agent as the chosen one
+                    a_x, a_y = trial_info["agent"]["x"], trial_info["agent"]["y"]
+                    a_pos = [a_x, a_y]
+                    obj_1 = trial_info["obj_1_dict"]["rgb"]
+                    obj_2 = trial_info["obj_2_dict"]["rgb"]
+                    dist1 = dist_agent_obj(a_pos, get_obj_pos(obj_1))
+                    dist2 = dist_agent_obj(a_pos, get_obj_pos(obj_2))
+                    if dist1 < dist2:
+                        trial_info["pref_dict"]["chosen"].append(1)
+                    else:
+                        trial_info["pref_dict"]["chosen"].append(2)
 
                 #print("path:", trial_info["path"])
                 path_len = len(trial_info["path"])
