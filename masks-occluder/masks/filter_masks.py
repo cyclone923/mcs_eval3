@@ -7,7 +7,6 @@ from PIL import Image
 import os
 import cv2
 import sys
-from .... vision.instSeg.inference import MaskAndClassPredictor
 train_scenes_path = '../../chengxi_scenes/tmp/'
 train_scenes = os.listdir(train_scenes_path)
 
