@@ -13,20 +13,23 @@ import numpy as np
 
 
 class VoeAgent:
-    def __init__(self, controller, level):
+    def __init__(self, controller, level, out_prefix):
         self.controller = controller
         self.level = level
+        self.prefix = out_prefix
+        print(f'LEVEL: {self.level}')
+        if self.level == 'level1':
+            self.visionmodel = vision.MaskAndClassPredictor(dataset='mcsvideo3_voe',
+                                                            config='plus_resnet50_config_depth_MC',
+                                                            weights='./visionmodule/dvis_resnet50_mc_voe.pth')
 
     def run_scene(self, config, desc_name):
-        folder_name = Path(Path(desc_name).stem)
+        folder_name = Path(self.prefix)/Path(Path(desc_name).stem)
         if folder_name.exists():
             return None
-        folder_name.mkdir()
+        folder_name.mkdir(parents=True)
         print(folder_name)
         self.track_info = {}
-        self.visionmodel = vision.MaskAndClassPredictor(dataset='mcsvideo3_voe',
-                                                        config='plus_resnet50_config_depth_MC',
-                                                        weights='./visionmodule/dvis_resnet50_mc_voe.pth')
         self.detector = \
             framewisevoe.FramewiseVOE(min_hist_count=3, max_hist_count=8,
                                       dist_thresh=0.5)
@@ -44,7 +47,6 @@ class VoeAgent:
             if step_output is None:
                 break
         self.controller.end_scene(choice=plausible_str(scene_voe_detected), confidence=1.0)
-        import pdb; pdb.set_trace()  # XXX BREAKPOINT
         return scene_voe_detected
 
     def calc_voe(self, step_output, frame_num, scene_name):

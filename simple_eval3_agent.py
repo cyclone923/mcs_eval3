@@ -3,6 +3,7 @@ import yaml
 import pickle
 import os
 import random
+import argparse
 """
 from exploration.controller_agent import ExploreAgent
 from voe.voe_agent import VoeAgent
@@ -13,22 +14,16 @@ import physics_voe_agent
 
 class Evaluation3_Agent:
 
-    def __init__(self, seed=-1):
+    def __init__(self, unity_path, config_path, prefix, seed=-1):
 
-        try:
-            assert "unity_path.yaml" in os.listdir(os.getcwd())
-            assert "mcs_config.yaml" in os.listdir(os.getcwd())
-        except:
-            raise FileExistsError("You might not set up mcs config and unity path yet. Please run 'bash setup_unity.sh'.")
-
-        with open("./unity_path.yaml", 'r') as config_file:
+        with open(unity_path, 'r') as config_file:
             config = yaml.safe_load(config_file)
 
         self.controller = mcs.create_controller(
             os.path.join(config['unity_path'])
         )
 
-        with open("./mcs_config.yaml", 'r') as config_file:
+        with open(config_path, 'r') as config_file:
             config = yaml.safe_load(config_file)
         self.level = config['metadata']
 
@@ -40,7 +35,7 @@ class Evaluation3_Agent:
         self.voe_agent = VoeAgent(self.controller, self.level)
         self.agency_voe_agent = AgencyVoeAgent(self.controller, self.level)
         """
-        self.phys_voe = physics_voe_agent.VoeAgent(self.controller, self.level)
+        self.phys_voe = physics_voe_agent.VoeAgent(self.controller, self.level, prefix)
 
         if seed != -1:
             random.seed(seed)
@@ -61,9 +56,17 @@ class Evaluation3_Agent:
             raise ValueError("Goal type not clear! It should be either: , 'intuitive physics', 'agents' or 'retrieval'")
 
 
-if __name__ == "__main__":
+def make_parser():
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--unity-path', default='unity_path.yaml')
+    parser.add_argument('--config', default='mcs_config.yaml')
+    parser.add_argument('--prefix', default='out')
+    return parser
 
-    agent = Evaluation3_Agent()
+
+if __name__ == "__main__":
+    args = make_parser().parse_args()
+    agent = Evaluation3_Agent(args.unity_path, args.config, args.prefix)
     goal_dir = "test_scenes"
     all_scenes = [os.path.join(goal_dir, one_scene) for one_scene in sorted(os.listdir(goal_dir))]
     random.shuffle(all_scenes)
@@ -74,11 +77,9 @@ if __name__ == "__main__":
         if voe is None:
             print('Skipping...')
             continue
-        with open('results.pkl', 'rb') as fd:
-            results = pickle.load(fd)
         print(f'VOE RESULT: {voe}')
         results[one_scene] = voe
-        with open('results.pkl', 'wb') as fd:
+        with open(f'{args.prefix}/results.pkl', 'wb') as fd:
             pickle.dump(results, fd)
 
 
