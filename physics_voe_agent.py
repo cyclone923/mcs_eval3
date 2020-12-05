@@ -44,6 +44,7 @@ class VoeAgent:
             if step_output is None:
                 break
         self.controller.end_scene(choice=plausible_str(scene_voe_detected), confidence=1.0)
+        import pdb; pdb.set_trace()  # XXX BREAKPOINT
         return scene_voe_detected
 
     def calc_voe(self, step_output, frame_num, scene_name):
@@ -53,7 +54,7 @@ class VoeAgent:
         bgr_img = rgb_img[:, :, [2, 1, 0]]
         frame = convert_output(step_output)
         result = self.visionmodel.step(bgr_img, depth_img)
-        masks = prob_to_mask(result['mask_prob'], result['fg_stCh'])
+        masks = prob_to_mask(result['mask_prob'], result['fg_stCh'], result['obj_class_score'])
         #masks = frame.obj_mask
         # Calculate tracking info
         self.track_info = track.track_objects(masks, self.track_info)
@@ -85,12 +86,17 @@ def squash_masks(ref, mask_l, ids):
         flat_mask[m] = id_
     return flat_mask
 
-def prob_to_mask(prob, cutoff):
+def prob_to_mask(prob, cutoff, obj_scores):
+    obj_pred_class = obj_scores.argmax(-1)
+    valid_ids = []
+    for mask_id, pred_class in zip(range(cutoff, prob.shape[0]), obj_pred_class):
+        if pred_class == 1: #An object!
+            valid_ids.append(mask_id+cutoff)
+    out_mask = -1 * np.ones(prob.shape[1:], dtype=np.int)
     am = np.argmax(prob, axis=0)
-    am -= cutoff
-    am[am<0] = -1
-    print(cutoff, np.unique(am))
-    return am
+    for out_id, mask_id in enumerate(valid_ids):
+        out_mask[am==mask_id-cutoff] = out_id
+    return out_mask
 
 def plausible_str(violation_detected):
     return 'implausible' if violation_detected else 'plausible'
