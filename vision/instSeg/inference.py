@@ -1,5 +1,6 @@
 import os
 import numpy as np
+from skimage import measure as smeasure
 
 import torch
 from torch.nn import functional as F
@@ -10,6 +11,58 @@ sys.path.append('./vision/instSeg')
 from vision.instSeg import data
 from vision.instSeg.dvis_network import DVIS
 from vision.instSeg.utils.augmentations import BaseTransform
+
+
+def voe_connect_comp_analysis(mask_probs, obj_scores, fg_stCH=1, wronglabel=[6], size_thr=10):
+    '''
+    @Func: 20201204: this func works as a trick to fix the wrong prediction on VOE scenes that:
+                 when there are three occl-poles and occl-walls, it failed to segment moving objects.
+                 That, the moving objects are messed together with one pole.
+           Sol: when there are 6 objects detected, perform component analysis.
+
+    @Param: mask_probs -- [fg_stCH + N, ht, wd]
+            obj_scores -- [N, num_classes]
+    @Output: ret_mask_probs -- [fg_stCH + N + K, ht, wd]
+             ret_obj_classes -- [N + K, num_classes]
+    '''
+    def _is_pole(prop):
+        y0,x0,y1,x1 = prop.bbox
+        if (y1-y0)/(x1-x0) > 5:
+            return True
+        else:
+            return False
+
+    ch, ht, wd = mask_probs.shape
+    labelI = mask_probs.argmax(axis=0)
+
+    # on observed wrong lables, perform connected component analysis
+    ext_masks, ext_scores = [], []
+    for i in wronglabel:
+        conn_labelI = smeasure.label(labelI==i)
+        props = smeasure.regionprops(conn_labelI)
+        if len(props) ==1:
+            continue
+        else:
+            for prop in props:
+                # check if it is pole or object
+                if _is_pole(prop):
+                    obj_scores[i-fg_stCH, :] = np.asarray([0.17, 0.17, 0.5, 0.16])
+                elif prop.area > size_thr:
+                    flagI = conn_labelI == prop.label
+                    ext_masks.append(flagI*mask_probs[i])
+                    ext_scores.append([0.17, 0.5, 0.17, 0.16])
+                    mask_probs[i][flagI] = 0
+                else:
+                    continue
+    if len(ext_masks)>0:
+        ext_masks = np.stack(ext_masks)
+        ext_scores = np.asarray(ext_scores)
+
+        mask_probs = np.concatenate([mask_probs, ext_masks], axis=0)
+        obj_scores = np.concatenate([obj_scores, ext_scores], axis=0)
+
+    return mask_probs, obj_scores
+
 
 class MaskAndClassPredictor(object):
     '''
@@ -26,9 +79,10 @@ class MaskAndClassPredictor(object):
         cfg, set_cfg = data.dataset_specific_import(dataset)
         set_cfg(cfg, config)
 
-        self.fg_stCh   = cfg.dataset.sem_fg_stCH
-        self.transform = BaseTransform(cfg, resize_gt=True)
-        self.net       = DVIS(cfg)
+        self.dataset_name = dataset
+        self.fg_stCh      = cfg.dataset.sem_fg_stCH
+        self.transform    = BaseTransform(cfg, resize_gt=True)
+        self.net          = DVIS(cfg)
 
         if weights is None:
             weights = './vision/instSeg/dvis_'+config.split('_')[1]+'_mc.pth'
@@ -116,6 +170,9 @@ class MaskAndClassPredictor(object):
             net_mask   = preds_score.detach().numpy().argmax(axis=0)
             out_probs, out_scores = out_probs.detach().numpy(), out_scores.detach().numpy()
 
+        if 'mcsvideo3_voe' == self.dataset_name:
+            out_probs, out_scores = voe_connect_comp_analysis(out_probs, out_scores,
+                                                        fg_stCH=1, wronglabel=[6], size_thr=10)
         return {'mask_prob': out_probs,
                 'obj_class_score': out_scores,
                 'fg_stCh': self.fg_stCh,
@@ -176,8 +233,6 @@ def demo_voe_segmentation():
     for rgb_file in img_list:
         depth_file = rgb_file.replace('original', 'depth')[:-4] + '.png'
 
-        import pdb
-        pdb.set_trace()
         bgrI   = cv2.imread(rgb_file)
         depthI = smisc.imread(depth_file, mode='P')
         ret    = model.step(bgrI, depthI)
@@ -189,5 +244,5 @@ if __name__=='__main__':
 
     demo_voe_segmentation()
 
-    demo_interact_segmentation()
+    #demo_interact_segmentation()
 
