@@ -17,7 +17,7 @@ from MCS_exploration.frame_processing import *
 from shapely.geometry import Point, MultiPoint
 from MCS_exploration.obstacle import Obstacle
 import copy
-# from vision.instSeg.inference import MaskAndClassPredictor
+from vision.instSeg.inference import MaskAndClassPredictor
 from vision.instSeg.data.config_mcsVideo3_inter import MCSVIDEO_INTER_CLASSES_BG, MCSVIDEO_INTER_CLASSES_FG
 
 TROPHY_INDEX = MCSVIDEO_INTER_CLASSES_FG.index('trophy') + 1
@@ -129,9 +129,9 @@ class GameState(object):
         self.img_seg_occupancy_map_points = {}
         self.current_frame_img_obstacles = []
         self.img_channels = None
-        # self.mask_predictor = MaskAndClassPredictor(dataset='mcsvideo3_inter',
-        #                                           config='plus_resnet50_config_depth_MC',
-        #                                           weights='./vision/instSeg/dvis_resnet50_mc.pth')
+        self.mask_predictor = MaskAndClassPredictor(dataset='mcsvideo3_inter',
+                                                   config='plus_resnet50_config_depth_MC',
+                                                   weights='./vision/instSeg/dvis_resnet50_mc.pth')
 
     def occupancy_map_init(self):
         #rows = int(self.map_width//self.grid_size)
