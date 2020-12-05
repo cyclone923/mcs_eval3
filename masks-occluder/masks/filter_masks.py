@@ -7,7 +7,7 @@ from PIL import Image
 import os
 import cv2
 import sys
-from ....vision.instSeg.inference import MaskAndClassPredictor
+from .... vision.instSeg.inference import MaskAndClassPredictor
 train_scenes_path = '../../chengxi_scenes/tmp/'
 train_scenes = os.listdir(train_scenes_path)
 
@@ -132,21 +132,21 @@ def size_filter(img, depth_crop):
 #     return name
 
 
-def demo_voe_segmentation():
-    import glob
-    import cv2
-    import scipy.misc as smisc  # scipy in version <= 1.2.0
+# def demo_voe_segmentation():
+#     import glob
+#     import cv2
+#     import scipy.misc as smisc  # scipy in version <= 1.2.0
 
-    model = MaskAndClassPredictor(dataset='mcsvideo3_voe',
-                                  config='plus_resnet50_config_depth_MC',
-                                  weights='./vision/instSeg/dvis_resnet50_mc_voe.pth')
+#     model = MaskAndClassPredictor(dataset='mcsvideo3_voe',
+#                                   config='plus_resnet50_config_depth_MC',
+#                                   weights='./vision/instSeg/dvis_resnet50_mc_voe.pth')
 
-    img_list = glob.glob('./vision/instSeg/demo/voe/*.jpg')
-    for rgb_file in img_list:
+#     img_list = glob.glob('./vision/instSeg/demo/voe/*.jpg')
+#     for rgb_file in img_list:
 
-        bgrI   = cv2.imread(rgb_file)
-        depthI = smisc.imread(depth_file, mode='P')
-        ret    = model.step(bgrI, depthI)
+#         bgrI   = cv2.imread(rgb_file)
+#         depthI = smisc.imread(depth_file, mode='P')
+#         ret    = model.step(bgrI, depthI)
 
 
 
@@ -164,4 +164,4 @@ def mask_img(mask, img):
     return Image.fromarray(masked_arr)
 
 
-generate_mask_data(train_scenes)
+# generate_mask_data(train_scenes)
