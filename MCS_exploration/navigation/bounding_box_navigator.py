@@ -12,7 +12,7 @@ import numpy as np
 from descartes import PolygonPatch
 import constants
 
-SHOW_ANIMATION = False
+SHOW_ANIMATION = True
 LIMIT_STEPS = 350
 
 class BoundingBoxNavigator:
