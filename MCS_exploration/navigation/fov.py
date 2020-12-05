@@ -5,6 +5,7 @@ from MCS_exploration.navigation.geometry import Geometry
 import math
 import numpy as np
 import random
+import itertools
 import matplotlib.pyplot as plt
 import shapely.geometry as sp
 from shapely.prepared import prep
@@ -13,6 +14,11 @@ from shapely.ops import unary_union
 from shapely import speedups
 if speedups.available:
 	speedups.enable()
+
+
+import cProfile, pstats, io
+from pstats import SortKey
+import time 
 
 class FieldOfView:
 
@@ -25,7 +31,12 @@ class FieldOfView:
 		self.poly = unary_union([o.boundary for o in obs])
 		
 
-	def getFoVPolygon(self, maxLen=15, eps=0.001):
+	def getFoVPolygon(self, maxLen=15, eps=0.01):
+		# pr = cProfile.Profile()
+		# pr.enable()
+		start_time = time.time()
+
+		
 		poly_X = []
 		poly_Y = []
 		poly_angle = []
@@ -35,41 +46,89 @@ class FieldOfView:
 		p1 = Geometry.Point(self.agentX, self.agentY)
 		p2L = Geometry.Point(p1.x + maxLen*math.sin(lAngle), p1.y + maxLen*math.cos(lAngle))
 		p2R = Geometry.Point(p1.x + maxLen*math.sin(rAngle), p1.y + maxLen*math.cos(rAngle))
+		midPoint = p2L = Geometry.Point(p1.x + maxLen*math.sin(self.agentH), p1.y + maxLen*math.cos(self.agentH))
+		
+
+		# OPTIMIZING get polygon of maximum FoV and only consider points within it
+		points = [p1]
+		points.extend([Geometry.Point(p1.x + maxLen*math.sin(lAngle+i*self.HVoF), p1.y + maxLen*math.cos(lAngle+i*self.HVoF)) for i in np.arange(0,1.1,0.05)])
+		points.append(p1)
+		try:
+			maxFoV = sp.Polygon( [(p.x, p.y) for p in points] ).buffer(0)
+			candidatePoly = maxFoV.intersection(self.poly).simplify(0.08)
+		except:
+			pass
+		
+
+		points = [p1]
+		points.extend([Geometry.Point(p1.x + maxLen*math.sin(lAngle+i*self.HVoF), p1.y + maxLen*math.cos(lAngle+i*self.HVoF)) for i in np.arange(-0.1,1.2,0.05)])
+		points.append(p1)
+		try:
+			maxFoV = sp.Polygon( [(p.x, p.y) for p in points] ).buffer(0)
+			intersectPoly = maxFoV.intersection(self.poly).simplify(0.08)
+		except:
+			pass
+		
+
+		#localPoly = self.poly
 
 		#cast on HFOV lines
-		if True:	
-			for i in np.arange(0, 1.1, 0.1):
-				v = Geometry.Point(p1.x + maxLen*math.sin(lAngle+i*self.HVoF), p1.y + maxLen*math.cos(lAngle+i*self.HVoF))
-				theta = (np.arctan2( v.y-p1.y,  v.x-p1.x))
-				x,y = self.castRayShapely(theta, maxLen,"-b")
-				poly_X.append(x)
-				poly_Y.append(y)
-				poly_angle.append(theta)
-		#print ("polyX b4 obstacle part", poly_X)
-		#print ("polyY b4 obstacle part", poly_Y)
+		pts = [ (p1.x + maxLen*math.sin(lAngle+i*self.HVoF), p1.y + maxLen*math.cos(lAngle+i*self.HVoF)) for i in np.arange(0,1.1,0.1)]
+		# thetas = [np.arctan2( v.y-p1.y,  v.x-p1.x) for v in pts]
+		# xy = [self.castRayShapely(t, maxLen, intersectPoly) for t in thetas]
+		# poly_X.extend( [p[0] for p in xy])
+		# poly_Y.extend( [p[1] for p in xy])
+		# poly_angle.extend(thetas)
 
-		if True:
-			# find any points in the FoV
-			for obs in self.obstacle:
-				obs = obs.simplify(0.08)
-				obs = ObstaclePolygon(obs.exterior.coords.xy[0],obs.exterior.coords.xy[1])
+		# # # Cast to every point in range
+		if isinstance(candidatePoly, sp.LineString):
+			pts.extend([pt for pt in candidatePoly.coords])
+		else:
+			pts.extend([pt for line in [line.coords for line in candidatePoly] for pt in line])
+		
 
-				#check if any point lies in the viewing window
-				for x,y in zip(obs.x_list, obs.y_list):
-					v = Geometry.Point(x,y)
+		#thetas = [np.arctan2( v[1]-p1.y,  v[0]-p1.x) for v in pts]
+		thetas = list(itertools.chain.from_iterable([[ t + e*eps for e in range(-1,1)] for t in [np.arctan2( v[1]-p1.y,  v[0]-p1.x) for v in pts]]))
+		xy = [self.castRayShapely(t, maxLen, intersectPoly) for t in thetas]
+		poly_X.extend( [p[0] for p in xy])
+		poly_Y.extend( [p[1] for p in xy])
+		poly_angle.extend(thetas)
 
-					if self.isLeftOfLine(p1, p2R, v) and not self.isLeftOfLine(p1, p2L, v):
+		#cast on HFOV lines
+		# if False:	
+		# 	for i in np.arange(0, 1.1, 0.1):
+		# 		v = Geometry.Point(p1.x + maxLen*math.sin(lAngle+i*self.HVoF), p1.y + maxLen*math.cos(lAngle+i*self.HVoF))
+		# 		theta = np.arctan2( v.y-p1.y,  v.x-p1.x)
+		# 		x,y = self.castRayShapely(theta, maxLen, localPoly)
+		# 		poly_X.append(x)
+		# 		poly_Y.append(y)
+		# 		poly_angle.append(theta)
+		
+		# if False:
+		# 	# find any points in the FoV
+		# 	for obs in self.obstacle:
+		# 		obs = obs.simplify(0.08)
+		# 		obs = ObstaclePolygon(obs.exterior.coords.xy[0],obs.exterior.coords.xy[1])
+
+
+		# 		#[ (x, y, t) for x,y ]
+
+		# 		#check if any point lies in the viewing window
+		# 		for x,y in zip(obs.x_list, obs.y_list):
+		# 			v = Geometry.Point(x,y)
+
+		# 			if self.isLeftOfLine(p1, p2R, v) and not self.isLeftOfLine(p1, p2L, v):
 						
-						#cast at point and with jitter around it
-						theta = (np.arctan2( v.y-p1.y,  v.x-p1.x))
-						for e in range(-5, 5):
-							t = (theta + e*eps)
-							x,y = self.castRayShapely(t, maxLen)
-							v = Geometry.Point(x,y)
-							if self.isLeftOfLine(p1, p2R, v) and not self.isLeftOfLine(p1, p2L, v):
-								poly_X.append(x)
-								poly_Y.append(y)
-								poly_angle.append(t)
+		# 				#cast at point and with jitter around it
+		# 				theta = (np.arctan2( v.y-p1.y,  v.x-p1.x))
+		# 				for e in range(-5, 5):
+		# 					t = (theta + e*eps)
+		# 					x,y = self.castRayShapely(t, maxLen, localPoly)
+		# 					v = Geometry.Point(x,y)
+		# 					if self.isLeftOfLine(p1, p2R, v) and not self.isLeftOfLine(p1, p2L, v):
+		# 						poly_X.append(x)
+		# 						poly_Y.append(y)
+		# 						poly_angle.append(t)
 
 		#poly_angle = [2*math.pi-x if x < 0 else x for x in poly_angle]
 		# print(poly_angle)
@@ -79,16 +138,29 @@ class FieldOfView:
 		poly_Y = [p1.y] + list(np.array(poly_Y)[indx]) + [p1.y]
 		#print ("polyX", poly_X)
 		#print ("polyY", poly_Y)
+#		print ("time taken for FoV", time.time()-start_time)
+
+
+		# pr.disable()
+		# s = io.StringIO()
+		# sortby = SortKey.CUMULATIVE
+		# ps = pstats.Stats(pr, stream=s).sort_stats(sortby)
+		# ps.print_stats()
+		# print(s.getvalue())
+
 		return ObstaclePolygon(poly_X, poly_Y)
 
 
-	def castRayShapely(self, angle, maxLen, clr="-g"):
+	def castRayShapely(self, angle, maxLen,localPoly, clr="-g"):
 
 		p1 = sp.Point( [ float(self.agentX), float(self.agentY) ] )
 		p2 = sp.Point( [p1.x + maxLen*np.cos(angle), p1.y + maxLen*np.sin(angle) ])
 
-		intersections = sp.LineString([p1,p2]).intersection(self.poly)
-		
+		try:
+			intersections = sp.LineString([p1,p2]).intersection(localPoly)
+		except:
+			pass
+
 		if intersections.is_empty:
 			return p2.x, p2.y
 		else:
