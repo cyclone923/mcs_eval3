@@ -446,7 +446,7 @@ class SequenceGenerator(object):
     
         #print ("object nearest point", object_nearest_point)
         #print ("object nearest point", object_farthest_point)
-        success_distance = 0.40 
+        success_distance = 0.35 
         nav_success = self.agent.nav.go_to_goal(object_nearest_point, self.agent, success_distance) 
         self.face_object(target_obj)
 
@@ -459,6 +459,7 @@ class SequenceGenerator(object):
             #print ("found goal in the middle of looking into containers")
             return
 
+        #print ("return status from open", self.agent.game_state.event.return_status)
         if  not self.update_opened_up(target_obj):
             return
     
@@ -479,7 +480,7 @@ class SequenceGenerator(object):
 
     def explore_all_objects(self):
         #print ("number of gloabal obstacles", len(self.agent.game_state.global_obstacles))
-        for i,obstacle in enumerate(self.agent.game_state.global_obstacles[2:]) :
+        for i,obstacle in enumerate(self.agent.game_state.global_obstacles) :
             print ("obj height ", obstacle.height)
             #print ("obj centre ", obstacle.get_centre())
             #if self.obstacle_is_possible_container(obstacle):
