@@ -510,7 +510,7 @@ class SequenceGenerator(object):
     
         #print ("done opening object ")
         self.look_straight()
-        nav_success = self.agent.nav.go_to_goal(object_farthest_point, self.agent, success_distance) 
+        nav_success = self.agent.nav.go_to_goal(object_farthest_point, self.agent, success_distance, stepBack=True) 
         self.face_object(target_obj)
 
     def update_opened_up(self,target_obj):          

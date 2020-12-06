@@ -202,11 +202,11 @@ class AgencyVoeAgent:
                         o_x, o_y = get_obj_pos(obj_2_dict["rgb"])
 
                 pd = info["pref_dict"]
+                pref_confidence = 1
                 # if the first frame of the multi-object case
-                # @TODO make running avg over all trial steps, not just first step
                 if first_frame and type(obj_2_dict["c"]) != type(None):
                     if info["trial_num"] == 8:
-                        o_x, o_y = get_pref_obj_pos(pd, obj_1_dict, obj_2_dict, [a_x, a_y])
+                        o_x, o_y, pref_confidence = get_pref_obj_pos(pd, obj_1_dict, obj_2_dict, [a_x, a_y])
                         _a_x, _a_y, = px_to_arena((a_x, a_y), home_dict["rgb"])
                         info["path"] = calc_path(arena, (_a_x, _a_y), px_to_arena((o_x, o_y), home_dict["rgb"]))
                     else:
@@ -254,6 +254,7 @@ class AgencyVoeAgent:
                     confidence = (trial_err * 2 - voe_threshold) / voe_threshold
                     choice = "expected" if confidence < 0 else "unexpected"
                     confidence = abs(confidence)
+                    confidence *= pref_confidence
                     if confidence > 1.0:
                         confidence = 1.0
 
@@ -274,6 +275,7 @@ class AgencyVoeAgent:
                     "step_num": i+1,
                     "trial_num": info["trial_num"],
                     "choice": choice,
+                    "pref_confidence": pref_confidence,
                     "confidence": confidence,
                     "pref_dict": pd
                 }
@@ -310,6 +312,7 @@ class AgencyVoeAgent:
                     "wall_i_s": None,
                     "choice": "expected",
                     "confidence": 1,
+                    "pref_confidence": 1,
                     "pref_dict": {
                         "obj_1_color": [],
                         "obj_2_color": [],
@@ -422,11 +425,13 @@ class AgencyVoeAgent:
                     a_pos = [a_x, a_y]
                     obj_1 = trial_info["obj_1_dict"]["rgb"]
                     obj_2 = trial_info["obj_2_dict"]["rgb"]
-                    dist1 = dist_agent_obj(a_pos, get_obj_pos(obj_1))
-                    dist2 = dist_agent_obj(a_pos, get_obj_pos(obj_2))
+                    dist1 = dist_agent_obj(a_pos, obj_1)
+                    dist2 = dist_agent_obj(a_pos, obj_2)
                     if dist1 < dist2:
+                        #cv2_show_im(obj_1)
                         trial_info["pref_dict"]["chosen"].append(1)
                     else:
+                        #cv2_show_im(obj_2)
                         trial_info["pref_dict"]["chosen"].append(2)
 
                 #print("path:", trial_info["path"])
@@ -467,10 +472,12 @@ class AgencyVoeAgent:
             print("avg step error over scene:", scene_err/scene_steps)
             print("avg trial path difference:", scene_path_err/num_trials)
 
-            # could base just on avg trial err thresholding?
             voe_threshold = 6.5
             wiggle = 1
+            # confidence is proportional to how well the agent followed our inferred path
+            # and weighted by our confidence in our agent's object preference hypothesis.
             confidence = ((avg_trial_a_pos_err - wiggle) * 2 - voe_threshold) / voe_threshold
+            confidence *= trial_info["pref_confidence"]
             choice = "expected" if confidence < 0 else "unexpected"
             confidence = abs(confidence)
             if confidence > 1.0:
