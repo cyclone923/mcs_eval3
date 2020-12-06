@@ -389,8 +389,8 @@ def update_seen(x,y,game_state,rotation,camera_field_of_view,obstacles):
     #print ("time taken to creat new fov" ,time.time()-start_time)
 
     try:
-        view = Polygon(zip(poly.x_list, poly.y_list))
-        game_state.world_poly = game_state.world_poly.union(view)
+        view = Polygon(zip(poly.x_list, poly.y_list)).buffer(0) #the buffer helps eliminate intersections
+        game_state.world_poly = game_state.world_poly.union(view).buffer(0)
     except:
         return
     world = game_state.world_poly

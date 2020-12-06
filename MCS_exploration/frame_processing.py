@@ -24,7 +24,7 @@ Image -> Point cloud conversion
 def convert_observation(env,frame_idx, agent_pos, rotation):
     start_time = time.time()
     all_points, obj_masks = convert_output_dead_reckoning(env,agent_pos, rotation)
-    env.occupancy_map, polygons,object_occupancy_grids = point_cloud_to_polygon(all_points,env.occupancy_map,env.grid_size,env.displacement,env.obj_mask)
+    env.occupancy_map, polygons,object_occupancy_grids = point_cloud_to_polygon(all_points,env.occupancy_map,env.grid_size,env.displacement,env.obj_mask,env.level)
     #if env.trophy_location != None :
         #print ("trophy location not none in observation", env.trophy_location)
         #update_goal_bounding_box(all_points, env)
@@ -172,7 +172,7 @@ def occupancy_to_polygons(occupancy, scale, displacement):
         polygons.append(box(i*scale-d, minX*scale-d, (i+1)*scale-d, maxX*scale-d))
     return unary_union(polygons)
 
-def point_cloud_to_polygon(points,occupancy_map,grid_size, displacement, obj_masks= None):
+def point_cloud_to_polygon(points,occupancy_map,grid_size, displacement, obj_masks,level):
     '''
     Fucntion to create a set of obstacle polygons a point cloud
 
@@ -199,9 +199,6 @@ def point_cloud_to_polygon(points,occupancy_map,grid_size, displacement, obj_mas
 
     object_occupancy_grids_row_view = {}
     np_occ_map = np.zeros(occupancy_map.shape)
-    arr_mask = np.array(obj_masks)
-    obj_masks = arr_mask.reshape(-1, arr_mask.shape[-1])
-    #obj_masks = obj_masks.flatten()
     sample = 1
     points = points[::sample]
     obj_masks_new = obj_masks[::sample]
@@ -209,9 +206,11 @@ def point_cloud_to_polygon(points,occupancy_map,grid_size, displacement, obj_mas
     new_points = np.where((points[:,1] > 0.05) & (points[:,1] <= 2.9))#,1,0).reshape(points.shape[0],1)
     points = points[new_points[0]]
     obj_masks = obj_masks[new_points[0]]
-    ar_row_view = obj_masks.view('|S%d' % (obj_masks.itemsize * obj_masks.shape[1]))
+    if level == "level2" or level == "oracle":
+        ar_row_view = obj_masks.view('|S%d' % (obj_masks.itemsize * obj_masks.shape[1]))
+    if level == "level1" :
+        ar_row_view = obj_masks[:]
     unique_row_view = np.unique(ar_row_view)
-    #unique_row_view = np.unique(obj_masks)
     #exit()
 
     for elem in unique_row_view :
@@ -278,7 +277,7 @@ def create_img_seg_occ_map_pts(points,obj_id, mask,env):
     points = points[new_points[0]]
     mask = mask[new_points[0]]
     min_max_prob =  (np.amin(mask), np.amax(mask))
-    print ("min max values after taking out the floor and ceiling" , min_max_prob)
+    #print ("min max values after taking out the floor and ceiling" , min_max_prob)
 
 
     obj_pixel_coords = np.where(mask >= 0.5)

@@ -43,7 +43,14 @@ class Obstacle():
         exterior_coords = self.get_convex_polygon_coords()
         self.centre_x = np.mean(np.array(exterior_coords[0],dtype=object))
         self.centre_z = np.mean(np.array(exterior_coords[1],dtype=object))
-        self.centre_y = self.height / 2.0
+        if self.height < 0.5 :
+            self.centre_y = self.height / 2.0
+        else :
+            self.centre_y = self.height / 4.0
+
+    def set_height(self,height):
+        self.height = height
+        self.calculate_centre()
 
     def get_convex_polygon_coords(self):
         if self.bounding_box.geom_type == "MultiPolygon":

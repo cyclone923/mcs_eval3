@@ -15,7 +15,7 @@ class Evaluation3_Agent:
             assert "unity_path.yaml" in os.listdir(os.getcwd())
             assert "mcs_config.yaml" in os.listdir(os.getcwd())
         except:
-            raise FileExistsError("You might not set up mcs config and unity path yet. Please run 'bash setup_unity.sh'.")
+            raise FileNotFoundError("You might not set up mcs config and unity path yet. Please run 'bash setup_unity.sh'.")
 
         with open("./unity_path.yaml", 'r') as config_file:
             config = yaml.safe_load(config_file)
@@ -37,8 +37,6 @@ class Evaluation3_Agent:
         #initilize VOE agent here also
 
         random.seed(seed)
-
-
 
     def run_scene(self, one_scene):
         scene_config, status = mcs.load_config_json_file(one_scene)

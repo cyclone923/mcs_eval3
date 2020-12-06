@@ -12,7 +12,7 @@ import numpy as np
 from descartes import PolygonPatch
 import constants
 
-SHOW_ANIMATION = False
+SHOW_ANIMATION = True
 LIMIT_STEPS = 350
 
 class BoundingBoxNavigator:
@@ -43,7 +43,7 @@ class BoundingBoxNavigator:
 		rotation_degree = heading / (2 * math.pi) * 360 - agent.game_state.rotation
 
 		if backwards:
-			rotation_degree -= 180
+			rotation_degree = ( rotation_degree  - 180 ) % 360
 		
 		if np.abs(rotation_degree) > 360:
 			rotation_degree = np.sign(rotation_degree) * (np.abs(rotation_degree) - 360)
@@ -183,7 +183,7 @@ class BoundingBoxNavigator:
 	def get_obstacles(self):
 		return self.scene_obstacles_dict
 
-	def go_to_goal(self, goal_pose, agent, success_distance):
+	def go_to_goal(self, goal_pose, agent, success_distance, stepBack=False):
 
 		self.current_nav_steps = 0
 		self.agentX = agent.game_state.position['x']
@@ -198,7 +198,13 @@ class BoundingBoxNavigator:
 		plan = []
 		iteration_no = 0
 		collision = False
+		executeUnstick = stepBack 
 		
+
+		# create initial plan
+		roadmap = DiscreteActionPlanner(self.radius*1.1, self.scene_obstacles_dict.values(), self.epsilon)
+		plan = []
+
 		while True:
 			start_time = time.time()
 
@@ -206,38 +212,48 @@ class BoundingBoxNavigator:
 			dis_to_goal = math.sqrt((self.agentX-gx)**2 + (self.agentY-gy)**2)
 			if dis_to_goal < self.epsilon:
 				break
-			obs = []
-
-			#add any new obstacles
-			for obstacle_key, obstacle in self.scene_obstacles_dict.items():
-				if self.scene_obstacles_dict_roadmap[obstacle_key] == 0:
-					#print ("not added obstacle", self.current_nav_steps)
-					if self.can_add_obstacle(obstacle, (gx, gy)):
-						#print ("adding new obstacles ", self.current_nav_steps)
-						self.scene_obstacles_dict_roadmap[obstacle_key] =1
-						obs.append(obstacle)
-						#roadmap.addObstacle(obstacle)
-			roadmap = DiscreteActionPlanner(self.radius+0.05, obs, self.epsilon)
 			
+			#refresh obstacle map
+			roadmap.resetObstacles(self.scene_obstacles_dict.values())
+
+			
+			#check if agent is stuck given the new map
+			if roadmap.isStuck((self.agentX, self.agentY)):
+				print("stuck")
+				executeUnstick = True
+
+			#check if previous step resulted in collision
+			if collision:
+				print("collided")
+				executeUnstick = True
+
+			# move away from the nearest obstacle if either stuck or collided
+			if executeUnstick:
+				path_x, path_y = roadmap.getUnstuckPath(self.agentX, self.agentY,10) 
+				for x,y in zip(path_x, path_y):
+					self.step_towards_point(agent, x, y, backwards=True)
+				plan = []
+				executeUnstick = False
+				collision = False
+
 			#check if the plan is still valid / exists and replan if not
 			if not roadmap.validPlan(plan, (self.agentX, self.agentY)):
-				plan_x, plan_y = roadmap.planning(self.agentX, self.agentY, gx, gy)
-				plan = list(zip(plan_x, plan_y))
 				
 
+				plan_x, plan_y = roadmap.planning(self.agentX, self.agentY, gx, gy, returnNearest=True)
+				plan = list(zip(plan_x, plan_y))
+				
+				# this would only happen if the search found the current position to be as close as it can possible get to the goal
+				# the agent is already unstuck prior to this executing so we can feel somewhat safe that len(plan)==0 is due to not
+				# finding a better path
+				if len(plan) == 0:
+					return 
+
 			#take action if the plan provides one
-			collision = True
 			if len(plan) > 0:
 				x,y = plan.pop(0)
 				collision = self.step_towards_point(agent, x,y)
 
-			
-			#if we collide or produced no plan, try to un-stick ourselves
-			if collision:
-				path_x, path_y = roadmap.getUnstuckPath(self.agentX, self.agentY) 
-				for x,y in zip(path_x, path_y):
-					self.step_towards_point(agent, x, y, backwards=True)
-				plan = []
 				
 			
 			#plot out the state if enabled
@@ -246,7 +262,7 @@ class BoundingBoxNavigator:
 				fov.agentX = self.agentX
 				fov.agentY = self.agentY
 				fov.agentH = self.agentH
-				poly = fov.getFoVPolygon(15)
+				#poly = fov.getFoVPolygon(15)
 
 				plt.cla()
 				plt.xlim((-7, 7))
@@ -257,7 +273,7 @@ class BoundingBoxNavigator:
 				circle = plt.Circle((self.agentX, self.agentY), radius=self.radius, color='r')
 				plt.gca().add_artist(circle)
 				plt.plot(gx, gy, "x")
-				poly.plot("red")
+				#poly.plot("red")
 
 				for obstacle in self.scene_obstacles_dict.values():
 					obstacle.plot("green")

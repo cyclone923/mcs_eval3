@@ -196,6 +196,13 @@ class SequenceGenerator(object):
                 #print ("explored a lot of points but objects not found")
                 break
 
+        if self.agent.game_state.trophy_picked_up == True:
+            return
+        if self.agent.game_state.goals_found :
+            self.pick_up_obstacles(possible_trophy_obstacles=True)
+        if self.agent.game_state.trophy_picked_up == True:
+            return
+
         self.explore_all_objects()
         if self.agent.game_state.trophy_picked_up == True:
             return
@@ -261,7 +268,33 @@ class SequenceGenerator(object):
         #print ("in nav go to goal done moving towards goal")
 
         self.face_object(target_obj)
+
+        SHOW_ANIMATION = True
+        if SHOW_ANIMATION:
+            plt.cla()
+            plt.xlim((-7, 7))
+            plt.ylim((-7, 7))
+            plt.gca().set_xlim((-7, 7))
+            plt.gca().set_ylim((-7, 7))
+
+            for obstacle in self.agent.game_state.global_obstacles:
+                if obstacle.id ==target_obj.id :
+                    patch1 = PolygonPatch(obstacle.get_bounding_box(), fc='red', ec="black", alpha=0.2, zorder=1)
+                else :
+                    patch1 = PolygonPatch(obstacle.get_bounding_box(), fc='green', ec="black", alpha=0.2, zorder=1)
+                plt.gca().add_patch(patch1)
+
+            plt.axis("equal")
+            plt.pause(0.001)
+            #plt.show()
+
+        print ("target obj height" , target_obj.height)
+
         x,y = self.get_obj_pixels(target_obj)
+        
+        if x == None or y == None :
+            print ("No object to found pick at given location")
+            return 
 
         #print ("goal pick up coordinates" ,x,y)
         #print ("goal current frame ID",target_obj.current_frame_id)
@@ -332,10 +365,16 @@ class SequenceGenerator(object):
 
 
     def get_obj_pixels(self,target_obj):
-        arr_mask = np.array(self.agent.game_state.event.object_mask_list[-1])
-        reshaped_obj_masks = arr_mask.reshape(-1, arr_mask.shape[-1])
-        ar_row_view= reshaped_obj_masks.view('|S%d' % (reshaped_obj_masks.itemsize * reshaped_obj_masks.shape[1]))
-        reshaped_obj_masks = ar_row_view.reshape(arr_mask.shape[:2])
+        #arr_mask = np.array(self.agent.game_state.event.object_mask_list[-1])
+        #reshaped_obj_masks = arr_mask.reshape(-1, arr_mask.shape[-1])
+        obj_masks = self.agent.game_state.obj_mask
+        level = self.agent.game_state.level
+        if level == "level2" or level == "oracle":
+            ar_row_view = obj_masks.view('|S%d' % (obj_masks.itemsize * obj_masks.shape[1]))
+        if level == "level1" :
+            ar_row_view = obj_masks[:]
+        #ar_row_view= reshaped_obj_masks.view('|S%d' % (reshaped_obj_masks.itemsize * reshaped_obj_masks.shape[1]))
+        reshaped_obj_masks = ar_row_view.reshape(400,600)
         goal_pixel_coords = np.where(reshaped_obj_masks==target_obj.current_frame_id)
         if len(goal_pixel_coords[0])==0:
             return None, None
@@ -371,8 +410,8 @@ class SequenceGenerator(object):
         n = int(abs(theta) // 10)
         m = int(abs(omega) // 10)
 
-        #print ("Theta", theta)
-        #print ("Omega", omega)
+        print ("Theta", theta)
+        print ("Omega", omega)
         if theta > 0:
             #action = {'action': 'RotateRight'}
             action = {'action': 'RotateLeft'}
@@ -446,7 +485,7 @@ class SequenceGenerator(object):
     
         #print ("object nearest point", object_nearest_point)
         #print ("object nearest point", object_farthest_point)
-        success_distance = 0.40 
+        success_distance = 0.35 
         nav_success = self.agent.nav.go_to_goal(object_nearest_point, self.agent, success_distance) 
         self.face_object(target_obj)
 
@@ -459,12 +498,13 @@ class SequenceGenerator(object):
             #print ("found goal in the middle of looking into containers")
             return
 
+        #print ("return status from open", self.agent.game_state.event.return_status)
         if  not self.update_opened_up(target_obj):
             return
     
         #print ("done opening object ")
         self.look_straight()
-        nav_success = self.agent.nav.go_to_goal(object_farthest_point, self.agent, success_distance) 
+        nav_success = self.agent.nav.go_to_goal(object_farthest_point, self.agent, success_distance, stepBack=True) 
         self.face_object(target_obj)
 
     def update_opened_up(self,target_obj):          
@@ -479,7 +519,7 @@ class SequenceGenerator(object):
 
     def explore_all_objects(self):
         #print ("number of gloabal obstacles", len(self.agent.game_state.global_obstacles))
-        for i,obstacle in enumerate(self.agent.game_state.global_obstacles[2:]) :
+        for i,obstacle in enumerate(self.agent.game_state.global_obstacles) :
             print ("obj height ", obstacle.height)
             #print ("obj centre ", obstacle.get_centre())
             #if self.obstacle_is_possible_container(obstacle):
