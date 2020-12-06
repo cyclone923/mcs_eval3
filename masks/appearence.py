@@ -55,20 +55,21 @@ def obj_image_to_tensor(obj_image):
 
 
 class AppearanceMatchModel(nn.Module):
-    def __init__(self, shape_labels, color_labels):
+    def __init__(self):
         super(AppearanceMatchModel, self).__init__()
 
-        self._shape_labels = shape_labels
-        self._color_labels = color_labels
+        self._shape_labels = ['car', 'cone', 'cube', 'cylinder', 'duck', 'sphere', 'square frustum', 'turtle']
+        self._color_labels = ['black', 'blue', 'brown', 'green', 'grey', 'red', 'yellow']
+
         self.feature = nn.Sequential(nn.Conv2d(3, 6, 2),
                                      nn.LeakyReLU(),
                                      nn.Conv2d(6, 6, 3),
                                      nn.LeakyReLU())
 
         self.color_feature = nn.Sequential(nn.Conv2d(3, 6, 2),
-                                     nn.LeakyReLU(),
-                                     nn.Conv2d(6, 6, 3),
-                                     nn.LeakyReLU())
+                                           nn.LeakyReLU(),
+                                           nn.Conv2d(6, 6, 3),
+                                           nn.LeakyReLU())
 
         self.shape_classifier = nn.Sequential(nn.Linear(13254, len(self._shape_labels)))
         self.color_classifier = nn.Sequential(nn.Linear(13254, len(self._color_labels)))
@@ -123,28 +124,12 @@ def object_appearance_match(appearance_model, image, objects_info, device='cpu')
         obj_clr_hist_2 = cv2.calcHist([np.array(image)], [2], mask_image, [10], [0, 256])
         obj_clr_hist = (obj_clr_hist_0 + obj_clr_hist_1 + obj_clr_hist_2) / 3
 
-        from colorthief import ColorThief
-        from webcolors import rgb_to_name
-        import io
-        from PIL import Image
-        with io.BytesIO() as file_object:
-            (top_left_x, top_left_y), (bottom_right_x, bottom_right_y) = get_mask_box(objects_info[obj_key]['mask'])
-            _mask_image = image.crop((top_left_y, top_left_x, bottom_right_y, bottom_right_x))
-            # _mask_image = Image.fromarray(mask_image)
-            # _mask_image.save(file_object, "PNG")
-            # dominant_color_rgb = ColorThief(file_object).get_color(quality=1)
-            # dominant_color_name = rgb_to_name(getNearestWebSafeColor(dominant_color_rgb))
-            try:
-                dominant_color_rgb = max(_mask_image.getcolors())
-            except:
-                pass
-
         if 'base_image' not in objects_info[obj_key] or len(objects_info[obj_key]['position_history']) < 5:
             objects_info[obj_key]['base_image'] = {}
             objects_info[obj_key]['appearance'] = {}
             objects_info[obj_key]['base_image']['shape_id'] = current_object_shape_id
             objects_info[obj_key]['base_image']['shape'] = model.shape_label(current_object_shape_id)
-            objects_info[obj_key]['base_image']['color_id'] = current_object_shape_id
+            objects_info[obj_key]['base_image']['color_id'] = current_object_color_id
             objects_info[obj_key]['base_image']['color'] = model.color_label(current_object_color_id)
 
             objects_info[obj_key]['base_image']['histogram'] = obj_clr_hist
@@ -259,6 +244,7 @@ class ObjectDataset(Dataset):
         return {'images': self.data['images'][idx],
                 'shapes': self.data['shapes'][idx],
                 'color': self.data['color'][idx]}
+
 
 def generate_data(scenes_files):
     data = {'images': [], 'shapes': [], 'materials': [], 'textures': []}
@@ -408,7 +394,8 @@ if __name__ == '__main__':
         sampler = torch.utils.data.sampler.WeightedRandomSampler(weights, len(weights), replacement=True)
         dataloader = DataLoader(train_object_dataset, batch_size=args.batch_size, shuffle=False, num_workers=1,
                                 sampler=sampler)
-        model = AppearanceMatchModel(train_object_dataset.shape_labels, train_object_dataset.color_labels)
+
+        model = AppearanceMatchModel()
         optimizer = Adam(model.parameters(), lr=args.lr)
 
         # train
@@ -419,9 +406,8 @@ if __name__ == '__main__':
         all_scenes = list(args.test_scenes_path.glob('*.pkl.gz'))
         print(f'Found {len(all_scenes)} scenes')
 
-        # Todo: Don't load dataset over here. It's only required for label count
-        train_object_dataset = ObjectDataset(pickle.load(open(args.train_dataset_path, 'rb')))
-        model = AppearanceMatchModel(train_object_dataset.shape_labels, train_object_dataset.color_labels)
+        model = AppearanceMatchModel()
+
         model.load_state_dict(torch.load(model_path, map_location=torch.device('cpu')))
         model = model.to(args.device)
 
