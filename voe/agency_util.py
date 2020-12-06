@@ -450,44 +450,151 @@ def get_pref_obj_pos(history, o_1, o_2, a_pos):
     hog_acc /= num_trials
 
     # use best classifier to determine the currently preferred object
+    pref_confidence = 1
+    # used in the case of tied hypothesis classifier accuracy
+    h_1_chosen = None
+    h_2_chosen = None
+    h_3_chosen = None
     hypotheses = [short_acc, far_acc, color_acc, hog_acc]
-    #print("short_acc:", short_acc)
-    #print("far_acc:", far_acc)
-    #print("color_acc:", color_acc)
-    #print("hog_acc:", hog_acc)
-    best_classifier = hypotheses.index(max(hypotheses))
-    if best_classifier == 0 or best_classifier == 1:
-        #print("preferred object is based on distance")
-        dist_1 = dist_agent_obj(a_pos, o_1["rgb"])
-        dist_2 = dist_agent_obj(a_pos, o_2["rgb"])
-        if best_classifier == 0:
+    # print("short_acc:", short_acc)
+    # print("far_acc:", far_acc)
+    # print("color_acc:", color_acc)
+    # print("hog_acc:", hog_acc)
+    best_acc = max(hypotheses)
+    # tied preference hypotheses affects our confidence
+    tied_count = hypotheses.count(best_acc)
+    # will be altered later if theirs a classifier tie
+    pref_confidence = best_acc
+    best_classifier = hypotheses.index(best_acc)
+    
+    if tied_count == 1:
+        if best_classifier == 0 or best_classifier == 1:
+            #print("preferred object is based on distance")
+            dist_1 = dist_agent_obj(a_pos, o_1["rgb"])
+            dist_2 = dist_agent_obj(a_pos, o_2["rgb"])
+            if best_classifier == 0:
+                if dist_1 < dist_2:
+                    o_x, o_y = get_obj_pos(o_1["rgb"])
+                else:
+                    o_x, o_y = get_obj_pos(o_2["rgb"])
+            if best_classifier == 1:
+                if dist_1 > dist_2:
+                    o_x, o_y = get_obj_pos(o_1["rgb"])
+                else:
+                    o_x, o_y = get_obj_pos(o_2["rgb"])
+        elif best_classifier == 2:
+            #print("preferred object is a certain color")
+            dist_1 = np.absolute(get_ch_avgs(o_1["rgb"]) - avg_chosen_c).sum()
+            dist_2 = np.absolute(get_ch_avgs(o_2["rgb"]) - avg_chosen_c).sum()
             if dist_1 < dist_2:
                 o_x, o_y = get_obj_pos(o_1["rgb"])
             else:
                 o_x, o_y = get_obj_pos(o_2["rgb"])
-        if best_classifier == 1:
-            if dist_1 > dist_2:
+        else:
+            #print("preferred object is a certain shape")
+            dist_1 = np.absolute(get_obj_hog(o_1["rgb"]) - avg_chosen_h).sum()
+            dist_2 = np.absolute(get_obj_hog(o_2["rgb"]) - avg_chosen_h).sum()
+            if dist_1 < dist_2:
                 o_x, o_y = get_obj_pos(o_1["rgb"])
             else:
                 o_x, o_y = get_obj_pos(o_2["rgb"])
-    elif best_classifier == 2:
-        #print("preferred object is a certain color")
-        dist_1 = np.absolute(get_ch_avgs(o_1["rgb"]) - avg_chosen_c).sum()
-        dist_2 = np.absolute(get_ch_avgs(o_2["rgb"]) - avg_chosen_c).sum()
-        if dist_1 < dist_2:
-            o_x, o_y = get_obj_pos(o_1["rgb"])
-        else:
-            o_x, o_y = get_obj_pos(o_2["rgb"])
+    elif tied_count == 4:
+        # All 4 would be 0.5 accurate and we divide that by 4
+        pref_confidence = 0.125
+        o_x, o_y = get_obj_pos(o_2["rgb"])
     else:
-        #print("preferred object is a certain shape")
-        dist_1 = np.absolute(get_obj_hog(o_1["rgb"]) - avg_chosen_h).sum()
-        dist_2 = np.absolute(get_obj_hog(o_2["rgb"]) - avg_chosen_h).sum()
-        if dist_1 < dist_2:
-            o_x, o_y = get_obj_pos(o_1["rgb"])
-        else:
-            o_x, o_y = get_obj_pos(o_2["rgb"])
+        # need to calculate the best 2 and then compare predictions
+        # same accuracy as tied_count == 1 if they predict the same object
+        if hypotheses[0] == best_acc:
+            dist_1 = dist_agent_obj(a_pos, o_1["rgb"])
+            dist_2 = dist_agent_obj(a_pos, o_2["rgb"])
+            if dist_1 < dist_2:
+                h_1_chosen = 1
+            else:
+                h_1_chosen = 2
+        if hypotheses[1] == best_acc:
+            dist_1 = dist_agent_obj(a_pos, o_1["rgb"])
+            dist_2 = dist_agent_obj(a_pos, o_2["rgb"])
+            if dist_1 > dist_2:
+                if type(h_1_chosen) == type(None):
+                    h_1_chosen = 1  
+                else:
+                    h_2_chosen = 1
+            else:
+                if type(h_1_chosen) == type(None):
+                    h_1_chosen = 2  
+                else:
+                    h_2_chosen = 2
+        if hypotheses[2] == best_acc:
+            dist_1 = np.absolute(get_ch_avgs(o_1["rgb"]) - avg_chosen_c).sum()
+            dist_2 = np.absolute(get_ch_avgs(o_2["rgb"]) - avg_chosen_c).sum()
+            if dist_1 < dist_2:
+                if type(h_1_chosen) == type(None):
+                    h_1_chosen = 1  
+                elif type(h_2_chosen) == type(None):
+                    h_2_chosen = 1
+                else:
+                    h_3_chosen = 1
+            else:
+                if type(h_1_chosen) == type(None):
+                    h_1_chosen = 2  
+                elif type(h_2_chosen) == type(None):
+                    h_2_chosen = 2
+                else:
+                    h_3_chosen = 2
+        if hypotheses[3] == best_acc:
+            dist_1 = np.absolute(get_obj_hog(o_1["rgb"]) - avg_chosen_h).sum()
+            dist_2 = np.absolute(get_obj_hog(o_2["rgb"]) - avg_chosen_h).sum()
+            if dist_1 < dist_2:
+                if type(h_2_chosen) == type(None):
+                    h_2_chosen = 1  
+                else:
+                    h_3_chosen = 1
+            else:
+                if type(h_2_chosen) == type(None):
+                    h_2_chosen = 2
+                else:
+                    h_3_chosen = 2
 
-    return o_x, o_y
+        # now modulate confidence based on # of tied acc classifiers
+        # and whether or not those tied ones agree or not...
+        if tied_count == 2:
+            if h_1_chosen == h_2_chosen:
+                if h_1_chosen == 1:
+                    o_x, o_y = get_obj_pos(o_1["rgb"])
+                else:
+                    o_x, o_y = get_obj_pos(o_2["rgb"])
+            else:
+                pref_confidence *= 0.5
+                # just pick one i.e. guessing at this point
+                o_x, o_y = get_obj_pos(o_1["rgb"])
+        elif tied_count == 3:
+            if h_1_chosen == h_2_chosen == h_3_chosen:
+                if h_1_chosen == 1:
+                    o_x, o_y = get_obj_pos(o_1["rgb"])
+                else:
+                    o_x, o_y = get_obj_pos(o_2["rgb"])
+            elif h_1_chosen == h_2_chosen:
+                pref_confidence *= 0.66
+                if h_1_chosen == 1:
+                    o_x, o_y = get_obj_pos(o_1["rgb"])
+                else:
+                    o_x, o_y = get_obj_pos(o_2["rgb"])
+            elif h_1_chosen == h_3_chosen:
+                pref_confidence *= 0.66
+                if h_1_chosen == 1:
+                    o_x, o_y = get_obj_pos(o_1["rgb"])
+                else:
+                    o_x, o_y = get_obj_pos(o_2["rgb"])
+            else:
+                # must be h_2 and h_3 that agreed
+                pref_confidence *= 0.66
+                if h_2_chosen == 1:
+                    o_x, o_y = get_obj_pos(o_1["rgb"])
+                else:
+                    o_x, o_y = get_obj_pos(o_2["rgb"])
+
+    return o_x, o_y, pref_confidence
 
 # instead of a recursive solution, just hardcoded one since the nested structure isn't too deep
 def jsonify_info_dict(info):    
