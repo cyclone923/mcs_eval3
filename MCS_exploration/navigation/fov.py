@@ -134,8 +134,8 @@ class FieldOfView:
 		# print(poly_angle)
 
 		indx = sorted(range(len(poly_angle)), key=lambda x: (poly_angle[x]+self.agentH) % (2*np.pi))
-		poly_X = [p1.x] + list(np.array(poly_X)[indx])+ [p1.x]
-		poly_Y = [p1.y] + list(np.array(poly_Y)[indx]) + [p1.y]
+		poly_X = [p1.x] + list(np.array(poly_X)[indx])
+		poly_Y = [p1.y] + list(np.array(poly_Y)[indx])
 		#print ("polyX", poly_X)
 		#print ("polyY", poly_Y)
 #		print ("time taken for FoV", time.time()-start_time)

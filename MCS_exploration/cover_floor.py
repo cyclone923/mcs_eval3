@@ -390,7 +390,7 @@ def update_seen(x,y,game_state,rotation,camera_field_of_view,obstacles):
 
     try:
         view = Polygon(zip(poly.x_list, poly.y_list)).buffer(0) #the buffer helps eliminate intersections
-        game_state.world_poly = game_state.world_poly.union(view)
+        game_state.world_poly = game_state.world_poly.union(view).buffer(0)
     except:
         return
     world = game_state.world_poly
