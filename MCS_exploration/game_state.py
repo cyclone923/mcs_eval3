@@ -123,9 +123,9 @@ class GameState(object):
         self.trophy_obstacle = None
         self.trophy_picked_up = False
         self.trophy_prob_threshold = 0.3
-        #self.level = "oracle"
+        self.level = "oracle"
         #self.level = "level1"
-        self.level = "level2"
+        #self.level = "level2"
         self.trophy_visible_current_frame = False
         self.img_seg_occupancy_map_points = {}
         self.current_frame_img_obstacles = []
@@ -304,14 +304,19 @@ class GameState(object):
             if self.level == "oracle":
                 #print ("in oracle mode in reset")
                 self.create_current_frame_obstacles(current_frame_occupancy_points)
+                self.current_frame_obstacles = self.merge_obstacles(self.current_frame_obstacles,"current")
+                self.update_goal_data_oracle()
                 self.update_global_obstacles()
-                self.merge_global_obstacles()
+                self.global_obstacles = self.merge_obstacles(self.global_obstacles,"global")
+                #self.merge_global_obstacles()
             elif self.level == "level1" or self.level == "level2":
                 #print ("in level1_2 mode in reset")
                 self.calculate_img_obstacles()
                 self.create_current_frame_obstacles_level_1_2(current_frame_occupancy_points)
+                self.current_frame_obstacles = self.merge_obstacles(self.current_frame_obstacles,"current")
                 self.update_global_obstacles_level_1_2()
-                self.merge_global_obstacles()
+                self.global_obstacles = self.merge_obstacles(self.global_obstacles,"global")
+                #self.merge_global_obstacles()
                 self.update_goal_object_from_obstacle_prob()
             self.add_obstacle_func(bounding_boxes)
             lastActionSuccess = self.event.return_status
@@ -423,17 +428,24 @@ class GameState(object):
         bounding_boxes,current_frame_occupancy_points = convert_observation(self,self.number_actions,self.position,self.rotation) 
         self.number_actions += 1
 
+        #print ("after updating and getting the steps img channel data")
+
         if self.level == "oracle":
             #print ("in oracle mode in step")
             self.create_current_frame_obstacles(current_frame_occupancy_points)
+            self.current_frame_obstacles = self.merge_obstacles(self.current_frame_obstacles,"current")
+            self.update_goal_data_oracle()
             self.update_global_obstacles()
-            self.merge_global_obstacles()
+            self.global_obstacles = self.merge_obstacles(self.global_obstacles,"global")
+            #self.merge_global_obstacles()
         elif self.level == "level1" or self.level == "level2":
             self.goals_found = False
             self.calculate_img_obstacles()
             self.create_current_frame_obstacles_level_1_2(current_frame_occupancy_points)
+            self.current_frame_obstacles = self.merge_obstacles(self.current_frame_obstacles,"current")
             self.update_global_obstacles_level_1_2()
-            self.merge_global_obstacles()
+            self.global_obstacles = self.merge_obstacles(self.global_obstacles,"global")
+            #self.merge_global_obstacles()
             self.update_goal_object_from_obstacle_prob()
         #print ("time taken to update global obstacle list", time.time()-start_time)
         self.add_obstacle_func(bounding_boxes)
@@ -443,6 +455,16 @@ class GameState(object):
         else :
             print ("Failed status : ",self.event.return_status )
 
+        #for obstacle1 in self.current_frame_obstacles:
+        #    for obstacle2 in self.current_frame_obstacles:  
+        #        if obstacle1.id == obstacle2.id :
+        #            continue
+        #        '''
+        #        object inside container
+        #        '''
+        #        if obstacle1.get_bounding_box().convex_hull.contains(obstacle2.get_bounding_box()) :
+       #             print ("one object containing the other inside a single frame")
+       #             continue
         SHOW_ANIMATION = True
         if SHOW_ANIMATION:
             plt.cla()
@@ -451,18 +473,27 @@ class GameState(object):
             plt.gca().set_xlim((-7, 7))
             plt.gca().set_ylim((-7, 7))
 
-            for obstacle in self.global_obstacles:
-                if obstacle.id in self.goal_ids :
-                    patch1 = PolygonPatch(obstacle.get_bounding_box(), fc='red', ec="black", alpha=0.2, zorder=1)
-                else :
-                    patch1 = PolygonPatch(obstacle.get_bounding_box(), fc='green', ec="black", alpha=0.2, zorder=1)
-                plt.gca().add_patch(patch1)
-                centre_x,centre_y,centre_z = obstacle.get_centre()
-                #plt.plot(centre_x, centre_z, "x")
-            for obstacle in self.current_frame_img_obstacles:
-            #for obstacle in self.current_frame_obstacles:
-                patch1 = PolygonPatch(obstacle.get_bounding_box(), fc='blue', ec="black", alpha=0.2, zorder=1)
-                plt.gca().add_patch(patch1)
+            curr_frame_obstacles = True
+            global_obstacles = True
+            curr_frame_img_obstacles = False
+    
+            if global_obstacles :
+                for obstacle in self.global_obstacles:
+                    if obstacle.id in self.goal_ids :
+                        patch1 = PolygonPatch(obstacle.get_bounding_box(), fc='red', ec="black", alpha=0.2, zorder=1)
+                    else :
+                        patch1 = PolygonPatch(obstacle.get_bounding_box(), fc='green', ec="black", alpha=0.2, zorder=1)
+                    plt.gca().add_patch(patch1)
+
+            if curr_frame_img_obstacles == True :
+                for obstacle in self.current_frame_img_obstacles:
+                    patch1 = PolygonPatch(obstacle.get_bounding_box(), fc='blue', ec="black", alpha=0.2, zorder=1)
+                    plt.gca().add_patch(patch1)
+
+            if curr_frame_obstacles == True:
+                for obstacle in self.current_frame_obstacles:
+                    patch1 = PolygonPatch(obstacle.get_bounding_box(), fc='blue', ec="black", alpha=0.2, zorder=1)
+                    plt.gca().add_patch(patch1)
             if self.goal_bounding_box != None :
                 patch1 = PolygonPatch(self.goal_bounding_box, fc='yellow', ec="black", alpha=0.2, zorder=1)
                 plt.gca().add_patch(patch1)
@@ -475,29 +506,30 @@ class GameState(object):
 
         self.trophy_location = None
 
-
     def update_global_obstacles(self):
         #for key,values in self.current_frame_obstacles.items():
+
         for curr_frame_obstacle in self.current_frame_obstacles:
             flag = 0 
             #obj_occ_map = get_occupancy_from_points( values,self.occupancy_map.shape)   
             #obj_polygon = polygon_simplify(occupancy_to_polygons(obj_occ_map,self.grid_size,self.displacement ))
             #print (values)
             for i,obstacle in enumerate(self.global_obstacles) :
+                containment = False
 
                 '''
                 if obstacle.get_bounding_box().contains(curr_frame_obstacle.get_bounding_box()) and \
                     curr_frame_obstacle.is_goal == True and obstacle.is_goal != True :
+                    print ("contains is true for some obstacle and trophy most likely")
                     if self.goals_found != True :
-                        #print ("in contains making a separate object ")
     
+                        #print ("in contains making a separate object ")
                         #print ("occupancy map size b4", len(curr_frame_obstacle.get_occupancy_map_points()))
                         curr_frame_obstacle.expand_obstacle(obstacle.get_occupancy_map_points(),self.occupancy_map.shape,self.grid_size,self.displacement)
                         curr_frame_obstacle.id = self.objs
                         self.global_obstacles.append(copy.deepcopy(curr_frame_obstacle))
                         #print ("occupancy map after b4", len(curr_frame_obstacle.get_occupancy_map_points()))
                         #print ("occupancy map size after", len(self.global_obstacles[-1].get_occupancy_map_points()))
-
                         if self.global_obstacles[-1].is_goal == True :
                             self.goal_ids = [self.objs]
                             #print ("goal obj id being set to(in contains) = ", self.goal_id)
@@ -512,12 +544,20 @@ class GameState(object):
                     flag = 1
                     break
                 '''
+                if obstacle.get_bounding_box().contains(curr_frame_obstacle.get_bounding_box()):
+                    if curr_frame_obstacle.is_contained == False:
+                        #print ("containment = True in update global obstacles")
+                        containment = True
+                    else :
+                        curr_frame_obstacle.parent_bounding_box = obstacle.get_bounding_box()
+                        continue
+
                 intersect_area = curr_frame_obstacle.get_bounding_box().intersection(obstacle.get_bounding_box()).area
                 height_ratio = abs(curr_frame_obstacle.height-obstacle.height ) / (max(obstacle.height,curr_frame_obstacle.height))
-                if intersect_area > 0.00001 and height_ratio < 0.7:
+                if (intersect_area > 0.00001 and height_ratio < 0.7) or containment:
                     self.global_obstacles[i].expand_obstacle(curr_frame_obstacle.get_occupancy_map_points(),self.occupancy_map.shape,self.grid_size,self.displacement)
                     self.global_obstacles[i].current_frame_id = curr_frame_obstacle.current_frame_id
-                    self.global_obstacles[i].is_goal =  curr_frame_obstacle.is_goal
+                    self.global_obstacles[i].is_goal =  curr_frame_obstacle.is_goal or self.global_obstacles[i].is_goal
                     self.global_obstacles[i].set_height(max(self.global_obstacles[i].height,curr_frame_obstacle.height))
                     if self.global_obstacles[i].is_goal :
                         #print ("goal obj id being set to(in intersect) = ", self.goal_id)
@@ -566,11 +606,104 @@ class GameState(object):
                     elem_to_pop.append(obstacle2) 
             
         for elem in elem_to_pop:
+            #print ("global merge happening ID being popped",elem.id)
             self.global_obstacles.remove(elem)        
 
+
+    def merge_obstacles(self,obstacle_list,obs_list_scope):
+        #print ("in merge before ", len(self.global_obstacles))
+        elem_to_pop = []
+        for i,obstacle1 in enumerate(obstacle_list):
+            if obstacle1 in elem_to_pop :
+                continue
+            
+            for j in range(0,len(obstacle_list)):
+                obstacle2 = obstacle_list[j]
+                if obstacle1.id == obstacle2.id :   
+                    continue
+                containment = False
+                height_ratio =abs(obstacle1.height-obstacle2.height ) / (max(obstacle1.height,obstacle2.height))
+    
+                '''
+                if self.goals_found == True : 
+
+                    print ("obs_list_scope ", obs_list_scope)
+                    print ("when goals found, normal containment", obstacle1.get_bounding_box().contains(obstacle2.get_bounding_box()))
+                    print ("height ratio", height_ratio)
+                '''
+                if obstacle1.get_bounding_box().contains(obstacle2.get_bounding_box()) :
+                    if obstacle2.is_contained == False:
+                        containment = True
+                        #print ("containment = True, one frame is contained is false")
+                        
+                    else :
+                        obstacle2.parent_bounding_box = obstacle1.get_bounding_box()
+                        continue
+                intersect_area = obstacle1.get_bounding_box().intersection(obstacle2.get_bounding_box()).area
+
+                #if containment == True :
+                #    print ("intersect area,height_ratio ", intersect_area,height_ratio)
+                
+                if (intersect_area > 0.00001 and height_ratio < 0.7) or containment == True:
+                    obstacle1.expand_obstacle(obstacle2.get_occupancy_map_points(),self.occupancy_map.shape,self.grid_size,self.displacement)
+                    obstacle1.set_height(max(obstacle1.height,obstacle2.height))
+                    obstacle1.is_goal = obstacle1.is_goal or obstacle2.is_goal
+                    obstacle1.is_contained = obstacle1.is_contained or obstacle2.is_contained
+                    if len(obstacle2.trophy_prob_per_frame) != 0 : 
+                        for trophy_prob in obstacle2.trophy_prob_per_frame :
+                            #self.global_obstacles[i].trophy_prob_per_frame.append(trophy_prob)  
+                            obstacle1.trophy_prob_per_frame.append(trophy_prob)
+                        obstacle1.calculate_trophy_prob()
+                        #self.global_obstacles[i].calculate_trophy_prob()
+                    if obstacle2 not in elem_to_pop:
+                        elem_to_pop.append(obstacle2) 
+                    continue
+    
+
+                if obs_list_scope == "current" :
+                    #print ("obs list scope :", obs_list_scope)
+                    #print ("height ratio ",height_ratio)
+                    #print ("Convex containment" ,obstacle1.get_bounding_box().convex_hull.contains(obstacle2.get_bounding_box()) )                
+                    
+                    if obstacle1.height > 1.2 : 
+                        continue                
+
+                    if obstacle1.get_bounding_box().convex_hull.contains(obstacle2.get_bounding_box()) \
+                        and containment == False and height_ratio < 0.8:
+                        #obstacle1_poly_exterior_coords = obstacle1.get_convex_polygon_coords()
+                        #obstacle1_exterior_poly = Polygon(obstacle1_poly_exterior_coords)
+                        #if obstacle1_exterior_poly.contains(obstacle2.get_bounding_box()) \
+                        obstacle2.is_contained = True
+                        print ("is contained is true")
+                        obstacle2.parent_bounding_box = obstacle1.get_bounding_box().convex_hull
+                        SHOW_ANIMATION = (not containment and False)
+                        if SHOW_ANIMATION:
+                            plt.cla()
+                            plt.xlim((-7, 7))
+                            plt.ylim((-7, 7))
+                            plt.gca().set_xlim((-7, 7))
+                            plt.gca().set_ylim((-7, 7))
+
+                            #for obstacle in self.current_frame_obstacles:
+                            patch1 = PolygonPatch(obstacle1.get_bounding_box().convex_hull, fc='green', ec="black", alpha=0.2, zorder=1)
+                            plt.gca().add_patch(patch1)
+                            patch1 = PolygonPatch(obstacle2.get_bounding_box(), fc='red', ec="black", alpha=0.2, zorder=1)
+                            plt.gca().add_patch(patch1)
+                            plt.axis("equal")
+                            plt.pause(0.001)
+                            #plt.show()
+            
+        for elem in elem_to_pop:
+            #print ("merginng obstacles happening ID being popped",elem.id)
+            obstacle_list.remove(elem)        
+
+
+        return obstacle_list[:]
+
     def create_current_frame_obstacles(self, current_frame_obstacles_dict):
+        def intersect2D(a, b):
+            return np.array([x for x in set(tuple(x) for x in a) & set(tuple(x) for x in b)])
         obj_id =  1000
-        max_intersect_area = 0.001
         i = 0
         self.current_frame_obstacles = []
         goal_index = -1
@@ -579,21 +712,74 @@ class GameState(object):
             obj_occ_map_points = values[0]
             self.current_frame_obstacles.append(Obstacle(obj_id,obj_height,  obj_occ_map_points,self.occupancy_map.shape,self.grid_size,self.displacement))
             self.current_frame_obstacles[-1].current_frame_id = key
-            if self.goal_object_visible:
-                intersect_area = self.current_frame_obstacles[-1].get_bounding_box().intersection(self.goal_bounding_box).area
-                #intersect_area = self.current_frame_obstacles[-1].get_bounding_box().intersection(self.trophy_obstacle.get_bounding_box()).area
-                #print ("Intersection area : ", intersect_area)
-                if intersect_area > max_intersect_area :
-                    goal_index = i
-                    self.goal_calculated_points = self.current_frame_obstacles[-1].get_bounding_box() 
-                    max_intersect_area = intersect_area
-            i += 1
             obj_id += 1
+
+
+    def update_goal_data_oracle(self):
+        i = 0
+    
+        if not self.goal_object_visible :
+            return 
+        max_intersect_area = 0.001
+        goal_index = -1
+
+        for current_frame_obstacle in self.current_frame_obstacles:
+            intersect_area = current_frame_obstacle.get_bounding_box().intersection(self.goal_bounding_box).area
+            #intersect_area = self.current_frame_obstacles[-1].get_bounding_box().intersection(self.trophy_obstacle.get_bounding_box()).area
+            #print ("Intersection area : ", intersect_area)
+            if intersect_area > max_intersect_area :
+                goal_index = i
+                self.goal_calculated_points = current_frame_obstacle.get_bounding_box() 
+                max_intersect_area = intersect_area
+            i += 1
 
         #This is disabled when we do not want to recognize trophy(disabled only for testing containers)
         if goal_index != -1:
+            #print ("goal found")
             self.current_frame_obstacles[goal_index].is_goal = True
 
+            #print ("number of obstacles seen in this frame", len(self.current_frame_obstacles))
+
+            SHOW_ANIMATION = False
+            if SHOW_ANIMATION:
+                plt.cla()
+                plt.xlim((-7, 7))
+                plt.ylim((-7, 7))
+                plt.gca().set_xlim((-7, 7))
+                plt.gca().set_ylim((-7, 7))
+
+                #for obstacle in self.current_frame_obstacles:
+                for obstacle in self.global_obstacles:
+                    #obstacle_convex = Polygon(obstacle.get_convex_polygon_coords())
+                    patch1 = PolygonPatch(obstacle.get_bounding_box(), fc='green', ec="black", alpha=0.2, zorder=1)
+                    plt.gca().add_patch(patch1)
+                patch1 = PolygonPatch(self.current_frame_obstacles[goal_index].get_bounding_box(), fc='red', ec="black", alpha=0.2, zorder=1)
+                plt.gca().add_patch(patch1)
+                #patch1 = PolygonPatch(curr_frame_obstacle.get_bounding_box(), fc='red', ec="black", alpha=0.2, zorder=1)
+                #plt.gca().add_patch(patch1)
+                plt.axis("equal")
+                #plt.pause(0.001)
+                plt.show()
+
+        '''
+        for obstacle1 in self.current_frame_obstacles:
+            for obstacle2 in self.current_frame_obstacles:  
+                if obstacle1.id == obstacle2.id :
+                    continue
+                #if obstacle1.get_bounding_box().convex_hull.contains(obstacle2.get_bounding_box()) :
+                if obstacle1.get_bounding_box().contains(obstacle2.get_bounding_box()) :
+                    print ("one object containing the other inside a single frame")
+                    continue
+                    parent_gc = obstacle1.get_occupancy_map_points()
+                    #parent_gc = np.array([tuple(elem[0],elem[1]) for elem in parent_gc])
+                    child_gc = obstacle2.get_occupancy_map_points()
+                    #child_gc = np.array([tuple(elem[0],elem[1]) for elem in child_gc])
+                    #print ("grid cells by parent size", len(parent_gc))
+                    #print ("grid cells by child", len(child_gc))
+                    #print ("gc intersection size", len(intersect2D(parent_gc,child_gc)))
+                    #print ("gc intersection prop", len(intersect2D(parent_gc,child_gc))/len(child_gc))
+                    #print ("area proportion", curr_frame_obstacle.get_bounding_box().area/obstacle.get_bounding_box().area)
+        '''
         #print ("current frame obstacles size", len(self.current_frame_obstacles))
 
     def create_current_frame_obstacles_level_1_2(self, current_frame_obstacles_dict):
@@ -623,9 +809,43 @@ class GameState(object):
                     #    self.current_frame_obstacles[-1].is_goal = True
             obj_id += 1
 
-        #This is disabled in image segmentation as we can now have multiple goals
-        #if goal_index != -1:
-        #    self.current_frame_obstacles[goal_index].is_goal = True
+        SHOW_ANIMATION = False
+        if SHOW_ANIMATION:
+            plt.cla()
+            plt.xlim((-7, 7))
+            plt.ylim((-7, 7))
+            plt.gca().set_xlim((-7, 7))
+            plt.gca().set_ylim((-7, 7))
+
+            for obstacle in self.current_frame_obstacles:
+                #obstacle_convex = Polygon(obstacle.get_convex_polygon_coords())
+                patch1 = PolygonPatch(obstacle.get_bounding_box().convex_hull, fc='green', ec="black", alpha=0.2, zorder=1)
+                #patch1 = PolygonPatch(obstacle_convex, fc='green', ec="black", alpha=0.2, zorder=1)
+                plt.gca().add_patch(patch1)
+            #patch1 = PolygonPatch(curr_frame_obstacle.get_bounding_box(), fc='red', ec="black", alpha=0.2, zorder=1)
+            #plt.gca().add_patch(patch1)
+            plt.axis("equal")
+            plt.pause(0.001)
+            #plt.show()
+
+        '''
+        for obstacle1 in self.current_frame_obstacles:
+            for obstacle2 in self.current_frame_obstacles:  
+                if obstacle1.id == obstacle2.id :
+                    continue
+                if obstacle1.get_bounding_box().convex_hull.contains(obstacle2.get_bounding_box()) :
+                    print ("one object containing the other inside a single frame")
+                    continue
+                    parent_gc = obstacle1.get_occupancy_map_points()
+                    #parent_gc = np.array([tuple(elem[0],elem[1]) for elem in parent_gc])
+                    child_gc = obstacle2.get_occupancy_map_points()
+                    #child_gc = np.array([tuple(elem[0],elem[1]) for elem in child_gc])
+                    #print ("grid cells by parent size", len(parent_gc))
+                    #print ("grid cells by child", len(child_gc))
+                    #print ("gc intersection size", len(intersect2D(parent_gc,child_gc)))
+                    #print ("gc intersection prop", len(intersect2D(parent_gc,child_gc))/len(child_gc))
+                    #print ("area proportion", curr_frame_obstacle.get_bounding_box().area/obstacle.get_bounding_box().area)
+        '''
 
     def update_global_obstacles_level_1_2(self):
 
@@ -637,14 +857,6 @@ class GameState(object):
                 '''
                 if obstacle.get_bounding_box().contains(curr_frame_obstacle.get_bounding_box()) and \
                     curr_frame_obstacle.is_goal == True and obstacle.is_goal != True :
-                    if self.goals_found != True :
-    
-                        #print ("occupancy map size b4", len(curr_frame_obstacle.get_occupancy_map_points()))
-                        curr_frame_obstacle.expand_obstacle(obstacle.get_occupancy_map_points(),self.occupancy_map.shape,self.grid_size,self.displacement)
-                        curr_frame_obstacle.id = self.objs
-                        self.global_obstacles.append(copy.deepcopy(curr_frame_obstacle))
-                        #print ("occupancy map after b4", len(curr_frame_obstacle.get_occupancy_map_points()))
-                        #print ("occupancy map size after", len(self.global_obstacles[-1].get_occupancy_map_points()))
 
                         if self.global_obstacles[-1].is_goal == True :
                             self.goal_id = self.objs
@@ -660,6 +872,11 @@ class GameState(object):
                     flag = 1
                     break
                 '''
+                if obstacle.get_bounding_box().contains(curr_frame_obstacle.get_bounding_box()):
+                    if curr_frame_obstacle.is_contained == False:
+                        containment = True
+                    else :
+                        continue
                 intersect_area = curr_frame_obstacle.get_bounding_box().intersection(obstacle.get_bounding_box()).area
                 height_ratio = abs(curr_frame_obstacle.height-obstacle.height ) / (max(obstacle.height,curr_frame_obstacle.height))
                 if intersect_area > 0.00001 and height_ratio < 0.7:
@@ -685,12 +902,6 @@ class GameState(object):
                             self.goal_id = self.global_obstacles[i].id 
                             self.trophy_obstacle = self.global_obstacles[i]
                         '''
-                    '''
-                    if self.global_obstacles[i].is_goal :
-                        #print ("goal obj id being set to(in intersect) = ", self.goal_id)
-                        self.goal_id = self.global_obstacles[i].id
-                        self.goals_found = True
-                    '''
                     flag = 1
                     break
             if flag == 0 :

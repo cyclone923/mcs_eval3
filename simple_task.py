@@ -6,7 +6,7 @@ import sys
 DEBUG = False
 
 if __name__ == "__main__":
-    start_scene_number = 0 
+    start_scene_number = 0
     collector = Frame_collector(scene_dir="simple_task_img", start_scene_number=start_scene_number)
     env = McsEnv(
         task="interaction_scenes", scene_type="retrieval" if not DEBUG else "debug", seed=50,
@@ -24,7 +24,7 @@ if __name__ == "__main__":
     exploration_success = 0
     negative_reward = 0
     number_tasks_success = 0 
-    number_scenes = 5
+    number_scenes = 30
     negative_rewards = 0
     failure_return_status = {}
     number_crash = 0

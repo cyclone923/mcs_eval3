@@ -5,16 +5,19 @@ class Obstacle():
     def __init__(self,obj_id,obj_height,map_points,size,scale,displacement,trophy_prob =None, number_pixel_points=0):
         self.id = obj_id
         self.occupancy_map_points = map_points[:]
+        self.parent_occupancy_map = map_points[:]
         self.height = obj_height
         self.is_goal = False
         self.current_frame_id = None
-        self.is_container = 1 #initial assumption that anything can be a container
+        self.is_container = True #initial assumption that anything can be a container
         self.is_opened = False
+        self.is_contained = False #If it is contained in a different object
         self.centre_x = None
         self.centre_y = None
         self.centre_z = None
         self.bounding_box = None
         self.calculate_bounding_box(size,scale, displacement)
+        self.parent_bounding_box = self.bounding_box
         self.calculate_centre()
         self.parent_id = -1
         self.is_picked_and_not_trophy = False
@@ -35,6 +38,19 @@ class Obstacle():
             self.calculate_bounding_box(size,scale,displacement)
             self.calculate_centre()
 
+    def set_parent_obstacle_points (self,new_occupancy_map_points):
+        obstacle_len = len(self.parent_occupancy_map_points)
+        self.parent_occupancy_map_points = self.union(self.occupancy_map_points,self.parent_occupancy_map_points)
+        self.parent_occupancy_map_points = self.union(new_occupancy_map_points,self.parent_occupancy_map_points)
+        obstacle_len_updated = len(self.parent_occupancy_map_points)
+        if obstacle_len_updated > obstacle_len :
+            self.calculate_parent_bounding_box(size,scale,displacement)
+            self.calculate_parent_centre()
+
+    def calculate_parent_bounding_box(self,size,scale_displacement):
+        obj_occ_map = get_occupancy_from_points( self.parent_occupancy_map_points,size)   
+        self.parent_bounding_box = polygon_simplify(occupancy_to_polygons(obj_occ_map,scale,displacement ))
+    
     def calculate_bounding_box(self,size, scale,displacement):   
         obj_occ_map = get_occupancy_from_points( self.occupancy_map_points,size)   
         self.bounding_box = polygon_simplify(occupancy_to_polygons(obj_occ_map,scale,displacement ))

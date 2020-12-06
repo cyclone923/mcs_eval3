@@ -89,6 +89,7 @@ class SequenceGenerator(object):
                 exploration_routine.append((point[0],point[1]))
         #print ("time taken for within", time.time()- start_time)
         #print ("number of exploration points" , len(exploration_routine))
+        #self.explore_all_objects()
 
         '''
         SHOW_ANIMATION = False
@@ -265,11 +266,11 @@ class SequenceGenerator(object):
         #print ("goal point : ", object_nearest_point)
         nav_success = self.agent.nav.go_to_goal(object_nearest_point, self.agent, success_distance) 
 
-        #print ("in nav go to goal done moving towards goal")
+        print ("in nav go to goal done moving towards goal")
 
         self.face_object(target_obj)
 
-        SHOW_ANIMATION = True
+        SHOW_ANIMATION = False
         if SHOW_ANIMATION:
             plt.cla()
             plt.xlim((-7, 7))
@@ -283,10 +284,11 @@ class SequenceGenerator(object):
                 else :
                     patch1 = PolygonPatch(obstacle.get_bounding_box(), fc='green', ec="black", alpha=0.2, zorder=1)
                 plt.gca().add_patch(patch1)
+            plt.plot(object_nearest_point[0], object_nearest_point[1], "x")
 
             plt.axis("equal")
             plt.pause(0.001)
-            #plt.show()
+            plt.show()
 
         print ("target obj height" , target_obj.height)
 
@@ -410,8 +412,8 @@ class SequenceGenerator(object):
         n = int(abs(theta) // 10)
         m = int(abs(omega) // 10)
 
-        print ("Theta", theta)
-        print ("Omega", omega)
+        #print ("Theta", theta)
+        #print ("Omega", omega)
         if theta > 0:
             #action = {'action': 'RotateRight'}
             action = {'action': 'RotateLeft'}
@@ -450,7 +452,11 @@ class SequenceGenerator(object):
 
     def get_best_object_point(self,target_obj,dist_points,dist_func):
         agent_pos  =self.agent.game_state.position
-        exterior_coords = target_obj.get_convex_polygon_coords()
+        if target_obj.is_contained == True :
+            print ("object contained true in get best object point")
+            exterior_coords =  target_obj.parent_bounding_box.exterior.coords.xy       
+        else :
+            exterior_coords = target_obj.get_convex_polygon_coords()
         x_list = exterior_coords[0]
         y_list = exterior_coords[1]
         for x in x_list:
@@ -508,29 +514,33 @@ class SequenceGenerator(object):
         self.face_object(target_obj)
 
     def update_opened_up(self,target_obj):          
-        if self.agent.game_state.event.return_status == "SUCCESSFUL" :
-            for i,obstacle in enumerate(self.agent.game_state.global_obstacles) :
-                if target_obj.id == obstacle.id :
+        for i,obstacle in enumerate(self.agent.game_state.global_obstacles) :
+            if target_obj.id == obstacle.id :
+                if self.agent.game_state.event.return_status == "SUCCESSFUL" :
                     self.agent.game_state.global_obstacles[i].is_opened = True
                     return  True
-        if self.agent.game_state.event.return_status == "NOT_OPENABLE":
-            return False 
+                if self.agent.game_state.event.return_status == "NOT_OPENABLE":
+                    self.agent.game_state.global_obstacles[i].is_container = False
+                    return False 
 
 
     def explore_all_objects(self):
         #print ("number of gloabal obstacles", len(self.agent.game_state.global_obstacles))
+        #for i,obstacle in enumerate(self.agent.game_state.global_obstacles[2:]) :
         for i,obstacle in enumerate(self.agent.game_state.global_obstacles) :
-            print ("obj height ", obstacle.height)
+            #print ("obj height ", obstacle.height)
             #print ("obj centre ", obstacle.get_centre())
             #if self.obstacle_is_possible_container(obstacle):
             if obstacle.is_possible_container():
                 self.go_to_object_and_open(obstacle)
-                print ("after go to object and open is done")
+                #print ("after go to object and open is done")
                 #print ("goal object visible",self.agent.game_state.goal_object_visible)
                 # This is not always right- Can be wrong if object is visible in oracle mode
                 #  but not in global map for some reason
                 #if self.agent.game_state.goal_object_visible : 
+                self.look_straight()
                 if self.agent.game_state.goals_found : 
+                    print ("goal ids", self.agent.game_state.goal_ids)
                     self.pick_up_obstacles(possible_trophy_obstacles=True)
                     return 
                 self.look_straight()
