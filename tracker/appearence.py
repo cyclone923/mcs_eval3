@@ -92,7 +92,7 @@ class AppearanceMatchModel(nn.Module):
         return feature, self.shape_classifier(feature), self.color_classifier(color_feature)
 
 
-def object_appearance_match(appearance_model, image, objects_info, device='cpu'):
+def object_appearance_match(model, image, objects_info, device='cpu'):
     for obj_key in objects_info:
 
         top_x, top_y, bottom_x, bottom_y = objects_info[obj_key]['bounding_box']
@@ -103,7 +103,7 @@ def object_appearance_match(appearance_model, image, objects_info, device='cpu')
             obj_current_image_tensor = obj_current_image_tensor.unsqueeze(0)
 
             # extract appearance ( shape) info
-            _, object_shape_logit, object_color_logit = appearance_model(obj_current_image_tensor)
+            _, object_shape_logit, object_color_logit = model(obj_current_image_tensor)
             object_shape_logit = object_shape_logit.squeeze(0)
             object_shape_prob = torch.softmax(object_shape_logit, dim=0)
 
@@ -139,13 +139,13 @@ def object_appearance_match(appearance_model, image, objects_info, device='cpu')
 
         # shape match
         objects_info[obj_key]['appearance']['shape_match_quotient'] = object_shape_prob[base_shape_id].item()
-        objects_info[obj_key]['appearance']['shape_prob'] = object_shape_prob.numpy()
+        objects_info[obj_key]['appearance']['shape_prob'] = object_shape_prob.cpu().numpy()
         objects_info[obj_key]['appearance']['shape_prob_labels'] = model.shape_labels()
 
         # color match
         objects_info[obj_key]['appearance']['color_hist'] = obj_clr_hist
         objects_info[obj_key]['appearance']['color_match_quotient'] = object_color_prob[base_color_id].item()
-        objects_info[obj_key]['appearance']['color_prob'] = object_color_prob.numpy()
+        objects_info[obj_key]['appearance']['color_prob'] = object_color_prob.cpu().numpy()
         objects_info[obj_key]['appearance']['color_prob_labels'] = model.color_labels()
 
         # objects_info[obj_key]['appearance']['color'] = current_object_color_id

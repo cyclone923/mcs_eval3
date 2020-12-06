@@ -21,10 +21,15 @@ class FramewiseVOE:
         self.max_hist_count = max_hist_count
         self.net = ThorNLLS(oracle=True)
 
-    def record_obs(self, time, ids, pos, present, occluded):
+    def record_obs(self, time, ids, pos, present, occluded, vis_count):
         assert time not in self.frame_history
         self.frame_history[time] = (ids, pos, present, occluded)
-        self.all_ids = self.all_ids.union(ids)
+        valid_ids = []
+        for _id, _present, _occluded, _vis_count in zip(ids, present, occluded, vis_count):
+            probably_real = _vis_count > 3
+            if _present and not _occluded and probably_real:
+                valid_ids.append(_id)
+        self.all_ids = self.all_ids.union(valid_ids)
 
     def predict(self, time):
         in_ = self._get_inputs()
@@ -154,6 +159,16 @@ class PresenceViolation:
 
     def describe(self):
         return f'Object {self.object_id} is not visible, but should be at {self.pred_pos}'
+
+class AppearanceViolation:
+    def __init__(self, object_id):
+        self.object_id = object_id
+
+    def fill_heatmap(self, hmap, obj_mask):
+        return hmap + (obj_mask == self.object_id)
+
+    def describe(self):
+        return f'Object {self.object_id}\'s appearance changed'
 
 def make_voe_heatmap(viols, obj_mask):
     hmap = np.zeros_like(obj_mask, dtype=bool)
