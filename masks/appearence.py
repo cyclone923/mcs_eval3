@@ -50,11 +50,10 @@ def get_colour_name(requested_colour):
 def obj_image_to_tensor(obj_image, gray=False):
     obj_image = obj_image.resize((50, 50))
     if gray:
-        obj_image = np.array(obj_image)
-        obj_image = obj_image.reshape((3, 50, 50))
-        obj_image = torch.Tensor(obj_image).float()
         transform = transforms.Compose([transforms.Grayscale()])
         obj_image = transform(obj_image)
+        obj_image = np.array(obj_image)
+        obj_image = torch.Tensor(obj_image).unsqueeze(0).float()
     else:
         obj_image = np.array(obj_image)
         obj_image = obj_image.reshape((3, 50, 50))
@@ -164,11 +163,6 @@ def object_appearance_match(appearance_model, image, objects_info, device='cpu')
         objects_info[obj_key]['appearance']['color_match_quotient'] = object_color_prob[base_color_id].item()
         objects_info[obj_key]['appearance']['color_prob'] = object_color_prob.numpy()
         objects_info[obj_key]['appearance']['color_prob_labels'] = model.color_labels()
-
-        # objects_info[obj_key]['appearance']['color'] = current_object_color_id
-        # objects_info[obj_key]['appearance']['color_id'] = current_object_color_id
-        # objects_info[obj_key]['appearance']['dominant_color_name'] = dominant_color_name
-        # objects_info[obj_key]['appearance']['dominant_color_rgb'] = dominant_color_rgb
 
         objects_info[obj_key]['appearance']['color_hist_quotient'] = cv2.compareHist(obj_clr_hist,
                                                                                      objects_info[obj_key][
