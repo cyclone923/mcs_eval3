@@ -38,11 +38,11 @@ if __name__ == "__main__":
         #env.reset()
         #env.reset()
         #env.reset()
-        #try:
-        result = metaController.excecute()
-        #except Exception as e:
-        #    print ("error message", e)
-        #    number_crash += 1
+        try:
+            result = metaController.excecute()
+        except Exception as e:
+            print ("error message", e)
+            number_crash += 1
         #    print ("crash happened")
         #    pass
 
