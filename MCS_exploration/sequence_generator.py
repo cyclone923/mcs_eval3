@@ -22,15 +22,19 @@ from functools import reduce
 
 
 class SequenceGenerator(object):
-    def __init__(self,sess, env):
+    def __init__(self,sess, env,level="oracle"):
         #print ("seq generator init")
-        self.agent = graph_agent.GraphAgent(env, reuse=True)
+        self.agent = graph_agent.GraphAgent(env,level, reuse=True)
         self.game_state = self.agent.game_state
         #self.action_util = self.game_state.action_util
         self.planner_prob = 0.5
         self.scene_num = 0
         self.count = -1
         self.scene_name = None
+
+    def run_scene(self,config, event,config_filename=None,frame_collector=None):
+        self.step_output = self.controller.start_scene(scene_config)
+        self.explore_scene_view(self.step_output,config_filename,frame_collector)
 
     def explore_scene_view(self, event, config_filename=None, frame_collector=None):
         number_actions = 0
@@ -119,7 +123,7 @@ class SequenceGenerator(object):
         overall_area = 102
         pose = game_util.get_pose(self.game_state)[:3]
         #print ("overall area",overall_area)
-        print (" poly area " , self.agent.game_state.world_poly.area)
+        #print (" poly area " , self.agent.game_state.world_poly.area)
         while overall_area * 0.85 >  self.agent.game_state.world_poly.area or len(self.agent.game_state.global_obstacles) == 0 :
             #print ("In the main for loop of executtion")
             points_checked = 0
@@ -333,7 +337,7 @@ class SequenceGenerator(object):
 
 
 
-    def get_obj_pixels(self,target_obj):
+    def get_obj_pixels(self,target_obj,get_goal_pixels=False):
         #arr_mask = np.array(self.agent.game_state.event.object_mask_list[-1])
         #reshaped_obj_masks = arr_mask.reshape(-1, arr_mask.shape[-1])
         obj_masks = self.agent.game_state.obj_mask
@@ -355,7 +359,10 @@ class SequenceGenerator(object):
 
         goal_pixel_coords_tuples = np.array((goal_pixel_coords[0],goal_pixel_coords[1])).T
 
-        return x,y
+        if get_goal_pixels :
+           return goal_pixel_coords
+        else :
+            return x,y
 
     def get_target_obj(self,target_obj_id):
         target_obj = None
@@ -458,7 +465,7 @@ class SequenceGenerator(object):
     
         #print ("object nearest point", object_nearest_point)
         #print ("object nearest point", object_farthest_point)
-        success_distance = 0.35 
+        success_distance = 0.3 
         nav_success = self.agent.nav.go_to_goal(object_nearest_point, self.agent, success_distance) 
         self.face_object(target_obj)
 
@@ -471,16 +478,13 @@ class SequenceGenerator(object):
         if  not self.update_opened_up(target_obj):
             return
 
-        print ("return statys from open" , self.agent.game_state.event.return_status)
-
-        #if  self.agent.game_state.event.return_status == "SUCCESSFUL":  
-        #    self.random_object_pickup()
+        #print ("return statys from open" , self.agent.game_state.event.return_status)
 
         going_closer_counter = 0
 
         while self.agent.game_state.event.return_status == "OUT_OF_REACH":
             success_distance -= 0.03
-            print ("sucess distance")
+            #print ("sucess distance")
             nav_success = self.agent.nav.go_to_goal(object_nearest_point, self.agent, success_distance) 
             #self.update_goal_centre()
             self.face_object(target_obj)
@@ -497,6 +501,12 @@ class SequenceGenerator(object):
             going_closer_counter += 1
             if going_closer_counter > 2:
                 break
+
+        if  self.agent.game_state.event.return_status == "SUCCESSFUL":  
+            self.random_object_pickup(target_obj)
+
+        if self.agent.game_state.trophy_picked_up == True:
+            return
   
         #if self.agent.game_state.goal_object_visible: 
         if self.agent.game_state.goals_found : 
@@ -508,21 +518,37 @@ class SequenceGenerator(object):
         self.look_straight()
         nav_success = self.agent.nav.go_to_goal(object_farthest_point, self.agent, success_distance, stepBack=True) 
         self.face_object(target_obj)
+        self.random_object_pickup(target_obj)
 
-    def random_object_pickup(self):
-        action = {'action':"PickupObject", 'x': x, 'y':y}
-        self.agent.game_state.step(action)
+    def random_object_pickup(self,target_obj):
+        goal_pixel_coords = self.get_obj_pixels(target_obj,True)
 
-        if self.agent.game_state.event.return_status == "SUCCESSFUL" :
-            if self.agent.game_state.event.reward > -1* (self.agent.game_state.number_actions*0.001) +0.5 :
-                self.agent.game_state.trophy_picked_up = True
-                self.update_object_picked_up(target_obj,False)
-            else :
-                self.update_object_picked_up(target_obj,True)
-                action = {'action':'DropObject'}
+        for i in range (1,5):        
+            for j in range(1,5):
+
+                y = ((np.amax(goal_pixel_coords[0]) - np.amin(goal_pixel_coords[0]))*j/4) + np.amin(goal_pixel_coords[0])
+                x = ((np.amax(goal_pixel_coords[1]) - np.amin(goal_pixel_coords[1]))*i/4) + np.amin(goal_pixel_coords[1])
+            
+                action = {'action':"PickupObject", 'x': x, 'y':y}
                 self.agent.game_state.step(action)
-                self.look_straight()
-            return True
+
+                #print ("return status from random pick ups", self.agent.game_state.event.return_status)
+
+                if self.agent.game_state.event.return_status == "SUCCESSFUL" :
+                    if self.agent.game_state.event.reward > -1*(self.agent.game_state.number_actions*0.001) +0.5 :
+                        self.agent.game_state.trophy_picked_up = True
+                        self.update_object_picked_up(target_obj,False)
+                    else :
+                        self.update_object_picked_up(target_obj,True)
+                        action = {'action':'DropObject'}
+                        self.agent.game_state.step(action)
+                    self.look_straight()
+                    #print ("pick up successful trophy pickup status", self.agent.game_state.trophy_picked_up)
+                    return True
+
+        return False
+                
+        
         
 
 
@@ -555,6 +581,10 @@ class SequenceGenerator(object):
                 #  but not in global map for some reason
                 #if self.agent.game_state.goal_object_visible : 
                 self.look_straight()
+                
+                if self.agent.game_state.trophy_picked_up == True:
+                    return
+
                 if self.agent.game_state.goals_found : 
                     #print ("goal ids", self.agent.game_state.goal_ids)
                     self.pick_up_obstacles(possible_trophy_obstacles=True)

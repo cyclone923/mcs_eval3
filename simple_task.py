@@ -13,10 +13,10 @@ if __name__ == "__main__":
         #task="interaction_scenes", scene_type="traversal", seed=50,
         #task="interaction_scenes", scene_type="transferral", seed=50,
         #task="interaction_scenes", scene_type="experiment", seed=50,
-        start_scene_number=start_scene_number, frame_collector=None, set_trophy=True if not DEBUG else False, trophy_prob=1
+        start_scene_number=start_scene_number, frame_collector=None, set_trophy=True if not DEBUG else False, trophy_prob=0
         #start_scene_number=start_scene_number, frame_collector=None, set_trophy=False, trophy_prob=1
     ) # trophy_prob=1 mean the trophy is 100% outside the box, trophy_prob=0 mean the trophy is 100% inside the box,
-    metaController = MetaController(env)
+    metaController = MetaController(env,"oracle")
     result_total = 0
     number_tasks_attempted = 0
     total_actions = 0
@@ -38,28 +38,30 @@ if __name__ == "__main__":
         #env.reset()
         #env.reset()
         #env.reset()
-        try:
-            result = metaController.excecute()
-        except Exception as e:
-            print ("error message", e)
-            number_crash += 1
+        #try:
+        result = metaController.excecute()
+        #except Exception as e:
+        #    print ("error message", e)
+        #    number_crash += 1
         #    print ("crash happened")
         #    pass
 
         #result = metaController.excecute()
-        if env.step_output.reward > 0 :
+        curr_scene_reward = metaController.sequence_generator_object.agent.game_state.step_output.reward 
+        return_status = metaController.sequence_generator_object.agent.game_state.step_output.return_status
+        if curr_scene_reward > 0 :
             number_tasks_success +=1
-            result_total += env.step_output.reward
+            result_total += curr_scene_reward
             print("SUCCESS PICKUP")
         else :
-            negative_rewards += env.step_output.reward
-            failure_return_status[env.current_scene] = env.step_output.return_status
-            print ("SCENE FAIL : Action status return  :", env.step_output.return_status)
+            negative_rewards += curr_scene_reward
+            failure_return_status[env.current_scene] = return_status
+            print ("SCENE FAIL : Action status return status", return_status)
 
         sys.stdout.flush()
         collector.reset()
 
-        print ("reward from current scene = ", env.step_output.reward)
+        print ("reward from current scene = ",curr_scene_reward)
         number_tasks_attempted +=1
         game_state = metaController.sequence_generator_object.agent.game_state
         total_actions += game_state.number_actions

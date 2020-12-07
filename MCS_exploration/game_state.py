@@ -74,7 +74,7 @@ def retrieve_position(scene_event):
 
 
 class GameState(object):
-    def __init__(self, env=None, depth_scope=None):
+    def __init__(self, env=None,level="oracle", depth_scope=None):
         if env == None:
             self.env = game_util.create_env()
         else :
@@ -126,6 +126,7 @@ class GameState(object):
         self.level = "oracle"
         #self.level = "level1"
         #self.level = "level2"
+        #self.level= level
         self.trophy_visible_current_frame = False
         self.img_seg_occupancy_map_points = {}
         self.current_frame_img_obstacles = []
@@ -380,6 +381,7 @@ class GameState(object):
         '''
         '''
         #print (action)
+        #print ("rewards", self.event.reward)
         end_time_1 = time.time()
         action_creation_time = end_time_1 - t_start
         #print ("action creating time",action_creation_time)
@@ -393,7 +395,7 @@ class GameState(object):
             for elem in self.event.object_list:
                 if self.event.goal.metadata['target']['id'] == elem.uuid :
                     self.goal_object = elem
-                    self.goal_object_visible = elem.visible 
+                    #self.goal_object_visible = elem.visible 
 
         if self.level == "level1" or self.level == "level2":
             self.img_seg_occupancy_map_points = {}

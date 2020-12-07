@@ -11,10 +11,10 @@ def get_goal(goal_string):
     return (goal_x, goal_y, goal_z)
 
 class MetaController:
-    def __init__(self, env):
+    def __init__(self, env,level):
         self.env = env
         self.obstacles = {}
-        self.sequence_generator_object = sequence_generator.SequenceGenerator(None, self.env)
+        self.sequence_generator_object = sequence_generator.SequenceGenerator(None, self.env.controller,level)
 
 
     def excecute(self):
