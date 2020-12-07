@@ -123,9 +123,9 @@ class GameState(object):
         self.trophy_obstacle = None
         self.trophy_picked_up = False
         self.trophy_prob_threshold = 0.3
-        self.level = "oracle"
+        #self.level = "oracle"
         #self.level = "level1"
-        #self.level = "level2"
+        self.level = "level2"
         self.trophy_visible_current_frame = False
         self.img_seg_occupancy_map_points = {}
         self.current_frame_img_obstacles = []
@@ -393,7 +393,7 @@ class GameState(object):
             for elem in self.event.object_list:
                 if self.event.goal.metadata['target']['id'] == elem.uuid :
                     self.goal_object = elem
-                    self.goal_object_visible = elem.visible 
+                    #self.goal_object_visible = elem.visible 
 
         if self.level == "level1" or self.level == "level2":
             self.img_seg_occupancy_map_points = {}
@@ -631,6 +631,12 @@ class GameState(object):
                     print ("when goals found, normal containment", obstacle1.get_bounding_box().contains(obstacle2.get_bounding_box()))
                     print ("height ratio", height_ratio)
                 '''
+                intersect_area = obstacle1.get_bounding_box().intersection(obstacle2.get_bounding_box()).area
+
+                #if intersect_area > 0.0001 :
+                #    if obstacle1.is_contained == True and obstacle2.is_contained == True :
+                #        break
+
                 if obstacle1.get_bounding_box().contains(obstacle2.get_bounding_box()) :
                     if obstacle2.is_contained == False:
                         containment = True
@@ -639,7 +645,6 @@ class GameState(object):
                     else :
                         obstacle2.parent_bounding_box = obstacle1.get_bounding_box()
                         continue
-                intersect_area = obstacle1.get_bounding_box().intersection(obstacle2.get_bounding_box()).area
 
                 #if containment == True :
                 #    print ("intersect area,height_ratio ", intersect_area,height_ratio)
@@ -664,17 +669,18 @@ class GameState(object):
                     #print ("obs list scope :", obs_list_scope)
                     #print ("height ratio ",height_ratio)
                     #print ("Convex containment" ,obstacle1.get_bounding_box().convex_hull.contains(obstacle2.get_bounding_box()) )                
-                    
-                    if obstacle1.height > 1.2 : 
-                        continue                
+                    #print ("normal containment", containment)
 
                     if obstacle1.get_bounding_box().convex_hull.contains(obstacle2.get_bounding_box()) \
-                        and containment == False and height_ratio < 0.8:
+                        and containment == False and height_ratio < 0.89:
+                        #print ("obstacle height")
+                        if obstacle1.height > 1.4 : 
+                            continue                
                         #obstacle1_poly_exterior_coords = obstacle1.get_convex_polygon_coords()
                         #obstacle1_exterior_poly = Polygon(obstacle1_poly_exterior_coords)
                         #if obstacle1_exterior_poly.contains(obstacle2.get_bounding_box()) \
                         obstacle2.is_contained = True
-                        print ("is contained is true")
+                        #print ("is contained is true")
                         obstacle2.parent_bounding_box = obstacle1.get_bounding_box().convex_hull
                         SHOW_ANIMATION = (not containment and False)
                         if SHOW_ANIMATION:
@@ -691,7 +697,7 @@ class GameState(object):
                             plt.gca().add_patch(patch1)
                             plt.axis("equal")
                             plt.pause(0.001)
-                            #plt.show()
+                            plt.show()
             
         for elem in elem_to_pop:
             #print ("merginng obstacles happening ID being popped",elem.id)

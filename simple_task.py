@@ -69,7 +69,7 @@ if __name__ == "__main__":
         #        ",actions," + str(game_state.number_actions) + ",explore_success," + str(game_state.goals_found) + "\n")
         #f.write("scene,"+str(env.current_scene)+ ",reward,"+str(env.step_output.reward)+ ",actions," +
         #        str(game_state.number_actions)+ ",exploration_success," + str(game_state.goals_found) + ",total success,"+
-        #        str(result_total)+",exploration success until now,"+ str(exploration_success)  +"\n")
+        #        str(number_tasks_success)+",exploration success until now,"+ str(exploration_success)  +"\n")
         #f.close()
         #print ("scene number completed = ", env.current_scene)
         #break

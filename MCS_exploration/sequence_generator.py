@@ -87,8 +87,6 @@ class SequenceGenerator(object):
             real_point = Point(point[0]*constants.AGENT_STEP_SIZE,point[1]*constants.AGENT_STEP_SIZE)
             if real_point.within(outermost_poly):
                 exploration_routine.append((point[0],point[1]))
-        #print ("time taken for within", time.time()- start_time)
-        #print ("number of exploration points" , len(exploration_routine))
         #self.explore_all_objects()
 
         '''
@@ -112,6 +110,7 @@ class SequenceGenerator(object):
         #print ("done exploring point and now going to random points")
         #print ("current pose ", pose)
         #self.explore_all_objects()
+        #self.pick_up_obstacles(all_obstacles=True)
 
         if self.agent.game_state.goals_found :
             print ("Object found returning to main ")
@@ -208,48 +207,19 @@ class SequenceGenerator(object):
         if self.agent.game_state.trophy_picked_up == True:
             return
         self.pick_up_obstacles(all_obstacles=True)
+    
+        for obstacle in self.agent.game_state.global_obstacles :
+            print ("obstacle data")
+            print ("is contonained" , obstacle.is_contained)
+            print ("is open ", obstacle.is_opened)
+            #print ("is not trophy", ob)
 
+        '''
+        if self.agent.game_state.trophy_picked_up == True:
+            return
+        self.pick_up_obstacles(contained_obstacles=True)
+        '''
         return
-
-        all_explored = False
-        while (all_explored == False):
-            current_pos = self.agent.game_state.position
-            min_distance = math.inf
-            flag = 0
-            for object in self.agent.game_state.discovered_objects :
-                #distance_to_object =
-                #if object['explored'] == 0  and object['locationParent'] == None and len(object['dimensions']) >0:
-                if object['explored'] == 0 :#and len(object['dimensions']) > 0:# and object['locationParent'] == None
-                    flag = 1
-                    distance_to_object = math.sqrt( (current_pos['x'] - object['position']['x'] )** 2 + (current_pos['z']-object['position']['z'])**2)
-                else :
-                    continue
-
-                if distance_to_object < min_distance:
-                    min_distance_obj_id = object['uuid']
-                    min_distance = distance_to_object
-
-            if flag == 0 :
-                all_explored = True
-                break
-            self.explore_object(min_distance_obj_id)
-            omega = -self.agent.game_state.event.head_tilt
-            m = int(omega // 10)
-
-            if omega > 0:
-                for _ in range(m):
-                    self.agent.step({"action": "LookDown"})
-            else:
-                for _ in range(m):
-                    self.agent.step({"action": "LookUp"})
-
-            if self.agent.game_state.goals_found:
-                return
-            if self.agent.game_state.number_actions > constants.MAX_STEPS :
-                # print ("Too many actions performed")
-                return
-
-        #self.explore_object(self.agent.game_state.discovered_objects[0])
 
     def go_to_object_and_pick(self,target_obj):
 
@@ -266,7 +236,7 @@ class SequenceGenerator(object):
         #print ("goal point : ", object_nearest_point)
         nav_success = self.agent.nav.go_to_goal(object_nearest_point, self.agent, success_distance) 
 
-        print ("in nav go to goal done moving towards goal")
+        #print ("in nav go to goal done moving towards goal")
 
         self.face_object(target_obj)
 
@@ -290,7 +260,7 @@ class SequenceGenerator(object):
             plt.pause(0.001)
             plt.show()
 
-        print ("target obj height" , target_obj.height)
+        #print ("target obj height" , target_obj.height)
 
         x,y = self.get_obj_pixels(target_obj)
         
@@ -499,14 +469,40 @@ class SequenceGenerator(object):
         action = {'action':"OpenObject", 'x': x, 'y':y}
         self.agent.game_state.step(action)
 
+        
+        #print ("return status from open", self.agent.game_state.event.return_status)
+        if  not self.update_opened_up(target_obj):
+            return
+        return
+
+        print ("return statys from open" , self.agent.game_state.event.return_status)
+        going_closer_counter = 0
+
+        while self.agent.game_state.event.return_status == "OUT_OF_REACH":
+            success_distance -= 0.03
+            print ("sucess distance")
+            nav_success = self.agent.nav.go_to_goal(object_nearest_point, self.agent, success_distance) 
+            #self.update_goal_centre()
+            self.face_object(target_obj)
+            x,y = self.get_obj_pixels(target_obj)
+            #print (x,y)
+            if x == None and y == None :
+                continue
+            action = {'action':"OpenObject", 'x': x, 'y':y}
+            self.agent.game_state.step(action)
+
+            if not self.update_opened_up(target_obj) :        
+                return 
+
+            going_closer_counter += 1
+            if going_closer_counter > 2:
+                break
+  
         #if self.agent.game_state.goal_object_visible: 
         if self.agent.game_state.goals_found : 
             #print ("found goal in the middle of looking into containers")
             return
 
-        #print ("return status from open", self.agent.game_state.event.return_status)
-        if  not self.update_opened_up(target_obj):
-            return
     
         #print ("done opening object ")
         self.look_straight()
@@ -523,10 +519,13 @@ class SequenceGenerator(object):
                     self.agent.game_state.global_obstacles[i].is_container = False
                     return False 
 
+        return True
+
 
     def explore_all_objects(self):
         #print ("number of gloabal obstacles", len(self.agent.game_state.global_obstacles))
         #for i,obstacle in enumerate(self.agent.game_state.global_obstacles[2:]) :
+        #for i,obstacle in enumerate(self.agent.game_state.global_obstacles[3:]) :
         for i,obstacle in enumerate(self.agent.game_state.global_obstacles) :
             #print ("obj height ", obstacle.height)
             #print ("obj centre ", obstacle.get_centre())

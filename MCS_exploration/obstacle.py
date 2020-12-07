@@ -117,6 +117,8 @@ class Obstacle():
             return False
         if self.is_opened == True :
             return False
+        if self.height < 0.1 :
+            return False
         return True
 
     def is_possible_container(self):
