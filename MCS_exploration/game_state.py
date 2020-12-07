@@ -713,12 +713,41 @@ class GameState(object):
         i = 0
         self.current_frame_obstacles = []
         goal_index = -1
+
+        structure = np.ones((3, 3), dtype=np.int)
+        current_frame_obstacles_dict_divided = {}
         for key,values in current_frame_obstacles_dict.items():
+            #print ("per obj ")
+            obj_heights = values[1]
+            obj_occ_map_points = values[0]
+
+            new_occ_map = np.zeros(self.occupancy_map.shape)
+            new_height_map = np.zeros(self.occupancy_map.shape)
+            k = 0
+
+            for position in obj_occ_map_points :
+                new_occ_map[position[0]][position[1]] = 1     
+                new_height_map[position[0]][position[1]] = obj_heights[k]     
+                k += 1
+            
+            labeled,n_components = label(new_occ_map, structure)     
+
+            #print (n_components,np.amax(labeled))
+
+            for i in range(1,n_components+1):
+                object_occ_map = np.where(labeled==i)
+                new_map_points = np.array([np.array([x,y]) for x,y in zip(object_occ_map[0],object_occ_map[1])] )
+                obj_height = np.amax(new_height_map[object_occ_map])
+                current_frame_obstacles_dict_divided[obj_id] = (new_map_points,obj_height,key)
+                obj_id += 1
+
+        for key,values in current_frame_obstacles_dict_divided.items():
             obj_height = values[1]
             obj_occ_map_points = values[0]
-            self.current_frame_obstacles.append(Obstacle(obj_id,obj_height,  obj_occ_map_points,self.occupancy_map.shape,self.grid_size,self.displacement))
-            self.current_frame_obstacles[-1].current_frame_id = key
-            obj_id += 1
+            curr_frame_id = values[2]
+            self.current_frame_obstacles.append(Obstacle(key,obj_height,  obj_occ_map_points,self.occupancy_map.shape,self.grid_size,self.displacement))
+            self.current_frame_obstacles[-1].current_frame_id = curr_frame_id
+            #obj_id += 1
 
 
     def update_goal_data_oracle(self):
@@ -788,7 +817,7 @@ class GameState(object):
         '''
         #print ("current frame obstacles size", len(self.current_frame_obstacles))
 
-    def create_current_frame_obstacles_level_1_2(self, current_frame_obstacles_dict):
+    def create_current_frame_obstacles_level_1(self, current_frame_obstacles_dict):
         #print ("in calculate current obstacle level 1_2 ")
         obj_id =  1000
         max_intersect_area = 0.001
@@ -852,6 +881,80 @@ class GameState(object):
                     #print ("gc intersection prop", len(intersect2D(parent_gc,child_gc))/len(child_gc))
                     #print ("area proportion", curr_frame_obstacle.get_bounding_box().area/obstacle.get_bounding_box().area)
         '''
+    def create_current_frame_obstacles_level_1_2(self, current_frame_obstacles_dict):
+        #print ("in calculate current obstacle level 1_2 ")
+        obj_id =  1000
+        max_intersect_area = 0.001
+        i = 0
+        self.current_frame_obstacles = []
+        goal_index = -1        
+        structure = np.ones((3, 3), dtype=np.int)
+        current_frame_obstacles_dict_divided = {}
+        for key,values in current_frame_obstacles_dict.items():
+            #print ("per obj ")
+            obj_heights = values[1]
+            obj_occ_map_points = values[0]
+
+            new_occ_map = np.zeros(self.occupancy_map.shape)
+            new_height_map = np.zeros(self.occupancy_map.shape)
+            k = 0
+
+            for position in obj_occ_map_points :
+                new_occ_map[position[0]][position[1]] = 1     
+                new_height_map[position[0]][position[1]] = obj_heights[k]     
+                k += 1
+            
+            labeled,n_components = label(new_occ_map, structure)     
+
+            #print (n_components,np.amax(labeled))
+
+            for i in range(1,n_components+1):
+                object_occ_map = np.where(labeled==i)
+                new_map_points = np.array([np.array([x,y]) for x,y in zip(object_occ_map[0],object_occ_map[1])] )
+                obj_height = np.amax(new_height_map[object_occ_map])
+                current_frame_obstacles_dict_divided[obj_id] = (new_map_points,obj_height,key)
+                obj_id += 1
+            
+
+        #for key,values in current_frame_obstacles_dict.items():
+        for key,values in current_frame_obstacles_dict_divided.items():
+            obj_height = values[1]
+            obj_occ_map_points = values[0]
+            curr_frame_id = values[2]
+            self.current_frame_obstacles.append(Obstacle(key,obj_height,  obj_occ_map_points,self.occupancy_map.shape,self.grid_size,self.displacement))
+            self.current_frame_obstacles[-1].current_frame_id = curr_frame_id
+
+            #print ("len of current img frame obs", len(self.current_frame_img_obstacles))
+            for img_obs in self.current_frame_img_obstacles : 
+
+                intersect_area = self.current_frame_obstacles[-1].get_bounding_box().intersection(img_obs.get_bounding_box()).area
+                #print ("Intersection area : ", intersect_area)
+                if intersect_area > 0.0001 :
+                    #print (" Has to come here exactly once every frame")
+                    self.current_frame_obstacles[-1].trophy_prob_per_frame.append(img_obs.trophy_prob_per_frame[0])
+                    self.current_frame_obstacles[-1].calculate_trophy_prob()
+                    #if self.current_frame_obstacles[-1].trophy_prob > 0.1 :
+                    #    self.current_frame_obstacles[-1].is_goal = True
+            obj_id += 1
+
+        SHOW_ANIMATION = False
+        if SHOW_ANIMATION:
+            plt.cla()
+            plt.xlim((-7, 7))
+            plt.ylim((-7, 7))
+            plt.gca().set_xlim((-7, 7))
+            plt.gca().set_ylim((-7, 7))
+
+            for obstacle in self.current_frame_obstacles:
+                #obstacle_convex = Polygon(obstacle.get_convex_polygon_coords())
+                patch1 = PolygonPatch(obstacle.get_bounding_box().convex_hull, fc='green', ec="black", alpha=0.2, zorder=1)
+                #patch1 = PolygonPatch(obstacle_convex, fc='green', ec="black", alpha=0.2, zorder=1)
+                plt.gca().add_patch(patch1)
+            #patch1 = PolygonPatch(curr_frame_obstacle.get_bounding_box(), fc='red', ec="black", alpha=0.2, zorder=1)
+            #plt.gca().add_patch(patch1)
+            plt.axis("equal")
+            plt.pause(0.001)
+            #plt.show()
 
     def update_global_obstacles_level_1_2(self):
 

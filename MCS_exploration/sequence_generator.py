@@ -472,6 +472,10 @@ class SequenceGenerator(object):
             return
 
         print ("return statys from open" , self.agent.game_state.event.return_status)
+
+        #if  self.agent.game_state.event.return_status == "SUCCESSFUL":  
+        #    self.random_object_pickup()
+
         going_closer_counter = 0
 
         while self.agent.game_state.event.return_status == "OUT_OF_REACH":
@@ -504,6 +508,23 @@ class SequenceGenerator(object):
         self.look_straight()
         nav_success = self.agent.nav.go_to_goal(object_farthest_point, self.agent, success_distance, stepBack=True) 
         self.face_object(target_obj)
+
+    def random_object_pickup(self):
+        action = {'action':"PickupObject", 'x': x, 'y':y}
+        self.agent.game_state.step(action)
+
+        if self.agent.game_state.event.return_status == "SUCCESSFUL" :
+            if self.agent.game_state.event.reward > -1* (self.agent.game_state.number_actions*0.001) +0.5 :
+                self.agent.game_state.trophy_picked_up = True
+                self.update_object_picked_up(target_obj,False)
+            else :
+                self.update_object_picked_up(target_obj,True)
+                action = {'action':'DropObject'}
+                self.agent.game_state.step(action)
+                self.look_straight()
+            return True
+        
+
 
     def update_opened_up(self,target_obj):          
         for i,obstacle in enumerate(self.agent.game_state.global_obstacles) :

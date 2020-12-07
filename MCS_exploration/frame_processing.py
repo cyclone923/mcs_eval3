@@ -16,6 +16,7 @@ from shapely.ops import unary_union
 from pprint import pprint
 import time
 import math
+from numpy_indexed import *
 
 """
 Image -> Point cloud conversion
@@ -172,6 +173,9 @@ def occupancy_to_polygons(occupancy, scale, displacement):
         polygons.append(box(i*scale-d, minX*scale-d, (i+1)*scale-d, maxX*scale-d))
     return unary_union(polygons)
 
+def get_max_height(points):
+    return np.max(points[:,1])
+
 def point_cloud_to_polygon(points,occupancy_map,grid_size, displacement, obj_masks,level):
     '''
     Fucntion to create a set of obstacle polygons a point cloud
@@ -212,17 +216,28 @@ def point_cloud_to_polygon(points,occupancy_map,grid_size, displacement, obj_mas
         ar_row_view = obj_masks[:]
     unique_row_view = np.unique(ar_row_view)
     #exit()
+    radix = occupancy_map.shape[0]
 
     for elem in unique_row_view :
         obj_coords = np.where(ar_row_view==elem)
         #obj_coords = np.where(obj_masks==elem)
         obj_points = points[obj_coords[0]]
+        obj_points_2 = points[obj_coords[0]]
         obj_height = np.max(obj_points[:,1])
+        #print ("max height = ", obj_height)
+
         obj_points = np.delete(obj_points, 1, 1)
         obj_points = np.int_((obj_points+displacement)/grid_size)
+
+        obj_points_2[:,0] = np.int_((obj_points_2[:,0]+displacement)/grid_size)
+        obj_points_2[:,2] = np.int_((obj_points_2[:,2]+displacement)/grid_size)
+        g = group_by(obj_points_2[:,0]*radix+obj_points_2[:,2])
+        obj_heights = list(map(get_max_height, g.split(obj_points_2)))
+
         obj_points_str = obj_points.view('|S%d' % (obj_points.itemsize * obj_points.shape[1]))
-        _,unique_indices,unique_counts = np.unique(obj_points_str,return_index=True,return_counts=True)
-        object_occupancy_grids_row_view[elem] = (obj_points[unique_indices],obj_height)
+        unique_elem,unique_indices,unique_counts = np.unique(obj_points_str,return_index=True,return_counts=True)
+
+        object_occupancy_grids_row_view[elem] = (obj_points[unique_indices],obj_heights)
         np_occ_map[obj_points[unique_indices][:,0],obj_points[unique_indices][:,1]] = unique_counts[:]
         np_occ_map = np.where(np_occ_map>=3, 1, 0)
         occupancy_map = merge_occupancy_map(occupancy_map, np_occ_map)

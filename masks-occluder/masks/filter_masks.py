@@ -7,8 +7,20 @@ from PIL import Image
 import os
 import cv2
 import sys
-train_scenes_path = '../../chengxi_scenes/tmp/'
+
+import glob
+
+
+train_scenes_path = '/home/jay/chengxi_scenes/tmp/'
 train_scenes = os.listdir(train_scenes_path)
+
+from vision.instSeg.inference import MaskAndClassPredictor
+
+
+model = MaskAndClassPredictor(dataset='mcsvideo3_voe',
+                              config='plus_resnet50_config_depth_MC',
+                              weights='/home/jay/mcs_eval3/vision/instSeg/dvis_resnet50_mc_voe.pth')
+
 
 
 def get_mask_box(obj_mask):
@@ -38,6 +50,28 @@ def filter_objects(scene_frame, depth_frame, masks):
             results['occluders'].append(mask)
     return results
 
+def filter_objects_model(scene_frame, depth_frame, masks=None):
+    ret = model.step(np.array(img), depth)
+
+    results = {'objects':[], 'occluders':[]}
+    if not isinstance(scene_frame, np.ndarray):
+        scene_frame = np.array(scene_frame)
+    if not isinstance(depth_frame, np.ndarray):
+        depth_frame = np.array(depth_frame)
+
+    ret = model.step(scene_frame, depth_frame)
+    masks = ret['mask_prob'][1:] > 0.5
+
+    for idx, mask in enumerate(masks):
+        (top_left_x, top_left_y), (bottom_right_x, bottom_right_y) = get_mask_box(mask)
+        obj_image = scene_frame.crop((top_left_y, top_left_x, bottom_right_y, bottom_right_x))
+        depth_crop = depth_frame[ top_left_x+1: bottom_right_x, top_left_y+1:bottom_right_y]
+        name = size_filter(obj_image, depth_crop)
+        if name is 'object':
+            results['objects'].append(mask)
+        else:
+            results['occluders'].append(mask)
+    return results
 
 def generate_mask_data(scenes_files):
     data = []
@@ -131,23 +165,44 @@ def size_filter(img, depth_crop):
 #     return name
 
 
-# def demo_voe_segmentation():
-#     import glob
-#     import cv2
-#     import scipy.misc as smisc  # scipy in version <= 1.2.0
+def model_test(scenes_files):
+    import glob
+    import cv2
+    import scipy.misc as smisc  # scipy in version <= 1.2.0
 
-#     model = MaskAndClassPredictor(dataset='mcsvideo3_voe',
-#                                   config='plus_resnet50_config_depth_MC',
-#                                   weights='./vision/instSeg/dvis_resnet50_mc_voe.pth')
-
-#     img_list = glob.glob('./vision/instSeg/demo/voe/*.jpg')
-#     for rgb_file in img_list:
-
-#         bgrI   = cv2.imread(rgb_file)
-#         depthI = smisc.imread(depth_file, mode='P')
-#         ret    = model.step(bgrI, depthI)
+    model = MaskAndClassPredictor(dataset='mcsvideo3_voe',
+                                  config='plus_resnet50_config_depth_MC',
+                                  weights='/home/jay/mcs_eval3/vision/instSeg/dvis_resnet50_mc_voe.pth')
 
 
+    for scene_file in sorted(scenes_files):
+        print (train_scenes_path + scene_file)
+
+        with gzip.open(train_scenes_path + scene_file, 'rb') as fd:
+            scene_data = pickle.load(fd)
+        for frame_num, frame in enumerate(scene_data):
+            img = frame.image
+            objs = frame.obj_data
+            structs = frame.struct_obj_data
+            depth = frame.depth_mask
+            obj_masks = split_obj_masks(frame.obj_mask, len(objs))
+            struct_masks = split_obj_masks(frame.struct_mask, len(structs))
+
+
+            ret = model.step(np.array(img), depth)
+            masks = ret['mask_prob'][1:] > 0.5
+            results = {'objects':[], 'occluders':[]}
+
+            for idx, mask in enumerate(masks):
+                (top_left_x, top_left_y), (bottom_right_x, bottom_right_y) = get_mask_box(mask)
+                obj_image = img.crop((top_left_y, top_left_x, bottom_right_y, bottom_right_x))
+                depth_crop = depth[ top_left_x+1: bottom_right_x, top_left_y+1:bottom_right_y]
+                name = size_filter(obj_image, depth_crop)
+                if name is 'object':
+                    results['objects'].append(mask)
+                    cv2.imwrite(f'{frame_num:02d}.png', np.array(img) * mask[:, :, np.newaxis]) 
+                else:
+                    results['occluders'].append(mask)
 
 def split_obj_masks(mask, num_objs):
     obj_masks = []
@@ -162,5 +217,5 @@ def mask_img(mask, img):
     masked_arr = img_arr * mask[:, :, np.newaxis]
     return Image.fromarray(masked_arr)
 
-
+model_test(train_scenes)
 # generate_mask_data(train_scenes)

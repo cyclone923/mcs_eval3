@@ -1,4 +1,5 @@
 numpy-quaternion==2020.5.19.15.27.24
+numpy-indexed==0.3.5
 scipy==1.2.0
 scikit-image==0.17.2
 descartes==1.1.0
