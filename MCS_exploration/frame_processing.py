@@ -274,6 +274,9 @@ def create_img_seg_occ_map_pts(points,obj_id, mask,env):
     print ("min max values after removing only ceiling" , min_max_prob)
     '''
     new_points = np.where((points[:,1] > 0.02)&  (points[:,1] <= 2.9))#,1,0).reshape(points.shape[0],1)
+    if len(new_points[0]) == 0 :
+        return    
+
     points = points[new_points[0]]
     mask = mask[new_points[0]]
     min_max_prob =  (np.amin(mask), np.amax(mask))

@@ -87,7 +87,6 @@ class SequenceGenerator(object):
             real_point = Point(point[0]*constants.AGENT_STEP_SIZE,point[1]*constants.AGENT_STEP_SIZE)
             if real_point.within(outermost_poly):
                 exploration_routine.append((point[0],point[1]))
-        #self.explore_all_objects()
 
         '''
         SHOW_ANIMATION = False
@@ -107,13 +106,11 @@ class SequenceGenerator(object):
             plt.pause(0.001)
             plt.show()
         '''
-        #print ("done exploring point and now going to random points")
-        #print ("current pose ", pose)
         #self.explore_all_objects()
         #self.pick_up_obstacles(all_obstacles=True)
 
         if self.agent.game_state.goals_found :
-            print ("Object found returning to main ")
+            #print ("Object found returning to main ")
             self.pick_up_obstacles(possible_trophy_obstacles=True)
 
         if self.agent.game_state.trophy_picked_up == True:
@@ -122,8 +119,8 @@ class SequenceGenerator(object):
         overall_area = 102
         pose = game_util.get_pose(self.game_state)[:3]
         #print ("overall area",overall_area)
-        #print (" poly area " , self.agent.game_state.world_poly.area)
-        while overall_area * 0.8 >  self.agent.game_state.world_poly.area or len(self.agent.game_state.global_obstacles) == 0 :
+        print (" poly area " , self.agent.game_state.world_poly.area)
+        while overall_area * 0.85 >  self.agent.game_state.world_poly.area or len(self.agent.game_state.global_obstacles) == 0 :
             #print ("In the main for loop of executtion")
             points_checked = 0
             #z+=1
@@ -143,7 +140,7 @@ class SequenceGenerator(object):
                         #    if obstacle.contains_goal(elem):
                         #        continue
 
-                        new_visible_area = cover_floor.get_point_all_new_coverage(elem[0]*constants.AGENT_STEP_SIZE, elem[1]*constants.AGENT_STEP_SIZE, self.agent.game_state,self.agent.game_state.event.rotation,self.agent.nav.scene_obstacles_dict.values() )
+                        new_visible_area = cover_floor.get_point_all_new_coverage(elem[0]*constants.AGENT_STEP_SIZE, elem[1]*constants.AGENT_STEP_SIZE, self.agent.game_state,self.agent.game_state.rotation,self.agent.nav.scene_obstacles_dict.values() )
                         processed_points[elem] = new_visible_area
                         #if max_visible < number_visible_points/math.sqrt((pose[0]-elem[0])**2 + (pose[1]-elem[1])**2):
                         if max_visible < new_visible_area: #and abs(max_visible_points[-1][0] - elem[0]) > 2 and  :
@@ -473,7 +470,6 @@ class SequenceGenerator(object):
         #print ("return status from open", self.agent.game_state.event.return_status)
         if  not self.update_opened_up(target_obj):
             return
-        return
 
         print ("return statys from open" , self.agent.game_state.event.return_status)
         going_closer_counter = 0
@@ -539,7 +535,7 @@ class SequenceGenerator(object):
                 #if self.agent.game_state.goal_object_visible : 
                 self.look_straight()
                 if self.agent.game_state.goals_found : 
-                    print ("goal ids", self.agent.game_state.goal_ids)
+                    #print ("goal ids", self.agent.game_state.goal_ids)
                     self.pick_up_obstacles(possible_trophy_obstacles=True)
                     return 
                 self.look_straight()

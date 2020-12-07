@@ -123,9 +123,9 @@ class GameState(object):
         self.trophy_obstacle = None
         self.trophy_picked_up = False
         self.trophy_prob_threshold = 0.3
-        #self.level = "oracle"
+        self.level = "oracle"
         #self.level = "level1"
-        self.level = "level2"
+        #self.level = "level2"
         self.trophy_visible_current_frame = False
         self.img_seg_occupancy_map_points = {}
         self.current_frame_img_obstacles = []
@@ -393,7 +393,7 @@ class GameState(object):
             for elem in self.event.object_list:
                 if self.event.goal.metadata['target']['id'] == elem.uuid :
                     self.goal_object = elem
-                    #self.goal_object_visible = elem.visible 
+                    self.goal_object_visible = elem.visible 
 
         if self.level == "level1" or self.level == "level2":
             self.img_seg_occupancy_map_points = {}
