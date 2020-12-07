@@ -113,14 +113,15 @@ class VoeAgent:
             if app_viol:
                 _idx = obj_ids.index(o_id)
                 appearance_viols.append(framewisevoe.AppearanceViolation(o_id, obj_pos[_idx]))
-        viols = dynamics_viols + appearance_viols
-        voe_hmap = framewisevoe.make_voe_heatmap(viols, tracked_masks)
-        # Output violations
-        framewisevoe.output_voe(viols)
-        framewisevoe.show_scene(scene_name, frame_num, depth_map, tracked_masks, voe_hmap, occ_heatmap)
         # Update tracker
         vis_count = {o_id:o_info['visible_count'] for o_id, o_info in self.track_info['objects'].items()}
-        self.detector.record_obs(frame_num, obj_ids, obj_pos, obj_present, obj_occluded, vis_count)
+        pos_hists = {o_id:o_info['position_history'] for o_id, o_info in self.track_info['objects'].items()}
+        obs_viols = self.detector.record_obs(frame_num, obj_ids, obj_pos, obj_present, obj_occluded, vis_count, pos_hists, camera_info)
+        # Output violations
+        viols = dynamics_viols + appearance_viols + obs_viols
+        voe_hmap = framewisevoe.make_voe_heatmap(viols, tracked_masks)
+        framewisevoe.output_voe(viols)
+        framewisevoe.show_scene(scene_name, frame_num, depth_map, tracked_masks, voe_hmap, occ_heatmap)
         # Output results
         voe_detected = viols is not None and len(viols) > 0
         voe_hmap_img = Image.fromarray(voe_hmap)

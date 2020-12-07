@@ -21,7 +21,7 @@ class FramewiseVOE:
         self.max_hist_count = max_hist_count
         self.net = ThorNLLS(oracle=True)
 
-    def record_obs(self, time, ids, pos, present, occluded, vis_count):
+    def record_obs(self, time, ids, pos, present, occluded, vis_count, pos_hists, camera_info):
         assert time not in self.frame_history
         self.frame_history[time] = (ids, pos, present, occluded)
         valid_ids = []
@@ -29,7 +29,18 @@ class FramewiseVOE:
             probably_real = vis_count[_id] > 3
             if _present and not _occluded and probably_real:
                 valid_ids.append(_id)
+        new_ids = [i for i in valid_ids if i not in self.all_ids]
+        viols = []
+        for _id in new_ids:
+            THRESH = 20
+            first_pos = pos_hists[_id][0]
+            x, y = first_pos['x'], first_pos['y']
+            ar = camera_info.aspect_ratio
+            at_edge = (x < THRESH or x > ar[1]-THRESH) or (y < THRESH or y > ar[0]-THRESH)
+            if not at_edge:
+                viols.append(EntranceViolation(_id, first_pos))
         self.all_ids = self.all_ids.union(valid_ids)
+        return viols
 
     def predict(self, time):
         in_ = self._get_inputs()
@@ -185,6 +196,23 @@ class AppearanceViolation:
 
     def describe(self):
         return f'Object {self.object_id}\'s appearance changed'
+
+class EntranceViolation:
+    def __init__(self, object_id, entrance_pos):
+        self.object_id = object_id
+        self.pos = (entrance_pos['y'], entrance_pos['x'])
+
+    def fill_heatmap(self, hmap, obj_mask):
+        return hmap + (obj_mask == self.object_id)
+
+    def ignore(self, *_):
+        return False
+
+    def xy_pos(self, camera):
+        return {'x': self.pos[0], 'y': self.pos[1]}
+
+    def describe(self):
+        return f'Object {self.object_id} entered the scene in an unlikely location, {self.pos}'
 
 def make_voe_heatmap(viols, obj_mask):
     hmap = np.zeros_like(obj_mask, dtype=bool)
