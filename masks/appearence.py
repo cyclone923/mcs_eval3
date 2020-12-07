@@ -192,6 +192,7 @@ def process_video(video_data, appearance_model, save_path=None, save_mp4=False, 
 
     track_info = {}
     processed_frames = []
+    violation = False
     for frame_num, frame in enumerate(video_data):
         track_info = track_objects(frame.obj_mask, track_info)
         track_info['objects'] = object_appearance_match(appearance_model, frame.image,
@@ -205,7 +206,8 @@ def process_video(video_data, appearance_model, save_path=None, save_mp4=False, 
         if 'objects' in track_info and len(track_info['objects'].keys()) > 0:
             for o in track_info['objects'].values():
                 if not o['appearance']['match']:
-                    print('Appearance Mis-Match')
+                    # print('Appearance Mis-Match')
+                    violation = True
 
     # save gif
     if save_gif:
@@ -218,6 +220,8 @@ def process_video(video_data, appearance_model, save_path=None, save_mp4=False, 
         clip = mp.VideoFileClip(save_path + '.gif')
         clip.write_videofile(save_path + '.mp4')
         os.remove(save_path + '.gif')
+
+    return violation
 
 
 def rgb_to_grayscale(img, num_output_channels: int = 1):
@@ -493,11 +497,21 @@ if __name__ == '__main__':
         model = model.to(args.device)
 
         i = 0
+
+        violations = []
+        np.random.seed(0)
+        np.random.shuffle(all_scenes)
+        mis_match_cases = []
+
         for scene_file in all_scenes:
             with gzip.open(scene_file, 'rb') as fd:
                 scene_data = pickle.load(fd)
 
-            print(f'{scene_file.name}')
-            process_video(scene_data, model, os.path.join(os.getcwd(), scene_file.name), save_mp4=True,
-                          device=args.device, save_gif=True)
-            i += 1
+            print(f'{i:} {scene_file.name}')
+            v = process_video(scene_data, model, os.path.join(os.getcwd(), scene_file.name), save_mp4=True,
+                              device=args.device, save_gif=True)
+            if v:
+                mis_match_cases.append(scene_file)
+            violations.append(v)
+        print(mis_match_cases)
+        print((len(violations)-sum(violations))/len(violations))

@@ -170,9 +170,9 @@ class MaskAndClassPredictor(object):
             net_mask   = preds_score.detach().numpy().argmax(axis=0)
             out_probs, out_scores = out_probs.detach().numpy(), out_scores.detach().numpy()
 
-        if 'mcsvideo3_voe' == self.dataset_name:
-            out_probs, out_scores = voe_connect_comp_analysis(out_probs, out_scores,
-                                                        fg_stCH=1, wronglabel=[6], size_thr=10)
+        # if 'mcsvideo3_voe' == self.dataset_name:
+        #     out_probs, out_scores = voe_connect_comp_analysis(out_probs, out_scores,
+        #                                                 fg_stCH=1, wronglabel=[6], size_thr=10)
         return {'mask_prob': out_probs,
                 'obj_class_score': out_scores,
                 'fg_stCh': self.fg_stCh,
