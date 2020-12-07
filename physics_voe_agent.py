@@ -13,28 +13,33 @@ import torch
 import pickle
 
 APP_MODEL_PATH = './tracker/model.p'
+VISION_MODEL_PATH = './visionmodule/dvis_resnet50_mc_voe.pth'
+DEBUG = False
 
 class VoeAgent:
-    def __init__(self, controller, level, out_prefix):
+    def __init__(self, controller, level, out_prefix=None):
         self.controller = controller
         self.level = level
-        self.prefix = out_prefix
+        if DEBUG:
+            self.prefix = out_prefix
         self.device = 'cuda' if torch.cuda.is_available() else 'cpu'
-        print(f'LEVEL: {self.level}')
         self.app_model = appearence.AppearanceMatchModel()
         self.app_model.load_state_dict(torch.load(APP_MODEL_PATH, map_location=torch.device('cpu')))
         self.app_model = self.app_model.to(self.device).eval()
         if self.level == 'level1':
             self.visionmodel = vision.MaskAndClassPredictor(dataset='mcsvideo3_voe',
                                                             config='plus_resnet50_config_depth_MC',
-                                                            weights='./visionmodule/dvis_resnet50_mc_voe.pth')
+                                                            weights=VISION_MODEL_PATH)
 
     def run_scene(self, config, desc_name):
-        folder_name = Path(self.prefix)/Path(Path(desc_name).stem)
-        if folder_name.exists():
-            return None
-        folder_name.mkdir(parents=True)
-        print(folder_name)
+        if DEBUG:
+            folder_name = Path(self.prefix)/Path(Path(desc_name).stem)
+            if folder_name.exists():
+                return None
+            folder_name.mkdir(parents=True)
+            print(folder_name)
+        else:
+            folder_name = None
         self.track_info = {}
         self.detector = \
             framewisevoe.FramewiseVOE(min_hist_count=3, max_hist_count=8,
@@ -50,18 +55,20 @@ class VoeAgent:
             all_errs += frame_errs
             scene_voe_detected = scene_voe_detected or voe_detected
             choice = plausible_str(voe_detected)
-            assert choice in config['goal']['metadata']['choose'] # Sanity check
+            if DEBUG:
+                assert choice in config['goal']['metadata']['choose'] # Sanity check
             self.controller.make_step_prediction(
                 choice=choice, confidence=1.0, violations_xy_list=voe_xy_list,
                 heatmap_img=voe_heatmap)
             if step_output is None:
                 break
         self.controller.end_scene(choice=plausible_str(scene_voe_detected), confidence=1.0)
-        with open(folder_name/'viols.pkl', 'wb') as fd:
-            pickle.dump((all_viols, all_errs), fd)
+        if DEBUG:
+            with open(folder_name/'viols.pkl', 'wb') as fd:
+                pickle.dump((all_viols, all_errs), fd)
         return scene_voe_detected
 
-    def calc_voe(self, step_output, frame_num, scene_name):
+    def calc_voe(self, step_output, frame_num, scene_name=None):
         depth_map = step_output.depth_map_list[-1]
         rgb_image = step_output.image_list[-1]
         camera_info = make_camera(step_output)
@@ -80,12 +87,10 @@ class VoeAgent:
             appearence.object_appearance_match(self.app_model, rgb_image,
                                                self.track_info['objects'],
                                                self.device)
-        #DEBUG OUTPUT
-        """
-        img = appearence.draw_bounding_boxes(rgb_image, self.track_info['objects'])
-        img = appearence.draw_appearance_bars(img, self.track_info['objects'])
-        img.save(scene_name/f'DEBUG_{frame_num:02d}.png')
-        """
+        if DEBUG:
+            img = appearence.draw_bounding_boxes(rgb_image, self.track_info['objects'])
+            img = appearence.draw_appearance_bars(img, self.track_info['objects'])
+            img.save(scene_name/f'DEBUG_{frame_num:02d}.png')
         all_obj_ids = list(range(self.track_info['object_index']))
         masks_list = [self.track_info['objects'][i]['mask'] for i in all_obj_ids]
         tracked_masks = squash_masks(depth_map, masks_list, all_obj_ids)
@@ -120,8 +125,9 @@ class VoeAgent:
         # Output violations
         viols = dynamics_viols + appearance_viols + obs_viols
         voe_hmap = framewisevoe.make_voe_heatmap(viols, tracked_masks)
-        framewisevoe.output_voe(viols)
-        framewisevoe.show_scene(scene_name, frame_num, depth_map, tracked_masks, voe_hmap, occ_heatmap)
+        if DEBUG:
+            framewisevoe.output_voe(viols)
+            framewisevoe.show_scene(scene_name, frame_num, depth_map, tracked_masks, voe_hmap, occ_heatmap)
         # Output results
         voe_detected = viols is not None and len(viols) > 0
         voe_hmap_img = Image.fromarray(voe_hmap)
