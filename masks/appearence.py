@@ -50,10 +50,10 @@ def get_colour_name(requested_colour):
 def obj_image_to_tensor(obj_image, gray=False):
     obj_image = obj_image.resize((50, 50))
     if gray:
-        transform = transforms.Compose([transforms.Grayscale()])
-        obj_image = transform(obj_image)
         obj_image = np.array(obj_image)
-        obj_image = torch.Tensor(obj_image).unsqueeze(0).float()
+        obj_image = obj_image.reshape((3, 50, 50))
+        obj_image = torch.Tensor(obj_image).float()
+        obj_image = rgb_to_grayscale(obj_image)
     else:
         obj_image = np.array(obj_image)
         obj_image = obj_image.reshape((3, 50, 50))
@@ -217,6 +217,20 @@ def process_video(video_data, appearance_model, save_path=None, save_mp4=False, 
         os.remove(save_path + '.gif')
 
 
+def rgb_to_grayscale(img, num_output_channels: int = 1):
+    if num_output_channels not in (1, 3):
+        raise ValueError('num_output_channels should be either 1 or 3')
+
+    r, g, b = img.unbind(dim=-3)
+    l_img = (0.2989 * r + 0.587 * g + 0.114 * b).to(img.dtype)
+    l_img = l_img.unsqueeze(dim=-3)
+
+    if num_output_channels == 3:
+        return l_img.expand(img.shape)
+
+    return l_img
+
+
 class ObjectDataset(Dataset):
     """ Dataset of objects with labels indictating their shape"""
 
@@ -270,7 +284,7 @@ class ObjectDataset(Dataset):
                   'color': self.data['color'][idx]}
 
         if self.transform:
-            sample['gray_images'] = self.transform(torch.FloatTensor(sample['images']))
+            sample['gray_images'] = rgb_to_grayscale(torch.FloatTensor(sample['images']))
 
         return sample
 
@@ -310,6 +324,28 @@ def generate_data(scenes_files):
 
     print('Len of Dataset:', len(data['images']))
     return data
+
+
+def test_appearance_matching(dataloader, model):
+    model.eval()
+    batch_acc = {'shape': [], 'color': []}
+    for i_batch, batch in enumerate(dataloader):
+        object_image = batch['images']
+        object_gray_image = batch['gray_images']
+        object_shape = batch['shapes']
+        object_color = batch['color']
+
+        object_image = object_image.float()
+        feature, shape_logits, color_logits = model(object_image, object_gray_image)
+
+        shape_acc = sum(torch.argmax(shape_logits, dim=1) == object_shape).item() / len(object_shape)
+        color_acc = sum(torch.argmax(color_logits, dim=1) == object_color).item() / len(object_color)
+
+        batch_acc['shape'].append(shape_acc)
+        batch_acc['color'].append(color_acc)
+
+    print('Shape Accuracy:{} Color Acc: {}'.format(np.mean(batch_acc['shape']),
+                                                   np.mean(batch_acc['color'])))
 
 
 def train_appearance_matching(dataloader, model, optimizer, epochs: int, writer, checkpoint_path,
@@ -386,7 +422,7 @@ def make_parser():
     parser.add_argument('--epochs', required=False, type=int, default=50)
     parser.add_argument('--checkpoint-interval', required=False, type=int, default=1)
     parser.add_argument('--log-interval', required=False, type=int, default=1)
-    parser.add_argument('--opr', choices=['generate_dataset', 'train', 'demo'], default='demo',
+    parser.add_argument('--opr', choices=['generate_dataset', 'train','test', 'demo'], default='demo',
                         help='operation (opr) to be performed')
 
     return parser
@@ -432,6 +468,17 @@ if __name__ == '__main__':
         # train
         train_appearance_matching(dataloader, model, optimizer, args.epochs, summary_writer,
                                   checkpoint_path, args.checkpoint_interval, args.log_interval)
+
+    elif args.opr == 'test':
+        train_object_dataset = ObjectDataset(pickle.load(open(args.train_dataset_path, 'rb')),
+                                             transform=transforms.Compose([transforms.Grayscale()]))
+        dataloader = DataLoader(train_object_dataset, batch_size=args.batch_size, shuffle=False, num_workers=1)
+        model = AppearanceMatchModel()
+        model.load_state_dict(torch.load(model_path, map_location=torch.device('cpu')))
+        model = model.to(args.device)
+
+        # train
+        test_appearance_matching(dataloader, model)
 
     elif args.opr == 'demo':
         all_scenes = list(args.train_scenes_path.glob('*.pkl.gz'))
