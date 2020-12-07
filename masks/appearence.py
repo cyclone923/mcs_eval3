@@ -104,8 +104,7 @@ class AppearanceMatchModel(nn.Module):
 
 
 def object_appearance_match(appearance_model, image, objects_info, device='cpu'):
-    for obj_key in objects_info:
-
+    for obj_key in [k for k in objects_info.keys() if objects_info[k]['visible']]:
         top_x, top_y, bottom_x, bottom_y = objects_info[obj_key]['bounding_box']
         obj_current_image = image.crop((top_y, top_x, bottom_y, bottom_x))
 
@@ -203,10 +202,14 @@ def process_video(video_data, appearance_model, save_path=None, save_mp4=False, 
         track_info = track_objects(frame.obj_mask, track_info)
         track_info['objects'] = object_appearance_match(appearance_model, frame.image,
                                                         track_info['objects'], device)
-
         img = draw_bounding_boxes(frame.image, track_info['objects'])
         img = draw_appearance_bars(img, track_info['objects'])
         processed_frames.append(img)
+
+        if 'objects' in track_info and len(track_info['objects'].keys()) > 0:
+            for o in track_info['objects'].values():
+                if not o['appearance']['match']:
+                    print('Appearance Mis-Match')
 
     # save gif
     processed_frames[0].save(save_path + '.gif', save_all=True,
@@ -445,6 +448,7 @@ if __name__ == '__main__':
         model.load_state_dict(torch.load(model_path, map_location=torch.device('cpu')))
         model = model.to(args.device)
 
+        i = 0
         for scene_file in all_scenes:
             with gzip.open(scene_file, 'rb') as fd:
                 scene_data = pickle.load(fd)
@@ -452,3 +456,4 @@ if __name__ == '__main__':
             print(f'{scene_file.name}')
             process_video(scene_data, model, os.path.join(os.getcwd(), scene_file.name), save_mp4=True,
                           device=args.device)
+            i += 1
