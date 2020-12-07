@@ -129,6 +129,10 @@ class PositionViolation:
     def ignore(self, *_):
         return False
 
+    def xy_pos(self, camera):
+        spos = du.reverse_project(self.actual_pos, camera).tolist()
+        return {'x': spos[0], 'y': spos[1]}
+
     def describe(self):
         return f'Object {self.object_id} is at {self.actual_pos}, but should be at {self.pred_pos}'
 
@@ -136,23 +140,24 @@ class PresenceViolation:
     def __init__(self, object_id, pred_pos, camera):
         self.object_id = object_id
         self.pred_pos = pred_pos
-        self.radius = 5
+        self.radius = 10
         self._calc_mask(camera)
 
     def _calc_mask(self, camera):
-        fpos = du.reverse_project(self.pred_pos, camera)
+        spos = du.reverse_project(self.pred_pos, camera)
         rev_ratio = list(reversed(camera.aspect_ratio))
-        pos = np.array(rev_ratio) * (0.5+fpos.numpy()/2)
+        pos = np.array(rev_ratio) * (0.5+spos.numpy()/2)
         pxs = np.stack(np.meshgrid(*[np.arange(x) for x in rev_ratio], indexing='ij'),
                        axis=-1)
         dist = (pxs-pos)**2
         self.mask = dist.sum(-1) < self.radius**2
+        self.spos = spos.tolist()
 
     def fill_heatmap(self, hmap, obj_mask):
         return hmap + self.mask
 
     def ignore(self, depth, camera):
-        if self.mask.sum() < 20: #Off screen!
+        if self.mask.sum() < 50: #Off screen!
             return True
         scene_depth = du.query_depth(depth, self.mask)
         pred_vec = self.pred_pos - torch.tensor(camera.position)
@@ -160,15 +165,23 @@ class PresenceViolation:
         is_occluded = scene_depth < pred_depth
         return is_occluded
 
+    def xy_pos(self, camera):
+        return {'x': self.spos[0], 'y': self.spos[1]}
+
     def describe(self):
         return f'Object {self.object_id} is not visible, but should be at {self.pred_pos}'
 
 class AppearanceViolation:
-    def __init__(self, object_id):
+    def __init__(self, object_id, pos):
         self.object_id = object_id
+        self.pos = pos
 
     def fill_heatmap(self, hmap, obj_mask):
         return hmap + (obj_mask == self.object_id)
+
+    def xy_pos(self, camera):
+        spos = du.reverse_project(self.pos, camera).tolist()
+        return {'x': spos[0], 'y': spos[1]}
 
     def describe(self):
         return f'Object {self.object_id}\'s appearance changed'

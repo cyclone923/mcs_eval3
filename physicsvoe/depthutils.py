@@ -138,4 +138,4 @@ def reverse_project(world_pos, camera):
 
 def query_depth(depth, mask):
     ds = depth[mask]
-    return np.mean(ds)
+    return np.percentile(ds, 10)

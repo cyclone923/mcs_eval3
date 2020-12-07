@@ -45,14 +45,14 @@ class VoeAgent:
         all_errs = []
         for i, x in enumerate(config['goal']['action_list']):
             step_output = self.controller.step(action=x[0])
-            voe_detected, voe_heatmap, viols, frame_errs = self.calc_voe(step_output, i, folder_name)
+            voe_detected, voe_heatmap, voe_xy_list, viols, frame_errs = self.calc_voe(step_output, i, folder_name)
             all_viols.append(viols)
             all_errs += frame_errs
             scene_voe_detected = scene_voe_detected or voe_detected
             choice = plausible_str(voe_detected)
             assert choice in config['goal']['metadata']['choose'] # Sanity check
             self.controller.make_step_prediction(
-                choice=choice, confidence=1.0, violations_xy_list=None,
+                choice=choice, confidence=1.0, violations_xy_list=voe_xy_list,
                 heatmap_img=voe_heatmap)
             if step_output is None:
                 break
@@ -111,7 +111,8 @@ class VoeAgent:
             o_robust_mismatch = o_mismatch and obj_info['appearance']['mismatch_count'] > 3
             app_viol = o_visible and o_robust_mismatch and not o_occluded
             if app_viol:
-                appearance_viols.append(framewisevoe.AppearanceViolation(o_id))
+                _idx = obj_ids.index(o_id)
+                appearance_viols.append(framewisevoe.AppearanceViolation(o_id, obj_pos[_idx]))
         viols = dynamics_viols + appearance_viols
         voe_hmap = framewisevoe.make_voe_heatmap(viols, tracked_masks)
         # Output violations
@@ -123,7 +124,8 @@ class VoeAgent:
         # Output results
         voe_detected = viols is not None and len(viols) > 0
         voe_hmap_img = Image.fromarray(voe_hmap)
-        return voe_detected, voe_hmap_img, viols, all_errs
+        voe_xy_list = [v.xy_pos(camera_info) for v in (viols or [])]
+        return voe_detected, voe_hmap_img, voe_xy_list, viols, all_errs
 
     def oracle_masks(self, step_output):
         frame = convert_output(step_output)
