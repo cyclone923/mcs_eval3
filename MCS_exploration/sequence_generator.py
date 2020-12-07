@@ -266,7 +266,6 @@ class SequenceGenerator(object):
         x,y = self.get_obj_pixels(target_obj)
         
         if x == None or y == None :
-            print ("No object to found pick at given location")
             return 
 
         #print ("goal pick up coordinates" ,x,y)
@@ -350,7 +349,10 @@ class SequenceGenerator(object):
         reshaped_obj_masks = ar_row_view.reshape(400,600)
         goal_pixel_coords = np.where(reshaped_obj_masks==target_obj.current_frame_id)
         if len(goal_pixel_coords[0])==0:
-            return None, None
+            if get_goal_pixels :
+                return None
+            else:
+                return None, None
 
         #print ("xmax,xmin", np.amax(goal_pixel_coords[0]), np.amin(goal_pixel_coords[0]))
         #print ("ymax,ymin", np.amax(goal_pixel_coords[1]), np.amin(goal_pixel_coords[1]))
@@ -470,6 +472,10 @@ class SequenceGenerator(object):
         self.face_object(target_obj)
 
         x,y = self.get_obj_pixels (target_obj)
+        
+        if x == None or y == None :
+            return
+    
         action = {'action':"OpenObject", 'x': x, 'y':y}
         self.agent.game_state.step(action)
 
@@ -522,6 +528,8 @@ class SequenceGenerator(object):
 
     def random_object_pickup(self,target_obj):
         goal_pixel_coords = self.get_obj_pixels(target_obj,True)
+        if goal_pixel_coords == None :
+            return False
 
         for i in range (1,5):        
             for j in range(1,5):
