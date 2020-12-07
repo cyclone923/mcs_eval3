@@ -66,9 +66,7 @@ class FramewiseVOE:
                 # TODO: Check for occlusion
                 v = PresenceViolation(pred_id, pred_pos, camera)
                 violations.append(v)
-        vs = len(violations)
         valid_violations = [v for v in violations if not v.ignore(depth, camera)]
-        ignored = vs-len(valid_violations)
         return valid_violations
 
     def _get_inputs(self):
