@@ -12,6 +12,7 @@ from torch.utils.data import Dataset, DataLoader
 
 from torch.optim import Adam
 from torch.utils.tensorboard import SummaryWriter
+from torchvision import transforms
 import torch.nn as nn
 import cv2
 from tqdm import tqdm
@@ -46,11 +47,19 @@ def get_colour_name(requested_colour):
     return actual_name, closest_name
 
 
-def obj_image_to_tensor(obj_image):
+def obj_image_to_tensor(obj_image, gray=False):
     obj_image = obj_image.resize((50, 50))
-    obj_image = np.array(obj_image)
-    obj_image = obj_image.reshape((3, 50, 50))
-    obj_image = torch.Tensor(obj_image).float()
+    if gray:
+        obj_image = np.array(obj_image)
+        obj_image = obj_image.reshape((3, 50, 50))
+        obj_image = torch.Tensor(obj_image).float()
+        transform = transforms.Compose([transforms.Grayscale()])
+        obj_image = transform(obj_image)
+    else:
+        obj_image = np.array(obj_image)
+        obj_image = obj_image.reshape((3, 50, 50))
+        obj_image = torch.Tensor(obj_image).float()
+
     return obj_image
 
 
@@ -61,7 +70,7 @@ class AppearanceMatchModel(nn.Module):
         self._shape_labels = ['car', 'cone', 'cube', 'cylinder', 'duck', 'sphere', 'square frustum', 'turtle']
         self._color_labels = ['black', 'blue', 'brown', 'green', 'grey', 'red', 'yellow']
 
-        self.feature = nn.Sequential(nn.Conv2d(3, 6, 2),
+        self.feature = nn.Sequential(nn.Conv2d(1, 6, 2),
                                      nn.LeakyReLU(),
                                      nn.Conv2d(6, 6, 3),
                                      nn.LeakyReLU())
@@ -86,26 +95,30 @@ class AppearanceMatchModel(nn.Module):
     def color_labels(self):
         return self._color_labels
 
-    def forward(self, x):
-        feature = self.feature(x)
-        color_feature = self.color_feature(x)
+    def forward(self, image, gray_image):
+        feature = self.feature(gray_image)
+        color_feature = self.color_feature(image)
         feature = feature.flatten(1)
         color_feature = color_feature.flatten(1)
         return feature, self.shape_classifier(feature), self.color_classifier(color_feature)
 
 
 def object_appearance_match(appearance_model, image, objects_info, device='cpu'):
-    for obj_key in objects_info:
-
+    for obj_key in [k for k in objects_info.keys() if objects_info[k]['visible']]:
         top_x, top_y, bottom_x, bottom_y = objects_info[obj_key]['bounding_box']
         obj_current_image = image.crop((top_y, top_x, bottom_y, bottom_x))
 
         with torch.no_grad():
+            image_area = np.prod(obj_current_image.size)
             obj_current_image_tensor = obj_image_to_tensor(obj_current_image).to(device)
             obj_current_image_tensor = obj_current_image_tensor.unsqueeze(0)
 
+            obj_current_gray_image_tensor = obj_image_to_tensor(obj_current_image, gray=True).to(device)
+            obj_current_gray_image_tensor = obj_current_gray_image_tensor.unsqueeze(0)
+
             # extract appearance ( shape) info
-            _, object_shape_logit, object_color_logit = appearance_model(obj_current_image_tensor)
+            _, object_shape_logit, object_color_logit = appearance_model(obj_current_image_tensor,
+                                                                         obj_current_gray_image_tensor)
             object_shape_logit = object_shape_logit.squeeze(0)
             object_shape_prob = torch.softmax(object_shape_logit, dim=0)
 
@@ -124,14 +137,16 @@ def object_appearance_match(appearance_model, image, objects_info, device='cpu')
         obj_clr_hist_2 = cv2.calcHist([np.array(image)], [2], mask_image, [10], [0, 256])
         obj_clr_hist = (obj_clr_hist_0 + obj_clr_hist_1 + obj_clr_hist_2) / 3
 
-        if 'base_image' not in objects_info[obj_key] or len(objects_info[obj_key]['position_history']) < 5:
+        if ('base_image' not in objects_info[obj_key]) or \
+                (len(objects_info[obj_key]['position_history']) < 5 and
+                 (image_area > objects_info[obj_key]['base_image']['image_area'])):
             objects_info[obj_key]['base_image'] = {}
             objects_info[obj_key]['appearance'] = {}
+            objects_info[obj_key]['base_image']['image_area'] = image_area
             objects_info[obj_key]['base_image']['shape_id'] = current_object_shape_id
             objects_info[obj_key]['base_image']['shape'] = model.shape_label(current_object_shape_id)
             objects_info[obj_key]['base_image']['color_id'] = current_object_color_id
             objects_info[obj_key]['base_image']['color'] = model.color_label(current_object_color_id)
-
             objects_info[obj_key]['base_image']['histogram'] = obj_clr_hist
             base_shape_id = current_object_shape_id
             base_color_id = current_object_color_id
@@ -167,20 +182,34 @@ def object_appearance_match(appearance_model, image, objects_info, device='cpu')
         color_matches = current_object_color_id == base_color_id
         objects_info[obj_key]['appearance']['match'] = shape_matches and color_matches
 
+        if 'mismatch_count' not in objects_info[obj_key]['appearance']:
+            objects_info[obj_key]['appearance']['mismatch_count'] = 0
+
+        if objects_info[obj_key]['appearance']['match']:
+            objects_info[obj_key]['appearance']['mismatch_count'] = 0
+        else:
+            objects_info[obj_key]['appearance']['mismatch_count'] += 1
+
     return objects_info
 
 
 def process_video(video_data, appearance_model, save_path=None, save_mp4=False, device='cpu'):
+    appearance_model.eval()
+
     track_info = {}
     processed_frames = []
     for frame_num, frame in enumerate(video_data):
         track_info = track_objects(frame.obj_mask, track_info)
         track_info['objects'] = object_appearance_match(appearance_model, frame.image,
                                                         track_info['objects'], device)
-
         img = draw_bounding_boxes(frame.image, track_info['objects'])
         img = draw_appearance_bars(img, track_info['objects'])
         processed_frames.append(img)
+
+        if 'objects' in track_info and len(track_info['objects'].keys()) > 0:
+            for o in track_info['objects'].values():
+                if not o['appearance']['match']:
+                    print('Appearance Mis-Match')
 
     # save gif
     processed_frames[0].save(save_path + '.gif', save_all=True,
@@ -197,7 +226,7 @@ def process_video(video_data, appearance_model, save_path=None, save_mp4=False, 
 class ObjectDataset(Dataset):
     """ Dataset of objects with labels indictating their shape"""
 
-    def __init__(self, data):
+    def __init__(self, data, transform=None):
         self.data = data
         self.shape_labels = sorted(set(data['shapes']))
         self.color_labels = sorted(set(np.array(data['textures']).squeeze(1)))
@@ -213,6 +242,7 @@ class ObjectDataset(Dataset):
 
         self.data['shapes'] = self.data['shapes'].astype(np.int)
         self.data['color'] = self.data['color'].astype(np.int)
+        self.transform = transform
 
     def shape_label_name(self, label_id):
         return self.shape_labels[label_id]
@@ -241,9 +271,14 @@ class ObjectDataset(Dataset):
         if torch.is_tensor(idx):
             idx = idx.tolist()
 
-        return {'images': self.data['images'][idx],
-                'shapes': self.data['shapes'][idx],
-                'color': self.data['color'][idx]}
+        sample = {'images': self.data['images'][idx],
+                  'shapes': self.data['shapes'][idx],
+                  'color': self.data['color'][idx]}
+
+        if self.transform:
+            sample['gray_images'] = self.transform(torch.FloatTensor(sample['images']))
+
+        return sample
 
 
 def generate_data(scenes_files):
@@ -300,11 +335,12 @@ def train_appearance_matching(dataloader, model, optimizer, epochs: int, writer,
         batch_acc = {'shape': [], 'color': []}
         for i_batch, batch in enumerate(dataloader):
             object_image = batch['images']
+            object_gray_image = batch['gray_images']
             object_shape = batch['shapes']
             object_color = batch['color']
 
             object_image = object_image.float()
-            feature, shape_logits, color_logits = model(object_image)
+            feature, shape_logits, color_logits = model(object_image, object_gray_image)
 
             shape_loss = nn.CrossEntropyLoss()(shape_logits, object_shape)
             color_loss = nn.CrossEntropyLoss()(color_logits, object_color)
@@ -388,7 +424,8 @@ if __name__ == '__main__':
         summary_writer = SummaryWriter(log_path, flush_secs=60 * 1)
 
         # create balanced distribution
-        train_object_dataset = ObjectDataset(pickle.load(open(args.train_dataset_path, 'rb')))
+        train_object_dataset = ObjectDataset(pickle.load(open(args.train_dataset_path, 'rb')),
+                                             transform=transforms.Compose([transforms.Grayscale()]))
         probs = 1 / torch.Tensor(train_object_dataset.shape_labels_count())
         weights = train_object_dataset.get_dataset_weights(probs)
         sampler = torch.utils.data.sampler.WeightedRandomSampler(weights, len(weights), replacement=True)
@@ -403,7 +440,7 @@ if __name__ == '__main__':
                                   checkpoint_path, args.checkpoint_interval, args.log_interval)
 
     elif args.opr == 'demo':
-        all_scenes = list(args.test_scenes_path.glob('*.pkl.gz'))
+        all_scenes = list(args.train_scenes_path.glob('*.pkl.gz'))
         print(f'Found {len(all_scenes)} scenes')
 
         model = AppearanceMatchModel()
@@ -411,6 +448,7 @@ if __name__ == '__main__':
         model.load_state_dict(torch.load(model_path, map_location=torch.device('cpu')))
         model = model.to(args.device)
 
+        i = 0
         for scene_file in all_scenes:
             with gzip.open(scene_file, 'rb') as fd:
                 scene_data = pickle.load(fd)
@@ -418,3 +456,4 @@ if __name__ == '__main__':
             print(f'{scene_file.name}')
             process_video(scene_data, model, os.path.join(os.getcwd(), scene_file.name), save_mp4=True,
                           device=args.device)
+            i += 1
