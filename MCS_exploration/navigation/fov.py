@@ -17,7 +17,7 @@ if speedups.available:
 
 
 import cProfile, pstats, io
-from pstats import SortKey
+#from pstats import SortKey
 import time 
 
 class FieldOfView:
