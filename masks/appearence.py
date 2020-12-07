@@ -53,8 +53,7 @@ def obj_image_to_tensor(obj_image, gray=False):
         obj_image = np.array(obj_image)
         obj_image = obj_image.reshape((3, 50, 50))
         obj_image = torch.Tensor(obj_image).float()
-        transform = transforms.Compose([transforms.Grayscale()])
-        obj_image = transform(obj_image)
+        obj_image = rgb_to_grayscale(obj_image)
     else:
         obj_image = np.array(obj_image)
         obj_image = obj_image.reshape((3, 50, 50))
@@ -144,9 +143,9 @@ def object_appearance_match(appearance_model, image, objects_info, device='cpu')
             objects_info[obj_key]['appearance'] = {}
             objects_info[obj_key]['base_image']['image_area'] = image_area
             objects_info[obj_key]['base_image']['shape_id'] = current_object_shape_id
-            objects_info[obj_key]['base_image']['shape'] = model.shape_label(current_object_shape_id)
+            objects_info[obj_key]['base_image']['shape'] = appearance_model.shape_label(current_object_shape_id)
             objects_info[obj_key]['base_image']['color_id'] = current_object_color_id
-            objects_info[obj_key]['base_image']['color'] = model.color_label(current_object_color_id)
+            objects_info[obj_key]['base_image']['color'] = appearance_model.color_label(current_object_color_id)
             objects_info[obj_key]['base_image']['histogram'] = obj_clr_hist
             base_shape_id = current_object_shape_id
             base_color_id = current_object_color_id
@@ -164,11 +163,6 @@ def object_appearance_match(appearance_model, image, objects_info, device='cpu')
         objects_info[obj_key]['appearance']['color_match_quotient'] = object_color_prob[base_color_id].item()
         objects_info[obj_key]['appearance']['color_prob'] = object_color_prob.numpy()
         objects_info[obj_key]['appearance']['color_prob_labels'] = model.color_labels()
-
-        # objects_info[obj_key]['appearance']['color'] = current_object_color_id
-        # objects_info[obj_key]['appearance']['color_id'] = current_object_color_id
-        # objects_info[obj_key]['appearance']['dominant_color_name'] = dominant_color_name
-        # objects_info[obj_key]['appearance']['dominant_color_rgb'] = dominant_color_rgb
 
         objects_info[obj_key]['appearance']['color_hist_quotient'] = cv2.compareHist(obj_clr_hist,
                                                                                      objects_info[obj_key][
@@ -221,6 +215,20 @@ def process_video(video_data, appearance_model, save_path=None, save_mp4=False, 
         clip = mp.VideoFileClip(save_path + '.gif')
         clip.write_videofile(save_path + '.mp4')
         os.remove(save_path + '.gif')
+
+
+def rgb_to_grayscale(img, num_output_channels: int = 1):
+    if num_output_channels not in (1, 3):
+        raise ValueError('num_output_channels should be either 1 or 3')
+
+    r, g, b = img.unbind(dim=-3)
+    l_img = (0.2989 * r + 0.587 * g + 0.114 * b).to(img.dtype)
+    l_img = l_img.unsqueeze(dim=-3)
+
+    if num_output_channels == 3:
+        return l_img.expand(img.shape)
+
+    return l_img
 
 
 class ObjectDataset(Dataset):
@@ -276,7 +284,7 @@ class ObjectDataset(Dataset):
                   'color': self.data['color'][idx]}
 
         if self.transform:
-            sample['gray_images'] = self.transform(torch.FloatTensor(sample['images']))
+            sample['gray_images'] = rgb_to_grayscale(torch.FloatTensor(sample['images']))
 
         return sample
 
@@ -316,6 +324,28 @@ def generate_data(scenes_files):
 
     print('Len of Dataset:', len(data['images']))
     return data
+
+
+def test_appearance_matching(dataloader, model):
+    model.eval()
+    batch_acc = {'shape': [], 'color': []}
+    for i_batch, batch in enumerate(dataloader):
+        object_image = batch['images']
+        object_gray_image = batch['gray_images']
+        object_shape = batch['shapes']
+        object_color = batch['color']
+
+        object_image = object_image.float()
+        feature, shape_logits, color_logits = model(object_image, object_gray_image)
+
+        shape_acc = sum(torch.argmax(shape_logits, dim=1) == object_shape).item() / len(object_shape)
+        color_acc = sum(torch.argmax(color_logits, dim=1) == object_color).item() / len(object_color)
+
+        batch_acc['shape'].append(shape_acc)
+        batch_acc['color'].append(color_acc)
+
+    print('Shape Accuracy:{} Color Acc: {}'.format(np.mean(batch_acc['shape']),
+                                                   np.mean(batch_acc['color'])))
 
 
 def train_appearance_matching(dataloader, model, optimizer, epochs: int, writer, checkpoint_path,
@@ -392,7 +422,7 @@ def make_parser():
     parser.add_argument('--epochs', required=False, type=int, default=50)
     parser.add_argument('--checkpoint-interval', required=False, type=int, default=1)
     parser.add_argument('--log-interval', required=False, type=int, default=1)
-    parser.add_argument('--opr', choices=['generate_dataset', 'train', 'demo'], default='demo',
+    parser.add_argument('--opr', choices=['generate_dataset', 'train','test', 'demo'], default='demo',
                         help='operation (opr) to be performed')
 
     return parser
@@ -438,6 +468,17 @@ if __name__ == '__main__':
         # train
         train_appearance_matching(dataloader, model, optimizer, args.epochs, summary_writer,
                                   checkpoint_path, args.checkpoint_interval, args.log_interval)
+
+    elif args.opr == 'test':
+        train_object_dataset = ObjectDataset(pickle.load(open(args.train_dataset_path, 'rb')),
+                                             transform=transforms.Compose([transforms.Grayscale()]))
+        dataloader = DataLoader(train_object_dataset, batch_size=args.batch_size, shuffle=False, num_workers=1)
+        model = AppearanceMatchModel()
+        model.load_state_dict(torch.load(model_path, map_location=torch.device('cpu')))
+        model = model.to(args.device)
+
+        # train
+        test_appearance_matching(dataloader, model)
 
     elif args.opr == 'demo':
         all_scenes = list(args.train_scenes_path.glob('*.pkl.gz'))
