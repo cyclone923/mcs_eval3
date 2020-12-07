@@ -50,7 +50,7 @@ def filter_objects(scene_frame, depth_frame, masks):
             results['occluders'].append(mask)
     return results
 
-def filter_objects_model(scene_frame, depth_frame, masks):
+def filter_objects_model(scene_frame, depth_frame, masks=None):
     ret = model.step(np.array(img), depth)
 
     results = {'objects':[], 'occluders':[]}
