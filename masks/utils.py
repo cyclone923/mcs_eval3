@@ -136,6 +136,6 @@ def draw_bounding_boxes(base_image, frame_objects_info):
         if obj_info['visible']:
             (box_top_x, box_top_y), (box_bottom_x, box_bottom_y) = get_mask_box(obj_info['mask'])
             box_img = cv2.rectangle(box_img, (box_top_y, box_top_x), (box_bottom_y, box_bottom_x), (255, 255, 0), 2)
-            box_img = cv2.putText(box_img, str(obj_key), (box_top_y, box_top_x), cv2.FONT_HERSHEY_SIMPLEX, 1, 255)
+            box_img = cv2.putText(box_img, str(obj_key), (box_top_y, box_top_x), cv2.FONT_HERSHEY_SIMPLEX, 1, 255, thickness=3)
 
     return Image.fromarray(box_img)

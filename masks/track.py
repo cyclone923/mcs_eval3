@@ -27,7 +27,7 @@ def track_objects(frame_mask, track_info={}):
     # Remove any object which doesn't have a valid mask.
     for frame_obj_mask in obj_masks:
         if True not in frame_obj_mask:
-            raise Warning('Empty Mask found. It will be ignored for scene processing')
+            print('Empty Mask found. It will be ignored for scene processing')
             objs -= 1
             obj_masks.remove(frame_obj_mask)
 

@@ -5,9 +5,9 @@ cd unity_app
 
 if [ "$(uname)" == "Darwin" ]; then
     # Do something under Mac OS X platform
-    wget https://github.com/NextCenturyCorporation/MCS/releases/download/0.3.4/MCS-AI2-THOR-Unity-App-v0.3.4-mac.zip
-    unzip MCS-AI2-THOR-Unity-App-v0.3.4-mac.zip
-    rm MCS-AI2-THOR-Unity-App-v0.3.4-mac.zip
+    wget https://github.com/NextCenturyCorporation/MCS/releases/download/0.3.3/MCS-AI2-THOR-Unity-App-v0.3.3-mac.zip
+    unzip MCS-AI2-THOR-Unity-App-v0.3.3-mac.zip
+    rm MCS-AI2-THOR-Unity-App-v0.3.3-mac.zip
     echo unity_path: \'unity_app/MCSai2thor.app/Contents/MacOS/MCSai2thor\' > ../unity_path.yaml
 elif [ "$(expr substr $(uname -s) 1 5)" == "Linux" ]; then
     # Do something under GNU/Linux platform

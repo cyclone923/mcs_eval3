@@ -187,7 +187,7 @@ def object_appearance_match(appearance_model, image, objects_info, device='cpu')
     return objects_info
 
 
-def process_video(video_data, appearance_model, save_path=None, save_mp4=False, device='cpu'):
+def process_video(video_data, appearance_model, save_path=None, save_mp4=False, save_gif=False, device='cpu'):
     appearance_model.eval()
 
     track_info = {}
@@ -196,9 +196,11 @@ def process_video(video_data, appearance_model, save_path=None, save_mp4=False, 
         track_info = track_objects(frame.obj_mask, track_info)
         track_info['objects'] = object_appearance_match(appearance_model, frame.image,
                                                         track_info['objects'], device)
-        img = draw_bounding_boxes(frame.image, track_info['objects'])
-        img = draw_appearance_bars(img, track_info['objects'])
-        processed_frames.append(img)
+
+        if save_gif:
+            img = draw_bounding_boxes(frame.image, track_info['objects'])
+            img = draw_appearance_bars(img, track_info['objects'])
+            processed_frames.append(img)
 
         if 'objects' in track_info and len(track_info['objects'].keys()) > 0:
             for o in track_info['objects'].values():
@@ -206,11 +208,12 @@ def process_video(video_data, appearance_model, save_path=None, save_mp4=False, 
                     print('Appearance Mis-Match')
 
     # save gif
-    processed_frames[0].save(save_path + '.gif', save_all=True,
-                             append_images=processed_frames[1:], optimize=False, loop=1)
+    if save_gif:
+        processed_frames[0].save(save_path + '.gif', save_all=True,
+                                 append_images=processed_frames[1:], optimize=False, loop=1)
 
     # save video
-    if save_mp4:
+    if save_gif and save_mp4:
         import moviepy.editor as mp
         clip = mp.VideoFileClip(save_path + '.gif')
         clip.write_videofile(save_path + '.mp4')
@@ -422,7 +425,7 @@ def make_parser():
     parser.add_argument('--epochs', required=False, type=int, default=50)
     parser.add_argument('--checkpoint-interval', required=False, type=int, default=1)
     parser.add_argument('--log-interval', required=False, type=int, default=1)
-    parser.add_argument('--opr', choices=['generate_dataset', 'train','test', 'demo'], default='demo',
+    parser.add_argument('--opr', choices=['generate_dataset', 'train', 'test', 'demo'], default='demo',
                         help='operation (opr) to be performed')
 
     return parser
@@ -496,5 +499,5 @@ if __name__ == '__main__':
 
             print(f'{scene_file.name}')
             process_video(scene_data, model, os.path.join(os.getcwd(), scene_file.name), save_mp4=True,
-                          device=args.device)
+                          device=args.device, save_gif=True)
             i += 1
