@@ -23,7 +23,7 @@ class VoeAgent:
         print(f'LEVEL: {self.level}')
         self.app_model = appearence.AppearanceMatchModel()
         self.app_model.load_state_dict(torch.load(APP_MODEL_PATH))
-        self.app_model = self.app_model.to(self.device)
+        self.app_model = self.app_model.to(self.device).eval()
         if self.level == 'level1':
             self.visionmodel = vision.MaskAndClassPredictor(dataset='mcsvideo3_voe',
                                                             config='plus_resnet50_config_depth_MC',
@@ -42,10 +42,12 @@ class VoeAgent:
         self.controller.start_scene(config)
         scene_voe_detected = False
         all_viols = []
+        all_errs = []
         for i, x in enumerate(config['goal']['action_list']):
             step_output = self.controller.step(action=x[0])
-            voe_detected, voe_heatmap, viols = self.calc_voe(step_output, i, folder_name)
+            voe_detected, voe_heatmap, viols, frame_errs = self.calc_voe(step_output, i, folder_name)
             all_viols.append(viols)
+            all_errs += frame_errs
             scene_voe_detected = scene_voe_detected or voe_detected
             choice = plausible_str(voe_detected)
             assert choice in config['goal']['metadata']['choose'] # Sanity check
@@ -56,7 +58,7 @@ class VoeAgent:
                 break
         self.controller.end_scene(choice=plausible_str(scene_voe_detected), confidence=1.0)
         with open(folder_name/'viols.pkl', 'wb') as fd:
-            pickle.dump(all_viols, fd)
+            pickle.dump((all_viols, all_errs), fd)
         return scene_voe_detected
 
     def calc_voe(self, step_output, frame_num, scene_name):
@@ -95,13 +97,22 @@ class VoeAgent:
             framewisevoe.calc_world_pos(depth_map, tracked_masks, camera_info)
         occ_heatmap = framewisevoe.make_occ_heatmap(obj_occluded, obj_ids, tracked_masks)
         # Calculate violations
-        dynamics_viols = self.detector.detect(frame_num, obj_pos, obj_occluded, obj_ids, depth_map, camera_info) or []
+        det_result = self.detector.detect(frame_num, obj_pos, obj_occluded, obj_ids, depth_map, camera_info)
+        if det_result is None:
+            dynamics_viols = []
+            all_errs = []
+        else:
+            dynamics_viols, all_errs = det_result
         appearance_viols = []
         for o_id, obj_info in self.track_info['objects'].items():
-            app_viol = not obj_info['appearance']['match'] and obj_info['visible'] and not obj_occluded[o_id]
+            o_visible = obj_info['visible']
+            o_mismatch = not obj_info['appearance']['match']
+            o_occluded = obj_occluded[o_id]
+            o_robust_mismatch = o_mismatch and obj_info['appearance']['mismatch_count'] > 3
+            app_viol = o_visible and o_robust_mismatch and not o_occluded
             if app_viol:
                 appearance_viols.append(framewisevoe.AppearanceViolation(o_id))
-        viols = dynamics_viols #+ appearance_viols
+        viols = dynamics_viols + appearance_viols
         voe_hmap = framewisevoe.make_voe_heatmap(viols, tracked_masks)
         # Output violations
         framewisevoe.output_voe(viols)
@@ -112,7 +123,7 @@ class VoeAgent:
         # Output results
         voe_detected = viols is not None and len(viols) > 0
         voe_hmap_img = Image.fromarray(voe_hmap)
-        return voe_detected, voe_hmap_img, viols
+        return voe_detected, voe_hmap_img, viols, all_errs
 
     def oracle_masks(self, step_output):
         frame = convert_output(step_output)

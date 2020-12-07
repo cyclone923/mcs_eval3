@@ -45,6 +45,7 @@ class FramewiseVOE:
 
     def detect(self, time, actual_poss, occluded, actual_ids, depth, camera):
         violations = []
+        all_errs = []
         pred_info = self.predict(time)
         if pred_info is None:
             return None
@@ -56,6 +57,7 @@ class FramewiseVOE:
                 _idx = actual_ids.index(pred_id)
                 actual_pos = actual_poss[_idx]
                 err = torch.dist(actual_pos, pred_pos)
+                all_errs.append(err)
                 thresh = self.dist_thresh
                 if occluded[_idx]:
                     thresh *= 3
@@ -67,7 +69,7 @@ class FramewiseVOE:
                 v = PresenceViolation(pred_id, pred_pos, camera)
                 violations.append(v)
         valid_violations = [v for v in violations if not v.ignore(depth, camera)]
-        return valid_violations
+        return valid_violations, all_errs
 
     def _get_inputs(self):
         time_l = []
