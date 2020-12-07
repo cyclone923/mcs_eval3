@@ -78,6 +78,12 @@ class VoeAgent:
             appearence.object_appearance_match(self.app_model, rgb_image,
                                                self.track_info['objects'],
                                                self.device)
+        #DEBUG OUTPUT
+        """
+        img = appearence.draw_bounding_boxes(rgb_image, self.track_info['objects'])
+        img = appearence.draw_appearance_bars(img, self.track_info['objects'])
+        img.save(scene_name/f'DEBUG_{frame_num:02d}.png')
+        """
         all_obj_ids = list(range(self.track_info['object_index']))
         masks_list = [self.track_info['objects'][i]['mask'] for i in all_obj_ids]
         tracked_masks = squash_masks(depth_map, masks_list, all_obj_ids)
@@ -95,7 +101,7 @@ class VoeAgent:
             app_viol = not obj_info['appearance']['match'] and obj_info['visible'] and not obj_occluded[o_id]
             if app_viol:
                 appearance_viols.append(framewisevoe.AppearanceViolation(o_id))
-        viols = dynamics_viols + appearance_viols
+        viols = dynamics_viols #+ appearance_viols
         voe_hmap = framewisevoe.make_voe_heatmap(viols, tracked_masks)
         # Output violations
         framewisevoe.output_voe(viols)

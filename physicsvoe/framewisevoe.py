@@ -25,8 +25,8 @@ class FramewiseVOE:
         assert time not in self.frame_history
         self.frame_history[time] = (ids, pos, present, occluded)
         valid_ids = []
-        for _id, _present, _occluded, _vis_count in zip(ids, present, occluded, vis_count):
-            probably_real = _vis_count > 3
+        for _id, _present, _occluded in zip(ids, present, occluded):
+            probably_real = vis_count[_id] > 3
             if _present and not _occluded and probably_real:
                 valid_ids.append(_id)
         self.all_ids = self.all_ids.union(valid_ids)
@@ -54,18 +54,21 @@ class FramewiseVOE:
                 continue
             if pred_id in actual_ids:
                 _idx = actual_ids.index(pred_id)
-                if occluded[_idx]:
-                    continue
                 actual_pos = actual_poss[_idx]
                 err = torch.dist(actual_pos, pred_pos)
-                if err > self.dist_thresh:
+                thresh = self.dist_thresh
+                if occluded[_idx]:
+                    thresh *= 3
+                if err > thresh:
                     v = PositionViolation(pred_id, pred_pos, actual_pos)
                     violations.append(v)
             else:
                 # TODO: Check for occlusion
                 v = PresenceViolation(pred_id, pred_pos, camera)
                 violations.append(v)
+        vs = len(violations)
         valid_violations = [v for v in violations if not v.ignore(depth, camera)]
+        ignored = vs-len(valid_violations)
         return valid_violations
 
     def _get_inputs(self):

@@ -67,7 +67,7 @@ def make_parser():
 if __name__ == "__main__":
     args = make_parser().parse_args()
     agent = Evaluation3_Agent(args.unity_path, args.config, args.prefix)
-    goal_dir = "test_scenes"
+    goal_dir = "anom_scenes"
     all_scenes = [os.path.join(goal_dir, one_scene) for one_scene in sorted(os.listdir(goal_dir))]
     random.shuffle(all_scenes)
 
@@ -81,8 +81,3 @@ if __name__ == "__main__":
         results[one_scene] = voe
         with open(f'{args.prefix}/results.pkl', 'wb') as fd:
             pickle.dump(results, fd)
-
-
-
-
-

@@ -3,18 +3,16 @@ import gzip
 from pathlib import Path
 from argparse import ArgumentParser
 import os
-from utils import draw_bounding_boxes, draw_appearance_bars, split_obj_masks, get_obj_position, get_mask_box
+from .utils import draw_bounding_boxes, draw_appearance_bars, split_obj_masks, get_obj_position, get_mask_box
 
-from track import track_objects
+from .track import track_objects
 import torch
 import numpy as np
 from torch.utils.data import Dataset, DataLoader
 
 from torch.optim import Adam
-from torch.utils.tensorboard import SummaryWriter
 import torch.nn as nn
 import cv2
-from tqdm import tqdm
 import webcolors
 
 
@@ -361,60 +359,3 @@ def make_parser():
 
     return parser
 
-
-if __name__ == '__main__':
-    args = make_parser().parse_args()
-    args.device = 'cuda' if torch.cuda.is_available() else 'cpu'
-
-    # paths
-    experiment_path = os.path.join(args.results_dir, 'run_{}'.format(args.run), )
-    os.makedirs(experiment_path, exist_ok=True)
-    log_path = os.path.join(experiment_path, 'logs')
-    model_path = os.path.join(experiment_path, 'model.p')
-    checkpoint_path = os.path.join(experiment_path, 'checkpoint.p')
-
-    # Determine the operation to be performed
-    if args.opr == 'generate_dataset':
-        train_scenes = list(args.train_scenes_path.glob('*.pkl.gz'))
-        data = generate_data(train_scenes)
-        pickle.dump(data, open(args.train_dataset_path, 'wb'))
-
-        test_scenes = list(args.test_scenes_path.glob('*.pkl.gz'))
-        data = generate_data(test_scenes)
-        pickle.dump(data, open(args.test_dataset_path, 'wb'))
-
-    elif args.opr == 'train':
-        # flush every 1 minutes
-        summary_writer = SummaryWriter(log_path, flush_secs=60 * 1)
-
-        # create balanced distribution
-        train_object_dataset = ObjectDataset(pickle.load(open(args.train_dataset_path, 'rb')))
-        probs = 1 / torch.Tensor(train_object_dataset.shape_labels_count())
-        weights = train_object_dataset.get_dataset_weights(probs)
-        sampler = torch.utils.data.sampler.WeightedRandomSampler(weights, len(weights), replacement=True)
-        dataloader = DataLoader(train_object_dataset, batch_size=args.batch_size, shuffle=False, num_workers=1,
-                                sampler=sampler)
-
-        model = AppearanceMatchModel()
-        optimizer = Adam(model.parameters(), lr=args.lr)
-
-        # train
-        train_appearance_matching(dataloader, model, optimizer, args.epochs, summary_writer,
-                                  checkpoint_path, args.checkpoint_interval, args.log_interval)
-
-    elif args.opr == 'demo':
-        all_scenes = list(args.test_scenes_path.glob('*.pkl.gz'))
-        print(f'Found {len(all_scenes)} scenes')
-
-        model = AppearanceMatchModel()
-
-        model.load_state_dict(torch.load(model_path, map_location=torch.device('cpu')))
-        model = model.to(args.device)
-
-        for scene_file in all_scenes:
-            with gzip.open(scene_file, 'rb') as fd:
-                scene_data = pickle.load(fd)
-
-            print(f'{scene_file.name}')
-            process_video(scene_data, model, os.path.join(os.getcwd(), scene_file.name), save_mp4=True,
-                          device=args.device)
