@@ -19,10 +19,10 @@ class VoeAgent:
         self.controller = controller
         self.level = level
         self.prefix = out_prefix
-        self.device = 'cuda'
+        self.device = 'cuda' if torch.cuda.is_available() else 'cpu'
         print(f'LEVEL: {self.level}')
         self.app_model = appearence.AppearanceMatchModel()
-        self.app_model.load_state_dict(torch.load(APP_MODEL_PATH))
+        self.app_model.load_state_dict(torch.load(APP_MODEL_PATH, map_location=torch.device('cpu')))
         self.app_model = self.app_model.to(self.device).eval()
         if self.level == 'level1':
             self.visionmodel = vision.MaskAndClassPredictor(dataset='mcsvideo3_voe',
