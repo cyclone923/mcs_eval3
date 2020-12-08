@@ -136,8 +136,12 @@ def generate_mask_data(scenes_files):
 def size_filter(img, depth_crop):
     size = img.size
     w,h  = size[0], size[1]
-    if w/h>=3.0 and w<400: # and np.std(depth_crop)<0.03:
-        name = 'pole'
+    print (w,h)
+    if w*h<60: # and np.std(depth_crop)<0.03:
+        name = 'ignore' 
+        print (name, w,h)
+    elif w/h>=3.0 and w<400: # and np.std(depth_crop)<0.03:
+        name = 'pole'       
     elif h/w>2.0 and h<100:
         name = 'pole'
     elif w>400:
@@ -160,12 +164,16 @@ def model_test(scenes_files):
                                   config='plus_resnet50_config_depth_MC',
                                   weights='/home/jay/mcs_eval3/vision/instSeg/dvis_resnet50_mc_voe.pth')
 
+    import random
+    random.shuffle(scenes_files)
+    # for scene_file in sorted(scenes_files):
+    for scene_file in scenes_files:
 
-    for scene_file in sorted(scenes_files):
         print (train_scenes_path + scene_file)
 
         with gzip.open(train_scenes_path + scene_file, 'rb') as fd:
             scene_data = pickle.load(fd)
+
         for frame_num, frame in enumerate(scene_data):
             img = frame.image
             objs = frame.obj_data
@@ -183,7 +191,6 @@ def model_test(scenes_files):
             # labelI = ret['mask_prob'][1:] > 0.5
             
             labelI = ret['mask_prob'].argmax(axis=0)
-            print (labelI.shape)
 
             from matplotlib import pyplot as plt
             # img.save( f'scene.png')
@@ -193,15 +200,15 @@ def model_test(scenes_files):
             # cv2.imwrite('scene.jpg', np.array(img)[:,:,::-1])
             # cv2.imwrite('depth.jpg', depth)
 
-            plt.imshow(labelI)
-            plt.savefig('output.png')
+            # plt.imshow(labelI)
+            # plt.savefig('output.png')
 
             # Image.fromarray(np.uint8(labelI)).save( f'op_ascene.png')  
             for i in range(1, labelI.max() +1):
                 conn_labelI = smeasure.label(labelI==i)
                 props = smeasure.regionprops(conn_labelI)
                 # y0,x0,y1,x1 = prop.bbox
-                print (i, len(props))
+                # print (i, len(props))
                 for idx, prop in enumerate(props):
                     y0,x0,y1,x1 = prop.bbox
                     info = (x0,y0), (x1,y1)
@@ -211,18 +218,21 @@ def model_test(scenes_files):
                     mask = cv2.rectangle(np.array(img), (x0,y0), (x1,y1), (0, 0, 0), -1)
                     mask = mask[:,:,0]==0
                     # cv2.imwrite(f'{i:02d}_{idx:02d}_masked_output.png', np.array(img) * mask[:, :, np.newaxis]) 
-                    print (mask.shape)
                     # Image.fromarray(mask).save( f'{i:02d}_{idx:02d}_masks.png')
 
                     bounded_img = draw_bounding_boxes(img,info)
 
                     # print (obj_image.size)
                     # import pdb; pdb.set_trace()
-                    bounded_img.save( f'{i:02d}_{idx:02d}_bounded_scene.png')
+                    # bounded_img.save( f'{i:02d}_{idx:02d}_bounded_scene.png')
                     name = size_filter(obj_image, None)
                     if name is 'object':
                         results['objects'].append(mask)
-                        cv2.imwrite(f'{frame_num:02d}.png', np.array(img) * mask[:, :, np.newaxis]) 
+                        # obj_image.save( f'run2/{i:02d}_{idx:02d}_cropped_scene.png')
+                        # cv2.imwrite(f'run2/{frame_num:02d}.png', np.array(img) * mask[:, :, np.newaxis]) 
+
+                        obj_image.save( f'{i:02d}_{idx:02d}_cropped_scene.png')
+                        cv2.imwrite(f'{frame_num:02d}.png', np.array(img) * mask[:, :, np.newaxis])                         
                     else:
                         results['occluders'].append(mask)
 
