@@ -8,4 +8,3 @@ pathfinding==0.0.4
 easydict==1.9
 git+https://github.com/NextCenturyCorporation/MCS@latest#egg=machine_common_sense
 webcolors
-numpy_indexed
