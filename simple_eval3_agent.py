@@ -47,6 +47,9 @@ class Evaluation3_Agent:
         if goal_type == "intuitive physics":
             return self.phys_voe.run_scene(scene_config, one_scene)
         elif goal_type == "agents":
+            if self.level == "level1" :
+                print ("Agency task cannot be run in level1. Exiting")
+                return
             self.agency_voe_agent.run_scene(scene_config)
         elif goal_type == "retrieval":
             self.exploration_agent.run_scene(scene_config)

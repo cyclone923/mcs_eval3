@@ -32,8 +32,12 @@ class SequenceGenerator(object):
         self.outermost_poly = None
 
     def run_scene(self,scene_config,config_filename=None,frame_collector=None):
-        self.step_output = self.controller.start_scene(scene_config)
-        self.explore_scene_view(self.step_output,config_filename,frame_collector)
+        try :
+            self.step_output = self.controller.start_scene(scene_config)
+            self.explore_scene_view(self.step_output,config_filename,frame_collector)
+        except Exception as e :
+            print (e)
+            
 
     def explore_scene_view(self, event, config_filename=None, frame_collector=None):
         number_actions = 0
