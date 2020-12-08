@@ -53,8 +53,6 @@ def filter_objects(scene_frame, depth_frame, masks):
     return results
 
 def filter_objects_model(scene_frame, depth_frame, masks=None):
-    ret = model.step(np.array(img), depth)
-
     results = {'objects':[], 'occluders':[]}
     # if not isinstance(scene_frame, np.ndarray):
     #     scene_frame = np.array(scene_frame)
@@ -69,7 +67,7 @@ def filter_objects_model(scene_frame, depth_frame, masks=None):
         for idx, prop in enumerate(props):
             y0,x0,y1,x1 = prop.bbox
             obj_image = scene_frame.crop(( x0, y0,  x1,  y1))
-            mask = cv2.rectangle(np.array(img), (x0,y0), (x1,y1), (0, 0, 0), -1)
+            mask = cv2.rectangle(np.array(scene_frame), (x0,y0), (x1,y1), (0, 0, 0), -1)
             mask = mask[:,:,0]==0
             name = size_filter(obj_image, None)
             if name is 'object':
