@@ -86,7 +86,7 @@ class VoeAgent:
         self.track_info['objects'] = \
             appearence.object_appearance_match(self.app_model, rgb_image,
                                                self.track_info['objects'],
-                                               self.device)
+                                               self.device, self.level)
         if DEBUG:
             img = appearence.draw_bounding_boxes(rgb_image, self.track_info['objects'])
             img = appearence.draw_appearance_bars(img, self.track_info['objects'])
