@@ -74,7 +74,7 @@ def retrieve_position(scene_event):
 
 
 class GameState(object):
-    def __init__(self, env=None,level="oracle", depth_scope=None):
+    def __init__(self, env=None,level="level1", depth_scope=None):
         if env == None:
             self.env = game_util.create_env()
         else :
@@ -123,10 +123,10 @@ class GameState(object):
         self.trophy_obstacle = None
         self.trophy_picked_up = False
         self.trophy_prob_threshold = 0.3
-        self.level = "oracle"
+        #self.level = "oracle"
         #self.level = "level1"
         #self.level = "level2"
-        #self.level= level
+        self.level= level
         self.trophy_visible_current_frame = False
         self.img_seg_occupancy_map_points = {}
         self.current_frame_img_obstacles = []
@@ -447,7 +447,6 @@ class GameState(object):
             self.current_frame_obstacles = self.merge_obstacles(self.current_frame_obstacles,"current")
             self.update_global_obstacles_level_1_2()
             self.global_obstacles = self.merge_obstacles(self.global_obstacles,"global")
-            #self.merge_global_obstacles()
             self.update_goal_object_from_obstacle_prob()
         #print ("time taken to update global obstacle list", time.time()-start_time)
         self.add_obstacle_func(bounding_boxes)
@@ -455,7 +454,8 @@ class GameState(object):
         if self.event.return_status :
             self.process_frame()
         else :
-            print ("Failed status : ",self.event.return_status )
+            pass
+            #print ("Failed status : ",self.event.return_status )
 
         #for obstacle1 in self.current_frame_obstacles:
         #    for obstacle2 in self.current_frame_obstacles:  

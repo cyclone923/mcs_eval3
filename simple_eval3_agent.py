@@ -3,6 +3,7 @@ import yaml
 import os
 import random
 from exploration.controller_agent import ExploreAgent
+from MCS_exploration.sequence_generator import SequenceGenerator 
 from voe.voe_agent import VoeAgent
 from voe.agency_voe_agent import AgencyVoeAgent
 
@@ -30,7 +31,8 @@ class Evaluation3_Agent:
 
         assert self.level in ['oracle', 'level1', 'level2']
 
-        self.exploration_agent = ExploreAgent(self.controller, self.level)
+        #self.exploration_agent = ExploreAgent(self.controller, self.level)
+        self.exploration_agent = SequenceGenerator(None,self.controller,self.level)
         self.voe_agent = VoeAgent(self.controller, self.level)
         self.agency_voe_agent = AgencyVoeAgent(self.controller, self.level)
 
