@@ -95,6 +95,8 @@ class SequenceGenerator(object):
         #self.explore_all_objects()
         #self.pick_up_obstacles(all_obstacles=True)
 
+        if self.agent.game_state.trophy_picked_up == True:
+            return
         if self.agent.game_state.goals_found :
             #print ("Object found returning to main ")
             self.pick_up_obstacles(possible_trophy_obstacles=True)
@@ -590,7 +592,7 @@ class SequenceGenerator(object):
         #print ("In pick up obstacles ", all_obstacles)
 
         if all_obstacles == True :
-            for obstacle in reversed(self.agent.game_state.global_obstacles[3:]) :
+            for obstacle in self.agent.game_state.global_obstacles :
                 #if self.is_possible_trophy(obstacle):
                 #print (" for each obejct height", obstacle.height)
                 if obstacle.is_possible_trophy():
