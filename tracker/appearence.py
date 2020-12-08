@@ -15,6 +15,7 @@ from torchvision import transforms
 import torch.nn as nn
 import cv2
 import webcolors
+import sys
 
 
 def closest_colour(requested_colour):
@@ -100,7 +101,7 @@ class AppearanceMatchModel(nn.Module):
         return feature, self.shape_classifier(feature), self.color_classifier(color_feature)
 
 
-def object_appearance_match(appearance_model, image, objects_info, device='cpu'):
+def object_appearance_match(appearance_model, image, objects_info, device='cpu', level='level2'):
     for obj_key in [k for k in objects_info.keys() if objects_info[k]['visible']]:
         top_x, top_y, bottom_x, bottom_y = objects_info[obj_key]['bounding_box']
         obj_current_image = image.crop((top_y, top_x, bottom_y, bottom_x))
@@ -170,8 +171,16 @@ def object_appearance_match(appearance_model, image, objects_info, device='cpu')
         # Todo: size match?
 
         # match
-        shape_matches = current_object_shape_id == base_shape_id
-        color_matches = current_object_color_id == base_color_id
+
+        if level == 'level1':
+            shape_matches = current_object_shape_id in sorted(
+                [(x, i) for i, x in enumerate(objects_info[obj_key]['appearance']['shape_prob'])], reverse=True)[:3]
+            color_matches = current_object_color_id in sorted(
+                [(x, i) for i, x in enumerate(objects_info[obj_key]['appearance']['color_prob'])], reverse=True)[:3]
+        else:
+            shape_matches = current_object_shape_id == base_shape_id
+            color_matches = current_object_color_id == base_color_id
+
         objects_info[obj_key]['appearance']['match'] = shape_matches and color_matches
 
         if 'mismatch_count' not in objects_info[obj_key]['appearance']:
@@ -205,11 +214,6 @@ def process_video(video_data, appearance_model, save_path=None, save_mp4=False, 
                 if not o['appearance']['match']:
                     # print('Appearance Mis-Match')
                     violation = True
-
-        if 'objects' in track_info and len(track_info['objects'].keys()) > 0:
-            for o in track_info['objects'].values():
-                if not o['appearance']['match']:
-                    print('Appearance Mis-Match')
 
     # save gif
     if save_gif:
@@ -454,6 +458,7 @@ def make_parser():
 if __name__ == '__main__':
     from torch.utils.tensorboard import SummaryWriter
     from tqdm import tqdm
+
     args = make_parser().parse_args()
     args.device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
@@ -532,4 +537,4 @@ if __name__ == '__main__':
                 mis_match_cases.append(scene_file)
             violations.append(v)
         print(mis_match_cases)
-        print((len(violations)-sum(violations))/len(violations))
+        print((len(violations) - sum(violations)) / len(violations))
