@@ -9,6 +9,7 @@ import cv2
 import sys
 
 import glob
+from skimage import measure as smeasure
 
 
 train_scenes_path = '/home/jay/chengxi_scenes/tmp/'
@@ -33,8 +34,9 @@ def get_mask_box(obj_mask):
 def draw_bounding_boxes(base_image, frame_objects_info):
     box_img = np.array(base_image)
     (box_top_x, box_top_y), (box_bottom_x, box_bottom_y) = frame_objects_info
-    box_img = cv2.rectangle(box_img, (box_top_y, box_top_x), (box_bottom_y, box_bottom_x), (255, 255, 0), 2)
-    box_img = cv2.putText(box_img, str(1), (box_top_y, box_top_x), cv2.FONT_HERSHEY_SIMPLEX, 1, 255)
+    box_img = cv2.rectangle(box_img, (box_top_x, box_top_y), (box_bottom_x, box_bottom_y), (255, 255, 0), 2)
+    # box_img = cv2.rectangle(box_img, (box_top_y, box_top_x), (box_bottom_y, box_bottom_x), (255, 255, 0), 2)
+    # box_img = cv2.putText(box_img, str(1), (box_top_y, box_top_x), cv2.FONT_HERSHEY_SIMPLEX, 1, 255)
     return Image.fromarray(box_img)
 
 def filter_objects(scene_frame, depth_frame, masks):
@@ -54,23 +56,26 @@ def filter_objects_model(scene_frame, depth_frame, masks=None):
     ret = model.step(np.array(img), depth)
 
     results = {'objects':[], 'occluders':[]}
-    if not isinstance(scene_frame, np.ndarray):
-        scene_frame = np.array(scene_frame)
+    # if not isinstance(scene_frame, np.ndarray):
+    #     scene_frame = np.array(scene_frame)
     if not isinstance(depth_frame, np.ndarray):
         depth_frame = np.array(depth_frame)
 
     ret = model.step(scene_frame, depth_frame)
-    masks = ret['mask_prob'][1:] > 0.5
-
-    for idx, mask in enumerate(masks):
-        (top_left_x, top_left_y), (bottom_right_x, bottom_right_y) = get_mask_box(mask)
-        obj_image = scene_frame.crop((top_left_y, top_left_x, bottom_right_y, bottom_right_x))
-        depth_crop = depth_frame[ top_left_x+1: bottom_right_x, top_left_y+1:bottom_right_y]
-        name = size_filter(obj_image, depth_crop)
-        if name is 'object':
-            results['objects'].append(mask)
-        else:
-            results['occluders'].append(mask)
+    labelI = ret['mask_prob'].argmax(axis=0)
+    for i in range(1, labelI.max() +1):
+        conn_labelI = smeasure.label(labelI==i)
+        props = smeasure.regionprops(conn_labelI)
+        for idx, prop in enumerate(props):
+            y0,x0,y1,x1 = prop.bbox
+            obj_image = scene_frame.crop(( x0, y0,  x1,  y1))
+            mask = cv2.rectangle(np.array(img), (x0,y0), (x1,y1), (0, 0, 0), -1)
+            mask = mask[:,:,0]==0
+            name = size_filter(obj_image, None)
+            if name is 'object':
+                results['objects'].append(mask)
+            else:
+                results['occluders'].append(mask)
     return results
 
 def generate_mask_data(scenes_files):
@@ -128,7 +133,6 @@ def generate_mask_data(scenes_files):
 
         print (counter/actual_counter,  counter, actual_counter)
 
-
 def size_filter(img, depth_crop):
     size = img.size
     w,h  = size[0], size[1]
@@ -145,24 +149,6 @@ def size_filter(img, depth_crop):
     else:
         name = 'object'
     return name
-
-
-# def size_filter(img, depth_crop):
-#     size = img.size
-#     w,h  = size[0], size[1]
-#     if w/h>=3 and w<400: # and np.std(depth_crop)<0.03:
-#         name = 'pole'
-#     elif h/w>2.0 and h<100:
-#         name = 'pole'
-#     elif w>400:
-#         name = 'wall_floor'
-#     elif h/w>1.4 and h>120:
-#         name = 'occluder'        
-#     elif h>100 or w>100:
-#         name = 'occluder'        
-#     else:
-#         name = 'object'
-#     return name
 
 
 def model_test(scenes_files):
@@ -193,17 +179,175 @@ def model_test(scenes_files):
             masks = ret['mask_prob'][1:] > 0.5
             results = {'objects':[], 'occluders':[]}
 
-            for idx, mask in enumerate(masks):
-                (top_left_x, top_left_y), (bottom_right_x, bottom_right_y) = get_mask_box(mask)
-                obj_image = img.crop((top_left_y, top_left_x, bottom_right_y, bottom_right_x))
-                depth_crop = depth[ top_left_x+1: bottom_right_x, top_left_y+1:bottom_right_y]
-                name = size_filter(obj_image, depth_crop)
-                if name is 'object':
-                    results['objects'].append(mask)
-                    cv2.imwrite(f'{frame_num:02d}.png', np.array(img) * mask[:, :, np.newaxis]) 
-                else:
-                    results['occluders'].append(mask)
+            # # ret = model.step(scene_frame, depth_frame)
+            # labelI = ret['mask_prob'][1:] > 0.5
+            
+            labelI = ret['mask_prob'].argmax(axis=0)
+            print (labelI.shape)
 
+            from matplotlib import pyplot as plt
+            # img.save( f'scene.png')
+            # plt.imshow(depth, cmap='gray')
+            # plt.savefig('depth.png')
+
+            # cv2.imwrite('scene.jpg', np.array(img)[:,:,::-1])
+            # cv2.imwrite('depth.jpg', depth)
+
+            plt.imshow(labelI)
+            plt.savefig('output.png')
+
+            # Image.fromarray(np.uint8(labelI)).save( f'op_ascene.png')  
+            for i in range(1, labelI.max() +1):
+                conn_labelI = smeasure.label(labelI==i)
+                props = smeasure.regionprops(conn_labelI)
+                # y0,x0,y1,x1 = prop.bbox
+                print (i, len(props))
+                for idx, prop in enumerate(props):
+                    y0,x0,y1,x1 = prop.bbox
+                    info = (x0,y0), (x1,y1)
+                    # print (x0, y0, x1, y1)
+
+                    obj_image = img.crop(( x0, y0,  x1,  y1))
+                    mask = cv2.rectangle(np.array(img), (x0,y0), (x1,y1), (0, 0, 0), -1)
+                    mask = mask[:,:,0]==0
+                    # cv2.imwrite(f'{i:02d}_{idx:02d}_masked_output.png', np.array(img) * mask[:, :, np.newaxis]) 
+                    print (mask.shape)
+                    # Image.fromarray(mask).save( f'{i:02d}_{idx:02d}_masks.png')
+
+                    bounded_img = draw_bounding_boxes(img,info)
+
+                    # print (obj_image.size)
+                    # import pdb; pdb.set_trace()
+                    bounded_img.save( f'{i:02d}_{idx:02d}_bounded_scene.png')
+                    name = size_filter(obj_image, None)
+                    if name is 'object':
+                        results['objects'].append(mask)
+                        cv2.imwrite(f'{frame_num:02d}.png', np.array(img) * mask[:, :, np.newaxis]) 
+                    else:
+                        results['occluders'].append(mask)
+
+        #         # depth_crop = depth[ top_left_x+1: bottom_right_x, top_left_y+1:bottom_right_y]
+        #             name = size_filter(obj_image, None)
+        #             print (name)
+        #             if name is 'object':
+        #                 results['objects'].append(mask)
+        #                 cv2.imwrite(f'{frame_num:02d}.png', np.array(img) * mask[:, :, np.newaxis]) 
+        #             else:
+        #                 results['occluders'].append(mask)
+
+        #     for idx, mask in enumerate(masks):
+        #         (top_left_x, top_left_y), (bottom_right_x, bottom_right_y) = get_mask_box(mask)
+        #         obj_image = img.crop((top_left_y, top_left_x, bottom_right_y, bottom_right_x))
+        #         depth_crop = depth[ top_left_x+1: bottom_right_x, top_left_y+1:bottom_right_y]
+        #         name = size_filter(obj_image, depth_crop)
+        #         if name is 'object':
+        #             results['objects'].append(mask)
+        #             cv2.imwrite(f'{frame_num:02d}.png', np.array(img) * mask[:, :, np.newaxis]) 
+        #         else:
+        #             results['occluders'].append(mask)
+        #     break
+        # break
+
+# def model_test(scenes_files):
+#     import glob
+#     import cv2
+#     import scipy.misc as smisc  # scipy in version <= 1.2.0
+
+#     model = MaskAndClassPredictor(dataset='mcsvideo3_voe',
+#                                   config='plus_resnet50_config_depth_MC',
+#                                   weights='/home/jay/mcs_eval3/vision/instSeg/dvis_resnet50_mc_voe.pth')
+
+
+#     for scene_file in sorted(scenes_files):
+#         print (train_scenes_path + scene_file)
+
+#         with gzip.open(train_scenes_path + scene_file, 'rb') as fd:
+#             scene_data = pickle.load(fd)
+#         for frame_num, frame in enumerate(scene_data):
+#             img = frame.image
+#             objs = frame.obj_data
+#             structs = frame.struct_obj_data
+#             depth = frame.depth_mask
+#             obj_masks = split_obj_masks(frame.obj_mask, len(objs))
+#             struct_masks = split_obj_masks(frame.struct_mask, len(structs))
+
+
+#             ret = model.step(np.array(img), depth)
+#             masks = ret['mask_prob'][1:] > 0.5
+#             results = {'objects':[], 'occluders':[]}
+
+#             # # ret = model.step(scene_frame, depth_frame)
+#             # labelI = ret['mask_prob'][1:] > 0.5
+            
+#             labelI = ret['mask_prob'].argmax(axis=0)
+#             print (labelI.shape)
+
+#             from matplotlib import pyplot as plt
+#             # img.save( f'scene.png')
+#             # plt.imshow(depth, cmap='gray')
+#             # plt.savefig('depth.png')
+
+#             # cv2.imwrite('scene.jpg', np.array(img)[:,:,::-1])
+#             # cv2.imwrite('depth.jpg', depth)
+
+#             plt.imshow(labelI)
+#             plt.savefig('output.png')
+
+#             # Image.fromarray(np.uint8(labelI)).save( f'op_ascene.png')  
+#             for i in range(1, labelI.max() +1):
+#                 conn_labelI = smeasure.label(labelI==i)
+#                 props = smeasure.regionprops(conn_labelI)
+#                 # y0,x0,y1,x1 = prop.bbox
+#                 print (i, len(props))
+#                 for idx, prop in enumerate(props):
+#                     y0,x0,y1,x1 = prop.bbox
+#                     info = (x0,y0), (x1,y1)
+#                     print (x0, y0, x1, y1)
+
+#                     # (box_top_x, box_top_y), (box_bottom_x, box_bottom_y) = frame_objects_info
+#                     # box_img = cv2.rectangle(box_img, (box_top_x, box_top_y), (box_bottom_x, box_bottom_y), (255, 255, 0), 2)
+#                     # box_img = cv2.rectangle(box_img, (box_top_y, box_top_x), (box_bottom_y, box_bottom_x), (255, 255, 0), 2)
+
+#                     obj_image = img.crop(( x0, y0,  x1,  y1))
+                    
+#                     mask_img = cv2.rectangle(np.array(img), (x0,y0), (x1,y1), (0, 0, 0), -1)
+#                     mask_img = mask_img[:,:,0]==0
+#                     # print (mask_img)
+#                     # cv2.imwrite(f'{i:02d}_{idx:02d}_masked_output.png', np.array(img) * mask_img[:, :, np.newaxis]) 
+
+#                     Image.fromarray(mask_img).save( f'{i:02d}_{idx:02d}_masks.png')
+#                     obj_image.save( f'{i:02d}_{idx:02d}_crops.png')
+
+#                     bounded_img = draw_bounding_boxes(img,info)
+
+#                     # print (obj_image.size)
+#                     # import pdb; pdb.set_trace()
+#                     bounded_img.save( f'{i:02d}_{idx:02d}_scene.png')
+#                     obj_image.save( f'{i:02d}_{idx:02d}_crops.png')
+
+#                 img.save( f'scene.png')
+
+#                 # # depth_crop = depth[ top_left_x+1: bottom_right_x, top_left_y+1:bottom_right_y]
+#                 #     name = size_filter(obj_image, None)
+#                 #     print (name)
+#                 #     if name is 'object':
+#                 #         results['objects'].append(mask)
+#                 #         cv2.imwrite(f'{frame_num:02d}.png', np.array(img) * mask[:, :, np.newaxis]) 
+#                 #     else:
+#                 #         results['occluders'].append(mask)
+
+#             # for idx, mask in enumerate(masks):
+#             #     (top_left_x, top_left_y), (bottom_right_x, bottom_right_y) = get_mask_box(mask)
+#             #     obj_image = img.crop((top_left_y, top_left_x, bottom_right_y, bottom_right_x))
+#             #     depth_crop = depth[ top_left_x+1: bottom_right_x, top_left_y+1:bottom_right_y]
+#             #     name = size_filter(obj_image, depth_crop)
+#             #     if name is 'object':
+#             #         results['objects'].append(mask)
+#             #         cv2.imwrite(f'{frame_num:02d}.png', np.array(img) * mask[:, :, np.newaxis]) 
+#             #     else:
+#             #         results['occluders'].append(mask)
+#             # break
+#         break
 def split_obj_masks(mask, num_objs):
     obj_masks = []
     for obj_idx in range(num_objs):
