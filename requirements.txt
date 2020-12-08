@@ -6,5 +6,6 @@ descartes==1.1.0
 ray==1.0.1
 pathfinding==0.0.4
 easydict==1.9
+ai2thor==2.2.0
 git+https://github.com/NextCenturyCorporation/MCS@latest#egg=machine_common_sense
 webcolors
