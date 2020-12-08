@@ -467,7 +467,7 @@ class GameState(object):
         #        if obstacle1.get_bounding_box().convex_hull.contains(obstacle2.get_bounding_box()) :
        #             print ("one object containing the other inside a single frame")
        #             continue
-        SHOW_ANIMATION = True
+        SHOW_ANIMATION = False
         if SHOW_ANIMATION:
             plt.cla()
             plt.xlim((-7, 7))
