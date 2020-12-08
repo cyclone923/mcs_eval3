@@ -137,7 +137,7 @@ def size_filter(img, depth_crop):
     size = img.size
     w,h  = size[0], size[1]
     print (w,h)
-    if w*h<60: # and np.std(depth_crop)<0.03:
+    if w*h<80: # and np.std(depth_crop)<0.03:
         name = 'ignore' 
         print (name, w,h)
     elif w/h>=3.0 and w<400: # and np.std(depth_crop)<0.03:
