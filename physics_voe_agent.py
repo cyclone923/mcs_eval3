@@ -123,7 +123,9 @@ class VoeAgent:
         pos_hists = {o_id:o_info['position_history'] for o_id, o_info in self.track_info['objects'].items()}
         obs_viols = self.detector.record_obs(frame_num, obj_ids, obj_pos, obj_present, obj_occluded, vis_count, pos_hists, camera_info)
         # Output violations
-        viols = dynamics_viols + appearance_viols + obs_viols
+        viols = dynamics_viols + obs_viols
+        if self.level != 'level1': #Ignore appearance violations in the level1 case
+            viols += appearance_viols
         voe_hmap = framewisevoe.make_voe_heatmap(viols, tracked_masks)
         if DEBUG:
             framewisevoe.output_voe(viols)

@@ -50,13 +50,15 @@ def filter_objects_model(scene_frame, depth_frame, model_output):
 
     labelI = model_output['mask_prob'].argmax(axis=0)
     for i in range(1, labelI.max() +1):
-        conn_labelI = smeasure.label(labelI==i)
+        input_mask = labelI == i
+        conn_labelI = smeasure.label(input_mask)
         props = smeasure.regionprops(conn_labelI)
         for idx, prop in enumerate(props):
             y0,x0,y1,x1 = prop.bbox
             obj_image = scene_frame.crop(( x0, y0,  x1,  y1))
             mask = cv2.rectangle(np.array(scene_frame), (x0,y0), (x1,y1), (0, 0, 0), -1)
             mask = mask[:,:,0]==0
+            mask *= input_mask
             name = size_filter(obj_image, None)
             if name is 'object':
                 results['objects'].append(mask)
