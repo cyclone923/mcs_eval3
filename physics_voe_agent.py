@@ -151,7 +151,10 @@ class VoeAgent:
     def level1_masks(self, depth_img, rgb_img):
         bgr_img = np.array(rgb_img)[:, :, [2, 1, 0]]
         result = self.visionmodel.step(bgr_img, depth_img)
-        masks = prob_to_mask(result['mask_prob'], result['fg_stCh'], result['obj_class_score'])
+        filter_result = filter_masks.filter_objects_model(rgb_img, depth_img, result)
+        masks = -1 * np.ones(in_mask.shape[:2], dtype=np.int)
+        for i, o in enumerate(filter_result['objects']):
+            masks[o] = i
         return masks
 
 def squash_masks(ref, mask_l, ids):
