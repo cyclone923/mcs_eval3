@@ -66,3 +66,5 @@ export PYTHONPATH=$PWD
 ```
 python simple_eval3_agent.py
 ```
+
+The "MCS EVAL 3 Oregon State University Submission Helper" has more details on how to run specific scenes

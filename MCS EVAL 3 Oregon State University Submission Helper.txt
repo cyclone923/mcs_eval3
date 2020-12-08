@@ -1,0 +1,26 @@
+MCS EVAL 3 Oregon State University Submission 
+
+
+
+The submission repository is available at : https://github.com/osu-mcs/mcs_eval3
+
+
+The installation instructions are provided in the README in the repository. 
+
+
+The models required for running the code are already included in the ZIP file. They can also be downloaded by running “bash setup_vision.sh” (these instructions are part of the README)
+
+
+The main code to run is “simple_eval3_agent.py”
+
+
+The code is structured as follows : 
+
+
+It reads all the files in the “different_scenes” directory. Based on the “goal_category” in each json file - the appropriate agent is called. 
+
+
+To run on any scene - place that particular json file in the “different_scenes” directory. If you want to run multiple scenes at once, place all the files in the “different_scenes”.
+
+
+The configuration file - “mcs_config.yaml” file contains the configuration for the level of the system to run in.
