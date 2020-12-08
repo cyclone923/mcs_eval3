@@ -124,10 +124,8 @@ def generate_mask_data(scenes_files):
 def size_filter(img, depth_crop):
     size = img.size
     w,h  = size[0], size[1]
-    print (w,h)
     if w*h<125: # and np.std(depth_crop)<0.03:
         name = 'ignore'
-        print (name, w,h)
     elif w/h>=3.0 and w<400: # and np.std(depth_crop)<0.03:
         name = 'pole'
     elif h/w>2.0 and h<100:
