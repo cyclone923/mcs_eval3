@@ -5,7 +5,7 @@ import os
 import random
 import argparse
 from exploration.controller_agent import ExploreAgent
-from MCS_exploration.sequence_generator import SequenceGenerator 
+from MCS_exploration.sequence_generator import SequenceGenerator
 from voe.voe_agent import VoeAgent
 from voe.agency_voe_agent import AgencyVoeAgent
 import physics_voe_agent
@@ -60,13 +60,14 @@ def make_parser():
     parser.add_argument('--unity-path', default='unity_path.yaml')
     parser.add_argument('--config', default='mcs_config.yaml')
     parser.add_argument('--prefix', default='out')
+    parser.add_argument('--scenes', default='different_scenes')
     return parser
 
 
 if __name__ == "__main__":
     args = make_parser().parse_args()
     agent = Evaluation3_Agent(args.unity_path, args.config, args.prefix)
-    goal_dir = "different_scenes"
+    goal_dir = args.scenes
     all_scenes = [os.path.join(goal_dir, one_scene) for one_scene in sorted(os.listdir(goal_dir))]
     random.shuffle(all_scenes)
 
