@@ -3,19 +3,17 @@ import gzip
 from pathlib import Path
 from argparse import ArgumentParser
 import os
-from utils import draw_bounding_boxes, draw_appearance_bars, split_obj_masks, get_obj_position, get_mask_box
+from .utils import draw_bounding_boxes, draw_appearance_bars, split_obj_masks, get_obj_position, get_mask_box
 
-from track import track_objects
+from .track import track_objects
 import torch
 import numpy as np
 from torch.utils.data import Dataset, DataLoader
 
 from torch.optim import Adam
-from torch.utils.tensorboard import SummaryWriter
 from torchvision import transforms
 import torch.nn as nn
 import cv2
-from tqdm import tqdm
 import webcolors
 
 
@@ -155,14 +153,14 @@ def object_appearance_match(appearance_model, image, objects_info, device='cpu')
 
         # shape match
         objects_info[obj_key]['appearance']['shape_match_quotient'] = object_shape_prob[base_shape_id].item()
-        objects_info[obj_key]['appearance']['shape_prob'] = object_shape_prob.numpy()
-        objects_info[obj_key]['appearance']['shape_prob_labels'] = model.shape_labels()
+        objects_info[obj_key]['appearance']['shape_prob'] = object_shape_prob.cpu().numpy()
+        objects_info[obj_key]['appearance']['shape_prob_labels'] = appearance_model.shape_labels()
 
         # color match
         objects_info[obj_key]['appearance']['color_hist'] = obj_clr_hist
         objects_info[obj_key]['appearance']['color_match_quotient'] = object_color_prob[base_color_id].item()
-        objects_info[obj_key]['appearance']['color_prob'] = object_color_prob.numpy()
-        objects_info[obj_key]['appearance']['color_prob_labels'] = model.color_labels()
+        objects_info[obj_key]['appearance']['color_prob'] = object_color_prob.cpu().numpy()
+        objects_info[obj_key]['appearance']['color_prob_labels'] = appearance_model.color_labels()
 
         objects_info[obj_key]['appearance']['color_hist_quotient'] = cv2.compareHist(obj_clr_hist,
                                                                                      objects_info[obj_key][
@@ -197,7 +195,6 @@ def process_video(video_data, appearance_model, save_path=None, save_mp4=False, 
         track_info = track_objects(frame.obj_mask, track_info)
         track_info['objects'] = object_appearance_match(appearance_model, frame.image,
                                                         track_info['objects'], device)
-
         if save_gif:
             img = draw_bounding_boxes(frame.image, track_info['objects'])
             img = draw_appearance_bars(img, track_info['objects'])
@@ -208,6 +205,11 @@ def process_video(video_data, appearance_model, save_path=None, save_mp4=False, 
                 if not o['appearance']['match']:
                     # print('Appearance Mis-Match')
                     violation = True
+
+        if 'objects' in track_info and len(track_info['objects'].keys()) > 0:
+            for o in track_info['objects'].values():
+                if not o['appearance']['match']:
+                    print('Appearance Mis-Match')
 
     # save gif
     if save_gif:
@@ -222,6 +224,20 @@ def process_video(video_data, appearance_model, save_path=None, save_mp4=False, 
         os.remove(save_path + '.gif')
 
     return violation
+
+
+def rgb_to_grayscale(img, num_output_channels: int = 1):
+    if num_output_channels not in (1, 3):
+        raise ValueError('num_output_channels should be either 1 or 3')
+
+    r, g, b = img.unbind(dim=-3)
+    l_img = (0.2989 * r + 0.587 * g + 0.114 * b).to(img.dtype)
+    l_img = l_img.unsqueeze(dim=-3)
+
+    if num_output_channels == 3:
+        return l_img.expand(img.shape)
+
+    return l_img
 
 
 def rgb_to_grayscale(img, num_output_channels: int = 1):
@@ -436,6 +452,8 @@ def make_parser():
 
 
 if __name__ == '__main__':
+    from torch.utils.tensorboard import SummaryWriter
+    from tqdm import tqdm
     args = make_parser().parse_args()
     args.device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
