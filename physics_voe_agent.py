@@ -152,7 +152,7 @@ class VoeAgent:
         bgr_img = np.array(rgb_img)[:, :, [2, 1, 0]]
         result = self.visionmodel.step(bgr_img, depth_img)
         filter_result = filter_masks.filter_objects_model(rgb_img, depth_img, result)
-        masks = -1 * np.ones(in_mask.shape[:2], dtype=np.int)
+        masks = -1 * np.ones(np.array(depth_img).shape[:2], dtype=np.int)
         for i, o in enumerate(filter_result['objects']):
             masks[o] = i
         return masks
