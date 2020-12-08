@@ -9,33 +9,22 @@ import numpy as np
 from pathlib import Path
 from argparse import ArgumentParser
 
-
-def convert_scenes(env, paths):
-    for scene_path in paths:
-        out_path = scene_path.with_suffix('.pkl.gz')
-        if out_path.exists():
-            print(f'{out_path} exists, skipping')
-            continue
-        print(f'Converting {scene_path} -> {out_path}')
-        scene_output = [convert_frame(o, i) for i, o in enumerate(env.run_scene(scene_path))]
-        with gzip.open(out_path, 'wb') as fd:
-            pickle.dump(scene_output, fd)
-
-
-def convert_frame(o, i):
+def convert_output(o):
     objs = o.object_list
     structs = o.structural_object_list
     img = o.image_list[-1]
     obj_mask = convert_obj_mask(o.object_mask_list[-1], objs)
     depth_mask = np.array(o.depth_map_list[-1])
-    camera_desc = CameraInfo(o.camera_field_of_view, o.position, o.rotation, o.head_tilt)
-    # Project depth map to a 3D point cloud - removed for performance
-    # depth_pts = depth_to_points(depth_mask, *camera_desc)
-    return ThorFrame(objs, structs, img, depth_mask, obj_mask, camera_desc)
+    xyz_to_list = lambda x: [x['x'], x['y'], x['z']]
+    camera_desc = CameraInfo(o.camera_aspect_ratio, o.camera_field_of_view,
+                   xyz_to_list(o.position), o.rotation, o.head_tilt)
+    """
+    depth_pts = depth_to_points(depth_mask, *camera_desc)
+    """
+    return ThorFrame(objs, structs, depth_mask, obj_mask, camera_desc)
 
 
 def convert_obj_mask(mask, objs):
-    convert_color = lambda col: (col['r'], col['g'], col['b'])
     color_map = {convert_color(o.color):i for i, o in enumerate(objs)}
     arr_mask = np.array(mask)
     out_mask = -np.ones(arr_mask.shape[0:2], dtype=np.int8)
@@ -89,6 +78,11 @@ def depth_to_local(depth, clip_planes, fov_deg):
     px_arr = np.stack(idx_grid, axis=-1) # Each pixel's index
     uv_arr = px_arr*[2/w for w in aspect_ratio]-1
     uv_arr[:, :, 1] *= -1 # Each pixel's UV coords
+    """ Convert the depth mask values into per-pixel world-space depth
+    measurements using the provided clip plane distances.
+    """
+    depth_mix = depth/255
+    z_depth = clip_planes[0] + (clip_planes[1]-clip_planes[0])*depth_mix
     """ Determine vertical & horizontal FOV in radians.
     Use the UV coordinate values and tan(fov/2) to determine the 'XY' direction
     vector for each pixel.
@@ -100,29 +94,53 @@ def depth_to_local(depth, clip_planes, fov_deg):
     """ Add Z coordinate and scale to the pixel's known depth.  """
     const_zs = np.ones((px_dir_vec.shape[0:2])+(1,))
     px_dir_vec = np.concatenate((px_dir_vec, const_zs), axis=-1)
-    camera_offsets = px_dir_vec * np.expand_dims(depth, axis=-1)
+    camera_offsets = px_dir_vec * np.expand_dims(z_depth, axis=-1)
     return camera_offsets
 
+def convert_scenes(env, paths):
+    for scene_path in paths:
+        print(scene_path)
+        out_path = scene_path.with_suffix('.pkl.gz')
+        if out_path.exists():
+            print(f'{out_path} exists, skipping')
+            continue
+        print(f'{scene_path} -> {out_path}')
+        scene_output = [convert_output(o, i) for i, o in enumerate(env.run_scene(scene_path))]
+        with gzip.open(out_path, 'wb') as fd:
+            pickle.dump(scene_output, fd)
+
+def run_scenes(env, paths):
+    for scene_path in paths:
+        print(scene_path)
+        scene_output = [x for x in env.run_scene(scene_path)]
+
+def output_scene(env, path):
+    scene_output = [convert_output(o, i) for i, o in enumerate(env.run_scene(path))]
+    with gzip.open('./output.pkl.gz', 'wb') as fd:
+        pickle.dump(scene_output, fd)
+    return scene_output
+
+def convert_color(col):
+    return (col['r'], col['g'], col['b'])
 
 def make_parser():
     parser = ArgumentParser()
-    parser.add_argument('--sim', type=Path, default=Path('data/thor'))
-    parser.add_argument('--scenes', type=Path, default=Path('data/thor/scenes'))
+    parser.add_argument('--data', type=Path, default=Path('data/thor/scenes'))
     parser.add_argument('--filter', type=str, default=None)
+    parser.add_argument('--demo', action='store_true')
     return parser
 
-
-def main(sim_path, data_path, filter):
-    env = McsEnv(sim_path, data_path, filter)
+def main(data_path, filter, demo):
+    env = McsEnv('./data/thor', data_path, filter)
+    print(len(env.all_scenes))
     scenes = list(env.all_scenes)
-    print(f'Found {len(scenes)} scenes')
     random.shuffle(scenes)
-    # Work around stupid sim bug
-    Path('SCENE_HISTORY/evaluation3Training').mkdir(parents=True, exist_ok=True)
-    convert_scenes(env, scenes)
-
+    if demo:
+        run_scenes(env, scenes)
+    else:
+        convert_scenes(env, scenes)
 
 if __name__ == '__main__':
     args = make_parser().parse_args()
-    main(args.sim, args.scenes, args.filter)
+    main(args.data, args.filter, args.demo)
 
