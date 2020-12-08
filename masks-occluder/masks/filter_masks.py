@@ -137,7 +137,7 @@ def size_filter(img, depth_crop):
     size = img.size
     w,h  = size[0], size[1]
     print (w,h)
-    if w*h<110: # and np.std(depth_crop)<0.03:
+    if w*h<125: # and np.std(depth_crop)<0.03:
         name = 'ignore' 
         print (name, w,h)
     elif w/h>=3.0 and w<400: # and np.std(depth_crop)<0.03:
@@ -228,11 +228,11 @@ def model_test(scenes_files):
                     name = size_filter(obj_image, None)
                     if name is 'object':
                         results['objects'].append(mask)
-                        # obj_image.save( f'run2/{i:02d}_{idx:02d}_cropped_scene.png')
-                        # cv2.imwrite(f'run2/{frame_num:02d}.png', np.array(img) * mask[:, :, np.newaxis]) 
+                        obj_image.save( f'run2/{i:02d}_{idx:02d}_cropped_scene.png')
+                        cv2.imwrite(f'run2/{frame_num:02d}.png', np.array(img) * mask[:, :, np.newaxis]) 
 
-                        obj_image.save( f'{i:02d}_{idx:02d}_cropped_scene.png')
-                        cv2.imwrite(f'{frame_num:02d}.png', np.array(img) * mask[:, :, np.newaxis])                         
+                        # obj_image.save( f'{i:02d}_{idx:02d}_cropped_scene.png')
+                        # cv2.imwrite(f'{frame_num:02d}.png', np.array(img) * mask[:, :, np.newaxis])                         
                     else:
                         results['occluders'].append(mask)
 
