@@ -328,6 +328,8 @@ class AgencyVoeAgent:
                     init_info_dict["objs_ch_avgs"] = trial_info["objs_ch_avgs"]
                     init_info_dict["agent_ch_avgs"] = trial_info["agent_ch_avgs"]
                     init_info_dict["arena"] = trial_info["arena"]
+                    if idx == 8:
+                        init_info_dict["arena"] = None
                     init_info_dict["wall_i_s"] = trial_info["wall_i_s"]
                     init_info_dict["pref_dict"] = trial_info["pref_dict"]
 
