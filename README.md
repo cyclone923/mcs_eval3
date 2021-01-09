@@ -9,6 +9,8 @@ Here are the instructions for downloading and setting up environment for MCS eva
 ```
 conda create -n mcs_eval3 python=3.6.8
 conda activate mcs_eval3
+pip install --upgrade pip setuptools wheel
+sudo apt-get install python3-dev
 ```
 
 2. For MacOS system, create a python 3.7.9 using conda:
@@ -17,7 +19,6 @@ conda activate mcs_eval3
 conda create -n mcs_eval3 python=3.7.9
 conda activate mcs_eval3
 ```
-
 
 3. Install the required third-party Python libraries:
 
