@@ -38,6 +38,18 @@ pip show ai2thor
 bash setup_torch.sh
 ```
 
+### Mac Users: Install Homebrew and `wget`
+
+`wget` does not come pre-installed in macOS, and you will need to install `wget` if you do not already have it installed on your machine. The instructions below utilize Homebrew for installing `wget`.
+
+```
+# Skip the first line if you already have Homebrew installed on your Mac.
+
+/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+
+brew install wget
+```
+
 ### Unity Application
 
 Set up the unity application
