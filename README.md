@@ -40,7 +40,7 @@ bash setup_torch.sh
 
 ### Mac Users: Install Homebrew and `wget`
 
-`wget` does not come pre-installed in macOS, and you will need to install `wget` if you do not already have it installed on your machine. The instructions below utilize Homebrew for installing `wget`.
+The `wget` command does not come built-in on macOS, and you will need to install `wget` if you do not already have it installed on your machine. The instructions below utilize the Homebrew package manager for installing `wget`.
 
 ```
 # Skip the first line if you already have Homebrew installed on your Mac.
