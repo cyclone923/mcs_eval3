@@ -73,7 +73,7 @@ The "MCS EVAL 3 Oregon State University Submission Helper.txt" has more details 
 
 ```
 ./setup_unity.sh
-./get_gravity_scenes.sh
+python get_gravity_scenes.py
 python simple_eval3_agent.py --scenes gravity_scenes
 ```
 
