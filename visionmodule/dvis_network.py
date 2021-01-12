@@ -207,8 +207,12 @@ class DVIS(nn.Module):
 
     def load_weights(self, path, load_firstLayer=True, load_lastLayer=True, load_clsLayer=True):
         """ Loads weights from a compressed save file. """
+<<<<<<< Updated upstream
         # map_device = torch.device(0) if torch.cuda.is_available() else 'cpu'
         map_device = 'cpu'
+=======
+        map_device = 'cpu' if torch.cuda.is_available() else 'cpu'
+>>>>>>> Stashed changes
         state_dict = torch.load(path, map_location=map_device)
 
         # For backward compatability, remove these (the new variable is called layers)

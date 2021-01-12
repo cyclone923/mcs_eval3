@@ -22,8 +22,12 @@ class VoeAgent:
         self.level = level
         if DEBUG:
             self.prefix = out_prefix
+<<<<<<< Updated upstream
         self.device = 'cpu'
         # self.device = 'cuda' if torch.cuda.is_available() else 'cpu'
+=======
+        self.device = 'cpu' if torch.cuda.is_available() else 'cpu'
+>>>>>>> Stashed changes
         self.app_model = appearence.AppearanceMatchModel()
         self.app_model.load_state_dict(torch.load(APP_MODEL_PATH, map_location=torch.device('cpu')))
         self.app_model = self.app_model.to(self.device).eval()
