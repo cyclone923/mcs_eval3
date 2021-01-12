@@ -10,6 +10,8 @@ Here are the instructions for downloading and setting up environment for MCS eva
 conda create -n mcs_eval3 python=3.6.8
 conda activate mcs_eval3
 pip install --upgrade pip setuptools wheel
+sudo apt-get update
+sudo apt-get install build-essential
 sudo apt-get install python3-dev
 ```
 
