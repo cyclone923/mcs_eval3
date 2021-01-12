@@ -91,7 +91,8 @@ class MaskAndClassPredictor(object):
         self.net.load_weights(weights)
         self.net.eval()
 
-        self.cuda    = torch.cuda.is_available()
+        # self.cuda    = torch.cuda.is_available()
+        self.cuda = False
         if self.cuda:
             self.net = self.net.cuda()
 
