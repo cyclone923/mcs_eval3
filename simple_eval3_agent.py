@@ -9,7 +9,7 @@ from MCS_exploration.sequence_generator import SequenceGenerator
 from voe.voe_agent import VoeAgent
 from voe.agency_voe_agent import AgencyVoeAgent
 import physics_voe_agent
-
+import gravity_agent
 
 class Evaluation3_Agent:
 
@@ -34,8 +34,9 @@ class Evaluation3_Agent:
 
         assert self.level in ['oracle', 'level1', 'level2']
 
-        self.exploration_agent = SequenceGenerator(None,self.controller,self.level)
+        self.exploration_agent = SequenceGenerator(None, self.controller, self.level)
         self.agency_voe_agent = AgencyVoeAgent(self.controller, self.level)
+        self.gravity_agent = gravity_agent.GravityAgent(self.controller, self.level)
         self.phys_voe = physics_voe_agent.VoeAgent(self.controller, self.level, prefix)
 
         if seed != -1:
@@ -45,10 +46,13 @@ class Evaluation3_Agent:
         scene_config, status = mcs.load_config_json_file(one_scene)
         goal_type = scene_config['goal']['category']
         if goal_type == "intuitive physics":
-            return self.phys_voe.run_scene(scene_config, one_scene)
+            if 'gravity' in scene_config['name']:
+                return self.gravity_agent.run_scene(scene_config, one_scene)
+            else:
+                return self.phys_voe.run_scene(scene_config, one_scene)
         elif goal_type == "agents":
             if self.level == "level1" :
-                print ("Agency task cannot be run in level1. Exiting")
+                print("Agency task cannot be run in level1. Exiting")
                 return
             self.agency_voe_agent.run_scene(scene_config)
         elif goal_type == "retrieval":

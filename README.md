@@ -91,3 +91,13 @@ python simple_eval3_agent.py
 ```
 
 The "MCS EVAL 3 Oregon State University Submission Helper.txt" has more details on how to run specific scenes
+
+## Run Gravity Scenes
+
+```
+./setup_unity.sh
+python get_gravity_scenes.py
+python simple_eval3_agent.py --scenes gravity_scenes
+```
+
+The gravity scenes require unity at least v3.7. Running setup_unity.sh should download it and set it to be used in unity_path.yaml
