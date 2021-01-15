@@ -3,7 +3,7 @@
 Here are the instructions for downloading and setting up the environment for MCS Evaluation 3.
 
 ### Note for Developers:
-The master branch contains only the submission-ready code. For the latest in-progress code, check out the develop branch and any component-level branches (e.g. physics-voe, agency-voe, gravity, etc.).
+The master branch contains only the submission-ready code. For the latest in-progress code, check out the develop branch and any component-level branches (e.g. component/physics-voe, component/agency-voe, component/gravity, etc.).
 
 ```
 git checkout develop (or any component-level branch)
