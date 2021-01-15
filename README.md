@@ -1,10 +1,18 @@
 # MCS Evaluation3: Usage README
 
-Here are the instructions for downloading and setting up environment for MCS evaluation 3.
+Here are the instructions for downloading and setting up the environment for MCS Evaluation 3.
+
+### Note for Developers:
+The master branch contains only the submission-ready code. For the latest in-progress code, check out the develop branch and any component-level branches (e.g. component/physics-voe, component/agency-voe, component/gravity, etc.).
+
+```
+git checkout develop (or any component-level branch)
+git pull
+```
 
 ### Python Library
 
-1. For Linux system, create a python 3.6.8 using conda:
+1. For Linux systems, create a Python 3.6.8 environment using conda:
 
 ```
 conda create -n mcs_eval3 python=3.6.8
@@ -15,7 +23,7 @@ sudo apt-get install build-essential
 sudo apt-get install python3-dev
 ```
 
-2. For MacOS system, create a python 3.7.9 using conda:
+2. For MacOS systems, create a Python 3.7.9 environment using conda:
 
 ```
 conda create -n mcs_eval3 python=3.7.9
@@ -54,7 +62,7 @@ brew install wget
 
 ### Unity Application
 
-Set up the unity application
+Set up the Unity application:
 
 ```
 bash setup_unity.sh
@@ -62,7 +70,7 @@ bash setup_unity.sh
 
 ### Vision System
 
-Set up object mask and class predictor
+Set up object mask and class predictor:
 
 ```
 bash setup_vision.sh
