@@ -1,3 +1,5 @@
+import matplotlib as m
+import matplotlib.pyplot as plt
 import numpy as np
 
 DEBUG = False
@@ -13,6 +15,13 @@ class GravityAgent:
         self.controller.start_scene(config)
         for i, x in enumerate(config['goal']['action_list']):
             step_output = self.controller.step(action=x[0])
+            cam_im = step_output.image_list[0]
+            # reverse the channel order: BGR -> RGB
+            cam_im = np.array(cam_im)[:,:,::-1]
+            mask_im = step_output.object_mask_list[0]
+            mask_im = np.array(mask_im)[:,:,::-1]
+            # let's check out what we got
+            cv2_show_im(cam_im, mask_im)
             choice = plausible_str(True)
             voe_xy_list = []
             voe_heatmap = None
@@ -29,3 +38,14 @@ class GravityAgent:
 
 def plausible_str(violation_detected):
     return 'implausible' if violation_detected else 'plausible'
+
+def cv2_show_im(im, im2=None):
+    m.use('TkAgg')
+    f, (ax1, ax2) = plt.subplots(1, 2, figsize=(20, 10))
+    f.subplots_adjust(hspace=.2, wspace=.1)
+    ax1.imshow(im)
+    if type(im2) == type(None):
+        ax2.imshow(im)
+    else:
+        ax2.imshow(im2)
+    plt.show()
