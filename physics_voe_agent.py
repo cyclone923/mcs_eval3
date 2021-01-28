@@ -12,6 +12,10 @@ import numpy as np
 import torch
 import pickle
 
+from rich.console import Console
+
+console = Console()
+
 APP_MODEL_PATH = './tracker/model.p'
 VISION_MODEL_PATH = './visionmodule/dvis_resnet50_mc_voe.pth'
 DEBUG = False
@@ -32,12 +36,13 @@ class VoeAgent:
                                                             weights=VISION_MODEL_PATH)
 
     def run_scene(self, config, desc_name):
+        # console.log(desc_name, style='blue bold')
         if DEBUG:
             folder_name = Path(self.prefix)/Path(Path(desc_name).stem)
             if folder_name.exists():
                 return None
             folder_name.mkdir(parents=True)
-            print(folder_name)
+            console.log(folder_name)
         else:
             folder_name = None
         self.track_info = {}
@@ -50,10 +55,16 @@ class VoeAgent:
         all_errs = []
         for i, x in enumerate(config['goal']['action_list']):
             step_output = self.controller.step(action=x[0])
+            # console.log(step_output)
             voe_detected, voe_heatmap, voe_xy_list, viols, frame_errs = self.calc_voe(step_output, i, folder_name)
+            console.log('VOE' if voe_detected else 'Not VOE', style='green' if voe_detected else 'red')
+            console.log('')
             all_viols.append(viols)
             all_errs += frame_errs
+            console.log('Violations:', viols)
+            console.log('Errors:', frame_errs)
             scene_voe_detected = scene_voe_detected or voe_detected
+            console.log('[yellow]Scene-Wide VOE Detected?[/yellow]', scene_voe_detected, style='yellow')
             choice = plausible_str(voe_detected)
             if DEBUG:
                 assert choice in config['goal']['metadata']['choose'] # Sanity check
@@ -97,6 +108,7 @@ class VoeAgent:
         # Calculate occlusion from masks
         area_hists = {o_id:o_info['area_history'] for o_id, o_info in self.track_info['objects'].items()}
         obj_occluded = occlude.detect_occlusions(depth_map, tracked_masks, all_obj_ids, area_hists)
+        console.log('[yellow]Objects occluded?[/yellow]', obj_occluded)
         # Calculate object level info from masks
         obj_ids, obj_pos, obj_present = \
             framewisevoe.calc_world_pos(depth_map, tracked_masks, camera_info)
@@ -108,6 +120,7 @@ class VoeAgent:
             all_errs = []
         else:
             dynamics_viols, all_errs = det_result
+        console.log('[yellow]Dynamics violations:[/yellow]', dynamics_viols)
         appearance_viols = []
         for o_id, obj_info in self.track_info['objects'].items():
             o_visible = obj_info['visible']
@@ -118,10 +131,12 @@ class VoeAgent:
             if app_viol:
                 _idx = obj_ids.index(o_id)
                 appearance_viols.append(framewisevoe.AppearanceViolation(o_id, obj_pos[_idx]))
+        console.log('[yellow]Appearance violations:[/yellow]', appearance_viols)
         # Update tracker
         vis_count = {o_id:o_info['visible_count'] for o_id, o_info in self.track_info['objects'].items()}
         pos_hists = {o_id:o_info['position_history'] for o_id, o_info in self.track_info['objects'].items()}
         obs_viols = self.detector.record_obs(frame_num, obj_ids, obj_pos, obj_present, obj_occluded, vis_count, pos_hists, camera_info)
+        console.log('[yellow]Observation violations:[/yellow]', obs_viols)
         # Output violations
         viols = dynamics_viols + obs_viols
         if self.level != 'level1': #Ignore appearance violations in the level1 case

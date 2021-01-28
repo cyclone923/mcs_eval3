@@ -79,6 +79,8 @@ if __name__ == "__main__":
 
     results = {}
     for one_scene in all_scenes:
-        voe = agent.run_scene(one_scene)
         console.log(one_scene)
+        voe = agent.run_scene(one_scene)
         console.print('VOE' if voe is True else 'Not VOE', style='bold red' if voe is True else 'green')
+        input()
+    console.print(all_scenes, style='yellow bold')
