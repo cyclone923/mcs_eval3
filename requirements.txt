@@ -9,3 +9,4 @@ easydict==1.9
 ai2thor==2.2.0
 git+https://github.com/NextCenturyCorporation/MCS@latest#egg=machine_common_sense
 webcolors
+pybullet

@@ -1,6 +1,9 @@
 import matplotlib as m
 import matplotlib.pyplot as plt
 import numpy as np
+import sys
+sys.path.insert(1, '/gravity/')
+from gravity import pybullet_utilities
 
 DEBUG = False
 
@@ -15,13 +18,16 @@ class GravityAgent:
         self.controller.start_scene(config)
         for i, x in enumerate(config['goal']['action_list']):
             step_output = self.controller.step(action=x[0])
-            cam_im = step_output.image_list[0]
-            # reverse the channel order: BGR -> RGB
-            cam_im = np.array(cam_im)[:,:,::-1]
-            mask_im = step_output.object_mask_list[0]
-            mask_im = np.array(mask_im)[:,:,::-1]
-            # let's check out what we got
-            cv2_show_im(cam_im, mask_im)
+            
+            if i == 0:
+                pybullet_utilities.render_in_pybullet(step_output)
+            # cam_im = step_output.image_list[0]
+            # # reverse the channel order: BGR -> RGB
+            # cam_im = np.array(cam_im)[:,:,::-1]
+            # mask_im = step_output.object_mask_list[0]
+            # mask_im = np.array(mask_im)[:,:,::-1]
+            # # let's check out what we got
+            # cv2_show_im(cam_im, mask_im)
             choice = plausible_str(True)
             voe_xy_list = []
             voe_heatmap = None
