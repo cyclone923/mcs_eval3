@@ -2,6 +2,7 @@ import pybullet as p
 import time
 import pybullet_data
 import sys
+import numpy as np
 
 def render_in_pybullet(step_output):
     physicsClient = p.connect(p.GUI)#or p.DIRECT for non-graphical version
@@ -10,17 +11,10 @@ def render_in_pybullet(step_output):
     planeId = p.loadURDF("plane.urdf")
     
     object_count = len(step_output.object_list)
-    print(step_output.camera_aspect_ratio)
-    print(step_output.camera_clipping_planes)
-    print(step_output.camera_field_of_view)
-    print(step_output.camera_height)
 
     p.resetDebugVisualizerCamera(step_output.camera_height * 2, 0, -42.5, [0,0,0])
     print(len(step_output.object_list))
     for obj in step_output.object_list:
-        start_pos = list(obj.position.values())
-        rotation = list(obj.rotation.values())
-        start_orientation = p.getQuaternionFromEuler(rotation)
         boxId = createObjectShape(obj)
         if boxId == -1:
             print("err")
@@ -38,12 +32,13 @@ def render_in_pybullet(step_output):
 
 def getDims(obj):
     dims = obj.dimensions
+    print(dims)
     min_x = sys.maxsize
     min_y = sys.maxsize
     min_z = sys.maxsize
-    max_x = 0
-    max_y = 0
-    max_z = 0
+    max_x = -1*sys.maxsize
+    max_y = -1*sys.maxsize
+    max_z = -1*sys.maxsize
     for dim in dims:
         if dim['x'] <= min_x:
             min_x = dim['x']
@@ -62,18 +57,33 @@ def getDims(obj):
 
     return [max_x - min_x, max_z - min_z, max_y - min_y]
 
+def getColor(color_vals):
+    colors = list(color_vals.values())
+    colors = np.divide(colors, 255)
+    colors = list(colors)
+    colors.append(1)
+    return colors
+
 def createObjectShape(obj):
     meshScale = getDims(obj)
-    print(meshScale)
     
-    shift = [0,0,0]
+    shift = list(obj.rotation.values())
+    start_orientation = p.getQuaternionFromEuler(shift)
+    start_position = list(obj.position.values())
+    start_position = [start_position[0], start_position[2], start_position[1]]
     # set color
-    rgba_color = list(obj.color.values()).append(1)
-    
+    rgba_color = getColor(obj.color)
+    print(rgba_color)
+
+    visualShapeId = ''
+    collisionShapeId = ''
     # create visual and colision shapes
-    visualShapeId = p.createVisualShape(shapeType=p.GEOM_MESH,fileName="cube.obj", rgbaColor=rgba_color, specularColor=[0.4,.4,0], visualFramePosition=shift, meshScale=meshScale)
-    collisionShapeId = p.createCollisionShape(shapeType=p.GEOM_MESH, fileName="cube.obj", collisionFramePosition=shift,meshScale=meshScale)
+    if obj.shape == "cube":
+        visualShapeId = p.createVisualShape(shapeType=p.GEOM_MESH,fileName="cube.obj", rgbaColor=rgba_color, specularColor=[0.4,.4,0], visualFramePosition=shift, meshScale=meshScale)
+        collisionShapeId = p.createCollisionShape(shapeType=p.GEOM_MESH, fileName="cube.obj", collisionFramePosition=shift,meshScale=meshScale)
+
+    # if obj.shape == "cylinder"
 
     # return body
-    return p.createMultiBody(baseMass=obj.mass,baseInertialFramePosition=[0,0,0],baseCollisionShapeIndex=collisionShapeId, baseVisualShapeIndex = visualShapeId, basePosition = list(obj.position.values()), useMaximalCoordinates=True)
+    return p.createMultiBody(baseMass=obj.mass, baseOrientation=start_orientation, baseInertialFramePosition=[0, 0, 0], baseCollisionShapeIndex=collisionShapeId, baseVisualShapeIndex=visualShapeId, basePosition=start_position, useMaximalCoordinates=True)
     
