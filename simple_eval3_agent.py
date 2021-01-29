@@ -10,6 +10,7 @@ from voe.voe_agent import VoeAgent
 from voe.agency_voe_agent import AgencyVoeAgent
 import physics_voe_agent
 from rich.console import Console
+import sys
 
 console = Console()
 
@@ -65,8 +66,7 @@ def make_parser():
     parser.add_argument('--unity-path', default='unity_path.yaml')
     parser.add_argument('--config', default='mcs_config.yaml')
     parser.add_argument('--prefix', default='out')
-    # parser.add_argument('--scenes', default='different_scenes')
-    parser.add_argument('--scenes', default='physics-scenes')
+    parser.add_argument('--scenes', default='different_scenes')
     return parser
 
 

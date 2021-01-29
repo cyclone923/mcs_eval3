@@ -64,18 +64,18 @@ class FramewiseVOE:
         for pred_pos, pred_id, pred_mask in zip(pred_poss, pred_ids, pred_masks):
             if not pred_mask:
                 continue
-            if pred_id in actual_ids:
+            if pred_id in actual_ids:   # Object is a previously identified object
                 _idx = actual_ids.index(pred_id)
                 actual_pos = actual_poss[_idx]
-                err = torch.dist(actual_pos, pred_pos)
+                err = torch.dist(actual_pos, pred_pos)  # How far the object is from our predicted position
                 all_errs.append(err)
                 thresh = self.dist_thresh
                 if occluded[_idx]:
                     thresh *= 3
-                if err > thresh:
+                if err > thresh:    # If the object is sufficiently far from our predicted position
                     v = PositionViolation(pred_id, pred_pos, actual_pos)
                     violations.append(v)
-            else:
+            else:   # Object is no longer present
                 # TODO: Check for occlusion
                 v = PresenceViolation(pred_id, pred_pos, camera)
                 violations.append(v)

@@ -4,11 +4,13 @@ import os
 import pickle
 from argparse import ArgumentParser
 from pathlib import Path
+from rich.console import Console
 
 import numpy as np
 
 from .utils import draw_bounding_boxes, split_obj_masks, get_obj_position, get_mask_box
 
+console = Console()
 
 def l2_distance(src_pos, dest_pos):
     return np.sqrt(sum((src_pos[axis] - dest_pos[axis]) ** 2 for axis in ['x', 'y']))
@@ -64,6 +66,7 @@ def track_objects(frame_mask, track_info={}):
         track_info['objects'][_key]['visible'] = True
         track_info['objects'][_key]['hidden_for'] = 0
         track_info['objects'][_key]['visible_count'] += 1
+        console.log(track_info['objects'][_key]['bounding_box'])
 
     for obj_key, obj in track_info['objects'].items():
         if obj_key not in resolved_objs:

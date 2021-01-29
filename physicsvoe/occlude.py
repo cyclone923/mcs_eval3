@@ -3,6 +3,9 @@ from . import depthutils as du
 import numpy as np
 import torch
 import torch.nn.functional as F
+from rich.console import Console
+
+console = Console()
 
 def detect_occlusions(depth, mask, all_ids, area_hists):
     return [detect_occlusion(depth, mask, i, area_hists[i]) for i in all_ids]
@@ -28,6 +31,7 @@ def at_edge(mask):
     edges[:, 0] = True
     edges[-1, :] = True
     edges[:, -1] = True
+    console.print((edges * mask).sum())
     return (edges * mask).sum() > 0
 
 def mask_around(mask):
