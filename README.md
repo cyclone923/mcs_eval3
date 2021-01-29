@@ -101,3 +101,26 @@ python simple_eval3_agent.py --scenes gravity_scenes
 ```
 
 The gravity scenes require unity at least v3.7. Running setup_unity.sh should download it and set it to be used in unity_path.yaml
+
+## Approach: `oracle-rule_based-_:nice_drop_config`
+
+### Data level
+    - Oracle
+
+### Meta used
+    - `supporting_object->dimensions`
+    - `target_object->dimensions`
+    - `pole_object->texture_color_list`
+
+### Summary
+* Based on the above data, the target & supporting object's position & dimensions are known throughout the episode. 
+* I found out the dimensions of contact surfaces (bottom face of target & top face of support).
+* I calculated if the center of gravity of the target's contact surface fell with-in the dimensions of the support's contact surface.
+
+### Assumptions
+* Objects are assumed to be rigid with uniform mass density
+* Supporting object is assumed to be at rest
+* Law of conservation of energy is ignored
+* Accn. due to gravity & target object velocity are along the "y" direction
+* Target object would fall "nicely" (angular acceleration = 0 & contact surface's normal is along "y" direction)
+
