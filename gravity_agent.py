@@ -14,7 +14,7 @@ class GravityAgent:
             print("DEBUG MODE!")
 
         '''
-        # switch plausible scene to implausible
+        # switchs some plausible scene to implausible
         for o in config["objects"]:
             if o["id"] == "target_object":
                     for step in o["togglePhysics"]:
