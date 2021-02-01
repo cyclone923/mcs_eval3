@@ -27,9 +27,12 @@ class VoeAgent:
         if DEBUG:
             self.prefix = out_prefix
         self.device = 'cuda' if torch.cuda.is_available() else 'cpu'
+        # Create appearace model, load its (hardcoded) pretrained weights
         self.app_model = appearence.AppearanceMatchModel()
         self.app_model.load_state_dict(torch.load(APP_MODEL_PATH, map_location=torch.device(self.device)))
         self.app_model = self.app_model.to(self.device).eval()
+        # The full vision model is used for object mask prediction, so it
+        # isn't used for the level2/oracle levels (where masks are provided).
         if self.level == 'level1':
             self.visionmodel = vision.MaskAndClassPredictor(dataset='mcsvideo3_voe',
                                                             config='plus_resnet50_config_depth_MC',
@@ -38,8 +41,12 @@ class VoeAgent:
     def run_scene(self, config, desc_name):
         # console.print(desc_name, style='blue bold')
         if DEBUG:
+            # Create folder for debug output, named after scene's json file
             folder_name = Path(self.prefix)/Path(Path(desc_name).stem)
             if folder_name.exists():
+                # ABORT and don't run the scene if we already have output
+                # for this scene. Presumably if we're collecting debug output
+                # we don't want to generate the same data twice.
                 return None
             folder_name.mkdir(parents=True)
             console.print(folder_name)
@@ -80,9 +87,14 @@ class VoeAgent:
         return scene_voe_detected
 
     def calc_voe(self, step_output, frame_num, scene_name=None):
+        # Use the most recent depth map and RGB frames from the simulator's
+        # output
         depth_map = step_output.depth_map_list[-1]
         rgb_image = step_output.image_list[-1]
+        # We need to calculate+store some camera properties so that we can
+        # project points between screen space into world space
         camera_info = make_camera(step_output)
+        # Get the object mask data, depending on level
         if self.level == 'oracle':
             masks = self.oracle_masks(step_output)
         elif self.level == 'level2':
@@ -92,30 +104,45 @@ class VoeAgent:
             masks = self.level1_masks(depth_map, rgb_image)
         else:
             raise ValueError(f'Unknown level `{self.level}`')
-        # Calculate tracking info
+        # Calculate tracking info using mask history
+        # This stores a bunch of state in `self.track_info`
         self.track_info = track.track_objects(masks, self.track_info)
+        # Add appearance model's output to the object tracking info.
         self.track_info['objects'] = \
             appearence.object_appearance_match(self.app_model, rgb_image,
                                                self.track_info['objects'],
                                                self.device, self.level)
         if DEBUG:
+            # Generate+output appearance model's thoughts
             img = appearence.draw_bounding_boxes(rgb_image, self.track_info['objects'])
             img = appearence.draw_appearance_bars(img, self.track_info['objects'])
             img.save(scene_name/f'DEBUG_{frame_num:02d}.png')
+        # The tracking model assigns an ID to each mask that is consistent
+        # across frames, and calculates a mask for each object ID.
+        # We use `squash_masks` to turn this list of object masks into a single
+        # one-hot encoded matrix associating each screen pixel with an object.
         all_obj_ids = list(range(self.track_info['object_index']))
         masks_list = [self.track_info['objects'][i]['mask'] for i in all_obj_ids]
         tracked_masks = squash_masks(depth_map, masks_list, all_obj_ids)
-        # Calculate occlusion from masks
+        # Call 'occlusion' model
+        # 'Occlusion' really just means that the object is sufficiently
+        # obscured that we can't rely on our appearance model or position
+        # estimation.
+        # Therefore, if an object is determined to be 'occluded' we just ignore
+        # all raised VOEs.
         area_hists = {o_id:o_info['area_history'] for o_id, o_info in self.track_info['objects'].items()}
         obj_occluded = occlude.detect_occlusions(depth_map, tracked_masks, all_obj_ids, area_hists)
         console.print('[yellow]Objects occluded?[/yellow]', obj_occluded)
         # Calculate object level info from masks
+        # We can use the object masks + depth map + camera data to easily
+        # estimate world_space positions for each object in the scene.
         obj_ids, obj_pos, obj_present = \
             framewisevoe.calc_world_pos(depth_map, tracked_masks, camera_info)
         occ_heatmap = framewisevoe.make_occ_heatmap(obj_occluded, obj_ids, tracked_masks)
         # Calculate violations
         det_result = self.detector.detect(frame_num, obj_pos, obj_occluded, obj_ids, depth_map, camera_info)
         if det_result is None:
+            # Early return from VOE detector = no VOEs present
             dynamics_viols = []
             all_errs = []
         else:
@@ -146,6 +173,7 @@ class VoeAgent:
         viols = dynamics_viols + obs_viols
         if self.level != 'level1': #Ignore appearance violations in the level1 case
             viols += appearance_viols
+        # Create VOE heatmap from the list of violations, for step output
         voe_hmap = framewisevoe.make_voe_heatmap(viols, tracked_masks)
         if DEBUG:
             framewisevoe.output_voe(viols)
