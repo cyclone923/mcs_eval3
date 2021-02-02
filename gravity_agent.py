@@ -9,14 +9,17 @@ class ObjectFace:
     def __post_init__(self):
         x = sum(pt["x"] for pt in self.corners) / 4
         y = sum(pt["y"] for pt in self.corners) / 4
-        self.centroid = (x, y)
+        z = sum(pt["z"] for pt in self.corners) / 4
+        self.centroid = (x, y, z)
 
-    def __eq__(self, o: object, tol=1e-5) -> bool:
+    def on(self, o: object, tol=1e-2) -> bool:
+        # Doesn't check if method is invoked from top face and NOT bottom face
         # Assuming Object is rigid & won't deform during the motion
         x_matches = abs(self.centroid[0] - o.centroid[0]) < tol
         y_matches = abs(self.centroid[1] - o.centroid[1]) < tol
+        z_matches = abs(self.centroid[2] - o.centroid[2]) < tol
 
-        return x_matches and y_matches
+        return all([x_matches, y_matches, z_matches])
 
 
 class GravityAgent:
@@ -41,15 +44,15 @@ class GravityAgent:
             raise(Exception("Drop step not detected by observing color of pole"))
 
     @staticmethod
-    def get_object_bounding_simplices(dims):
+    def get_object_bounding_simplices(dims, tol=1e-2):
 
         y_coords = [pt["y"] for pt in dims]
         min_y, max_y = min(y_coords), max(y_coords)
 
         # Assuming "nice" placement with cubes
         # For generalizing, calculate convex hull and findout extreme simplices 
-        bottom_face = ObjectFace(corners=[pt for pt in dims if pt["y"] == min_y ])
-        top_face = ObjectFace(corners=[pt for pt in dims if pt["y"] == max_y ])
+        bottom_face = ObjectFace(corners=[pt for pt in dims if abs(pt["y"] - min_y) < tol])
+        top_face = ObjectFace(corners=[pt for pt in dims if abs(pt["y"] - max_y) < tol])
 
         return top_face, bottom_face
 
@@ -71,12 +74,12 @@ class GravityAgent:
     def target_should_be_stable(target, support):
 
         support_x_range = (min(pt["x"] for pt in support.corners), max(pt["x"] for pt in support.corners))
-        support_y_range = (min(pt["y"] for pt in support.corners), max(pt["x"] for pt in support.corners))
+        support_z_range = (min(pt["z"] for pt in support.corners), max(pt["z"] for pt in support.corners))
 
         target_x_inrange = support_x_range[0] <= target.centroid[0] <= support_x_range[1]
-        target_y_inrange = support_y_range[0] <= target.centroid[1] <= support_y_range[1]
+        target_z_inrange = support_z_range[0] <= target.centroid[2] <= support_z_range[1]
 
-        return target_x_inrange and target_y_inrange
+        return target_x_inrange and target_z_inrange
 
     def sense_voe(self, drop_step, support_coords, target_trajectory):
         '''
@@ -86,7 +89,6 @@ class GravityAgent:
         -> Law of conservation of energy is ignored
         -> Accn. due to gravity & target object velocity are along the "y" direction
         '''
-
         # Surface states when the target is (possibly) placed on support
         target, support, target_end = self.states_during_and_after_drop(
             drop_step, target_trajectory, support_coords
@@ -95,7 +97,7 @@ class GravityAgent:
         target_should_rest = self.target_should_be_stable(target, support)
 
         # Now verify if the target's final state is consistent with the above
-        target_actually_rested = target == target_end
+        target_actually_rested = target_end.on(support)
 
         return target_should_rest ^ target_actually_rested
 
@@ -108,6 +110,10 @@ class GravityAgent:
         target_trajectory = []
         pole_states = []  # To determine drop step
         support_coords = None
+
+        # Filter to run specific examples :: debug help
+        if "gravity_support_ex_" not in config["name"]:
+            return True
 
         for i, x in enumerate(config['goal']['action_list']):
             step_output = self.controller.step(action=x[0])
@@ -138,9 +144,9 @@ class GravityAgent:
         voe_flag = self.sense_voe(drop_step, support_coords, target_trajectory)
 
         if voe_flag:
-            print("VoE!")
+            print(f"[x] VoE observed for {config['name']}")
         else:
-            print("No VoE.")
+            print(f"[x] No violation for {config['name']}")
 
         self.controller.end_scene(choice=plausible_str(voe_flag), confidence=1.0)
         return True
