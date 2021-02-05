@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from shapely.geometry import Polygon
 
 DEBUG = False
 
@@ -7,19 +8,25 @@ class ObjectFace:
     corners: list
 
     def __post_init__(self):
+
+        self.polygon = Polygon([(pt["x"], pt["z"]) for pt in self.corners])
+
         x = sum(pt["x"] for pt in self.corners) / 4
         y = sum(pt["y"] for pt in self.corners) / 4
         z = sum(pt["z"] for pt in self.corners) / 4
         self.centroid = (x, y, z)
 
     def on(self, o: object, tol=1e-2) -> bool:
+        '''
+        Returns True if `self` "appears" to be on `o`
+        '''
         # Doesn't check if method is invoked from top face and NOT bottom face
         # Assuming Object is rigid & won't deform during the motion
-        x_matches = abs(self.centroid[0] - o.centroid[0]) < tol
+        
+        polygons_intersect = self.polygon.intersects(o.polygon)
         y_matches = abs(self.centroid[1] - o.centroid[1]) < tol
-        z_matches = abs(self.centroid[2] - o.centroid[2]) < tol
-
-        return all([x_matches, y_matches, z_matches])
+        
+        return polygons_intersect and y_matches
 
 
 class GravityAgent:
@@ -104,16 +111,24 @@ class GravityAgent:
     def run_scene(self, config, desc_name):
         if DEBUG:
             print("DEBUG MODE!")
+            
+        # Filter to run specific examples :: debug help
+        specific_scenes = ["04", "12"]
+        if all(code not in config["name"] for code in specific_scenes):
+            return True
+
+        # switchs some plausible scene to implausible
+        for o in config["objects"]:
+            if o["id"] == "target_object":
+                    for step in o["togglePhysics"]:
+                        step["stepBegin"] *= 100
+
         self.controller.start_scene(config)
 
         # Inputs to determine VoE
         target_trajectory = []
         pole_states = []  # To determine drop step
         support_coords = None
-
-        # Filter to run specific examples :: debug help
-        if "gravity_support_ex_" not in config["name"]:
-            return True
 
         for i, x in enumerate(config['goal']['action_list']):
             step_output = self.controller.step(action=x[0])
