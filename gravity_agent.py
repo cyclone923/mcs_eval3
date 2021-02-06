@@ -120,23 +120,34 @@ class GravityAgent:
             else:
                 step_output = dict(step_output)
 
+            print(step_output)
+
             # Collect observations
             if support_coords is None:
                 support_coords = step_output["object_list"]["supporting_object"]["dimensions"]
             
-            try:
-                target_trajectory.append(step_output["object_list"]["target_object"]["dimensions"])
-                pole_states.append(step_output["structural_object_list"]["pole_object"])
-            except KeyError:  # Object / Pole is not in view yet
-                pass
+                try:
+                    target_trajectory.append(step_output["object_list"]["target_object"]["dimensions"])
+                    pole_states.append(step_output["structural_object_list"]["pole_object"])
+                except KeyError:  # Object / Pole is not in view yet
+                    pass
             
             obj_traj_orn = None
             # print(i)
             # if len(pole_states) > 0:
                 # print(self.determine_drop_step(pole_states))
             if len(pole_states) > 0 and self.determine_drop_step(pole_states) == len(pole_states) - 1:
-                obj_traj_orn = pybullet_utilities.render_in_pybullet(step_output)
-            
+                obj_traj_orn = pybullet_utilities.render_in_pybullet(step_output, self.level)
+                
+            if obj_traj_orn != None:
+                start_pos = obj_traj_orn['target_object']['pos'][0]
+                end_pos = obj_traj_orn['target_object']['pos'][-1]
+                dx = abs(start_pos[0] - end_pos[0]) 
+                dy = abs(start_pos[2] - end_pos[2])
+                dz = abs(start_pos[1] - end_pos[1])
+                print(dx, dy, dz)
+
+
             choice = plausible_str(True)
             voe_xy_list = []
             voe_heatmap = None

@@ -27,7 +27,6 @@ class Evaluation3_Agent:
         self.controller = mcs.create_controller(
             os.path.join(config['unity_path'])
         )
-
         with open(config_path, 'r') as config_file:
             config = yaml.safe_load(config_file)
         self.level = config['metadata']

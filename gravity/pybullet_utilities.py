@@ -4,8 +4,9 @@ import pybullet_data
 import sys
 import numpy as np
 
-def render_in_pybullet(step_output):
+def render_in_pybullet(step_output, level):
     physicsClient = p.connect(p.GUI)#or p.DIRECT for non-graphical version
+    # physicsClient = p.connect(p.DIRECT)
     p.setAdditionalSearchPath(pybullet_data.getDataPath()) #optionally
     p.setGravity(0,0,-10)
     planeId = p.loadURDF("plane.urdf")
@@ -14,16 +15,17 @@ def render_in_pybullet(step_output):
 
     # get structural objects from output
     struct_obj_dict = {}
-    for obj, val in step_output["structural_object_list"].items():
-        boxId = createObjectShape(val)
-        if boxId == -1:
-            print("trouble building struct object", obj)
-        else:
-            struct_obj_dict[obj] = {
-                "boxID": boxId,
-                pos: [],
-                orn: []
-            }
+    if level == "oracle":
+        for obj, val in step_output["structural_object_list"].items():
+            boxId = createObjectShape(val)
+            if boxId == -1:
+                print("trouble building struct object", obj)
+            else:
+                struct_obj_dict[obj] = {
+                    "boxID": boxId,
+                    "pos": [],
+                    "orn": []
+                }
     
     # get objects from output
     obj_dict = {}
@@ -53,10 +55,11 @@ def render_in_pybullet(step_output):
             obj_dict[obj]["pos"].append(cubePos)
             obj_dict[obj]["orn"].append(cubeOrn)
             
-        for obj in struct_obj_dict:
-            cubePos, cubeOrn = p.getBasePositionAndOrientation(struct_obj_dict[obj]["boxID"])
-            struct_obj_dict[obj]["pos"].append(cubePos)
-            obj_dict[obj]["orn"].append(cubeOrn)
+        if level == "oracle":
+            for obj in struct_obj_dict:
+                cubePos, cubeOrn = p.getBasePositionAndOrientation(struct_obj_dict[obj]["boxID"])
+                struct_obj_dict[obj]["pos"].append(cubePos)
+                obj_dict[obj]["orn"].append(cubeOrn)
     # with open("")
     # for boxId in obj_dict:
     #     print(boxId)
@@ -73,7 +76,10 @@ def render_in_pybullet(step_output):
     #         print(orn)
     p.disconnect()
 
-    return obj_dict
+    if level == "oracle":
+        return obj_dict, struct_obj_dict
+    else:
+        return obj_dict
 
 def getDims(obj):
     dims = obj["dimensions"]
