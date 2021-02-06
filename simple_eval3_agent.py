@@ -64,6 +64,7 @@ def make_parser():
     parser.add_argument('--config', default='mcs_config.yaml')
     parser.add_argument('--prefix', default='out')
     parser.add_argument('--scenes', default='different_scenes')
+    parser.add_argument('--scene_idx', default=-1, type=int)
     return parser
 
 
@@ -72,8 +73,11 @@ if __name__ == "__main__":
     agent = Evaluation3_Agent(args.unity_path, args.config, args.prefix)
     goal_dir = args.scenes
     all_scenes = [os.path.join(goal_dir, one_scene) for one_scene in sorted(os.listdir(goal_dir))]
-    random.shuffle(all_scenes)
 
     results = {}
-    for one_scene in all_scenes:
-        voe = agent.run_scene(one_scene)
+    if args.scene_idx == -1:
+        random.shuffle(all_scenes)
+        for one_scene in all_scenes:
+            voe = agent.run_scene(one_scene)
+    else:
+        voe = agent.run_scene(all_scenes[args.scene_idx])
