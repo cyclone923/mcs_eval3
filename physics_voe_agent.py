@@ -3,7 +3,7 @@ from physicsvoe import framewisevoe, occlude
 from physicsvoe.timer import Timer
 from physicsvoe.data.types import make_camera
 
-from tracker import track, appearence, filter_masks
+from tracker import track, e3_appearence as appearence, filter_masks
 import visionmodule.inference as vision
 
 from pathlib import Path

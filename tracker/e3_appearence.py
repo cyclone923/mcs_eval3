@@ -135,7 +135,7 @@ def object_appearance_match(appearance_model, image, objects_info, device='cpu',
         obj_clr_hist_2 = cv2.calcHist([np.array(image)], [2], mask_image, [10], [0, 256])
         obj_clr_hist = (obj_clr_hist_0 + obj_clr_hist_1 + obj_clr_hist_2) / 3
 
-        if ('base_image' not in objects_info[obj_key]) or \
+        if ('base_image' not in objects_info[obj_key].keys()) or \
                 (len(objects_info[obj_key]['position_history']) < 5 and
                  (image_area > objects_info[obj_key]['base_image']['image_area'])):
             objects_info[obj_key]['base_image'] = {}
