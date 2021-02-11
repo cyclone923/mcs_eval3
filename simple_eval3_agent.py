@@ -72,7 +72,13 @@ if __name__ == "__main__":
     args = make_parser().parse_args()
     agent = Evaluation3_Agent(args.unity_path, args.config, args.prefix)
     goal_dir = args.scenes
-    all_scenes = [os.path.join(goal_dir, one_scene) for one_scene in sorted(os.listdir(goal_dir))]
+    
+    all_scenes = [
+        os.path.join(goal_dir, one_scene)
+        for one_scene in sorted(os.listdir(goal_dir))
+        if one_scene.endswith(".json")  # All scene config files are JSON files
+    ]
+    random.shuffle(all_scenes)
 
     results = {}
     if args.scene_idx == -1:
