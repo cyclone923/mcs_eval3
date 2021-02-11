@@ -16,6 +16,19 @@ import cv2
 import webcolors
 import sys
 
+class ObjectFeatures():
+    def __init__(self, kp, des):
+        self.keypoints = kp
+        self.descriptors = des
+
+class ObjectDataset():
+    def __init__(self, data, transform=None):
+        self.data = data
+        self.shape_labels = sorted(set(data['shapes']))
+        self.color_labels = sorted(set(np.array(data['textures']).squeeze(1)))
+
+        self.data['shapes'] = np.array(self.data['shapes'])
+        self.data['color'] = np.array(data['textures']).squeeze(1)
 class AppearanceMatchModel():
     def __init__(self):
         ### ATTRIBUTES LEARNED DURING TRAINING ###
@@ -33,13 +46,34 @@ class AppearanceMatchModel():
         # must fall back to frame-by-frame matching.
         # self.prev_obj_features = dict()
         self.detector = cv2.SIFT()      # The SIFT feature detection object
-        self.bf = cv2.BFMatcher()       # Brute-Force matcher w/ default params
+        FLANN_INDEX_KDTREE = 0
+        index_params = dict(algorithm=FLANN_INDEX_KDTREE, trees=5)
+        search_params = dict(checks=50)
+        self.flann = cv2.FlannBasedMatcher(index_params, search_params)       # FLANN based matcher
 
     # Search the learned object space to identify what the initial object is
     def identifyInitialObject(self, img_kp, img_des):
         # NOTE: If object descriptors do not sufficiently match up with any other object, return None
         # (system will fall back to frame-by-frame matching)
-        return None
+        match_avgs = dict()
+        for obj_id, obj in self.obj_dictionary.items():
+            o_match_rates = list()
+            for o_img in obj:
+                o_kp = o_img.keypoints
+                o_des = o_img.descriptors
+                o_matches = self.flann.knnMatch(img_des, o_des, k=2)
+                
+                o_good = list()
+                for m, n in o_matches:
+                    if m.distance < 0.7 * n.distance:
+                        o_good.append([m])
+                o_match_rates.append(len(o_good) / len(o_matches))
+
+            o_match_rates = np.array(o_match_rates)
+            o_match_avg = np.sum(o_match_rates) / len(o_match_rates)
+            match_avgs[obj_id] = o_match_avg
+        max_o = max(match_avgs, key=lambda o: match_avgs[o])
+        return max_o if match_avgs[max_o] >= 1 - self.feature_match_slack else None
 
     # Match feature descriptors
     def detectFeatureMatch(self, img_kp, img_des, obj):
@@ -48,6 +82,18 @@ class AppearanceMatchModel():
         else:
             # feature match
             avg_match_rate = 1     # TODO: Implement good match rate (see OpenCV Python SIFT docs)
+            l_match_rates = list()
+            for l_obj_img in self.obj_dictionary['shape_id']:
+                l_matches = self.flann.knnMatch(img_des, l_obj_img.descriptors, k=2)
+
+                l_good = list()
+                for m, n in l_matches:
+                    if m.distance < 0.7 * n.distance:
+                        l_good.append([m])
+                l_match_rates.append(len(l_good) / len(l_matches))
+            
+            l_match_rates = np.array(l_match_rates)
+            avg_match_rate = np.sum(l_match_rates) / len(l_match_rates)
             if avg_match_rate >= 1 - self.feature_match_slack:
                 match = True
             else:
@@ -59,13 +105,13 @@ class AppearanceMatchModel():
     def frameMatch(self, img_kp, img_des, obj):
         prev_kp = obj['appearance']['keypoint_history'][-1]
         prev_des = obj['appearance']['descriptor_history'][-1]
-        matches = self.bf.knnMatch(img_des, prev_des, k=2) # k=2 so we can apply the ratio test next
-        good = list()
-        for m, n in matches:
-            if m.distance < 0.75 * n.distance:
-                good.append([m])
+        f_matches = self.flann.knnMatch(img_des, prev_des, k=2) # k=2 so we can apply the ratio test next
+        f_good = list()
+        for m, n in f_matches:
+            if m.distance < 0.7 * n.distance:
+                f_good.append([m])
         
-        return len(good) / len(matches) >= self.feature_match_slack
+        return len(f_good) / len(f_matches) >= 1 - self.feature_match_slack
 
     # Check for any appearance mismatches in the provided images
     def match(self, image, objects_info, device='cpu', level='level2'):
@@ -97,11 +143,10 @@ class AppearanceMatchModel():
                 # obj['base_image']['histogram'] = obj_clr_hist
                 obj['appearance'] = dict()
 
-            # TODO: run detectFeatureMatch
+            # Run detectFeatureMatch
             obj, feature_match = self.detectFeatureMatch(img_kp, img_des, obj)
 
-            # TODO: Tweak occlusion code s.t. occlusion check happens before
-            # appearance model and occlusion status lives in object_info
+            # Update feature match indicator if the object is not occluded
             if not obj['occluded']:
                 obj['appearance']['feature_history']['keypoints'].append(img_kp)
                 obj['appearance']['feature_history']['descriptors'].append(img_des)

@@ -107,16 +107,7 @@ class VoeAgent:
         # Calculate tracking info using mask history
         # This stores a bunch of state in `self.track_info`
         self.track_info = track.track_objects(masks, self.track_info)
-        # Add appearance model's output to the object tracking info.
-        self.track_info['objects'] = \
-            appearence.object_appearance_match(self.app_model, rgb_image,
-                                               self.track_info['objects'],
-                                               self.device, self.level)
-        if DEBUG:
-            # Generate+output appearance model's thoughts
-            img = appearence.draw_bounding_boxes(rgb_image, self.track_info['objects'])
-            img = appearence.draw_appearance_bars(img, self.track_info['objects'])
-            img.save(scene_name/f'DEBUG_{frame_num:02d}.png')
+
         # The tracking model assigns an ID to each mask that is consistent
         # across frames, and calculates a mask for each object ID.
         # We use `squash_masks` to turn this list of object masks into a single
@@ -133,6 +124,21 @@ class VoeAgent:
         area_hists = {o_id:o_info['area_history'] for o_id, o_info in self.track_info['objects'].items()}
         obj_occluded = occlude.detect_occlusions(depth_map, tracked_masks, all_obj_ids, area_hists)
         console.print('[yellow]Objects occluded?[/yellow]', obj_occluded)
+
+        for o_id in obj_occluded:
+            self.track_info['objects'][o_id] = obj_occluded[o_id]
+
+        # Add appearance model's output to the object tracking info.
+        self.track_info['objects'] = \
+            appearence.object_appearance_match(self.app_model, rgb_image,
+                                               self.track_info['objects'],
+                                               self.device, self.level)
+        if DEBUG:
+            # Generate+output appearance model's thoughts
+            img = appearence.draw_bounding_boxes(rgb_image, self.track_info['objects'])
+            img = appearence.draw_appearance_bars(img, self.track_info['objects'])
+            img.save(scene_name/f'DEBUG_{frame_num:02d}.png')
+        
         # Calculate object level info from masks
         # We can use the object masks + depth map + camera data to easily
         # estimate world_space positions for each object in the scene.
