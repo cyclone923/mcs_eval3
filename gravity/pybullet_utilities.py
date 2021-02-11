@@ -52,32 +52,21 @@ def render_in_pybullet(step_output, level):
         # keep track of obj position
         for obj in obj_dict:
             cubePos, cubeOrn = p.getBasePositionAndOrientation(obj_dict[obj]["boxID"])
+            if obj == "target_object":
+                print(cubePos)
             obj_dict[obj]["pos"].append(cubePos)
             obj_dict[obj]["orn"].append(cubeOrn)
             
-        if level == "oracle":
-            for obj in struct_obj_dict:
-                cubePos, cubeOrn = p.getBasePositionAndOrientation(struct_obj_dict[obj]["boxID"])
-                struct_obj_dict[obj]["pos"].append(cubePos)
-                obj_dict[obj]["orn"].append(cubeOrn)
-    # with open("")
-    # for boxId in obj_dict:
-    #     print(boxId)
-    #     for idx, (pos, orn) in enumerate(obj_dict[boxId]):
-    #         print(idx)
-    #         print(pos)
-    #         print(orn)
+        # if level == "oracle":
+        #     for obj in struct_obj_dict:
+        #         cubePos, cubeOrn = p.getBasePositionAndOrientation(struct_obj_dict[obj]["boxID"])
+        #         struct_obj_dict[obj]["pos"].append(cubePos)
+        #         obj_dict[obj]["orn"].append(cubeOrn)
 
-    # for boxId in struct_obj_dict:
-    #     print(boxId)
-    #     for idx, (pos, orn) in enumerate(struct_obj_dict[boxId]):
-    #         print(idx)
-    #         print(pos)
-    #         print(orn)
     p.disconnect()
 
     if level == "oracle":
-        return obj_dict, struct_obj_dict
+        return obj_dict
     else:
         return obj_dict
 
@@ -118,6 +107,7 @@ def createObjectShape(obj):
     meshScale = getDims(obj)
     
     shift = list(obj["rotation"].values())
+    # shift = [shift[0], shift[2], shift[1]]
     start_orientation = p.getQuaternionFromEuler(shift)
     start_position = list(obj["position"].values())
     start_position = [start_position[0], start_position[2], start_position[1]]

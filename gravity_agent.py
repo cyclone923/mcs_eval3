@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 from gravity import pybullet_utilities
+import numpy as np
 DEBUG = False
 
 @dataclass
@@ -31,18 +32,15 @@ class GravityAgent:
         '''
         # Based on an assumption that the pole color changes after the drop (suction off)
 
-        pole_position_history = [md["position"] for md in pole_state_history]
-        init_position = pole_position_history[0]
+        pole_color_history = [md["texture_color_list"][0] for md in pole_state_history]
+        init_color = pole_color_history[0]
 
-        lowest_position = init_position
-        for idx, position in enumerate(pole_position_history):
-            if position['y'] <= lowest_position['y']:
-                lowest_position = position
-            else:
-                return idx
+        for idx, color in enumerate(pole_color_history):
+            if color != init_color:
+                return idx - 1
+        # else:
+        #     raise(Exception("Drop step not detected by observing color of pole"))
         return -1
-            # raise(Exception("Drop step not detected by observing color of pole"))
-
     @staticmethod
     def get_object_bounding_simplices(dims):
 
@@ -112,7 +110,11 @@ class GravityAgent:
         pole_states = []  # To determine drop step
         support_coords = None
 
+        obj_traj_orn = None
+        previous_step = None
+        step_output = None
         for i, x in enumerate(config['goal']['action_list']):
+            previous_step = step_output
             step_output = self.controller.step(action=x[0])
 
             if step_output is None:
@@ -120,40 +122,42 @@ class GravityAgent:
             else:
                 step_output = dict(step_output)
 
-            print(step_output)
 
             # Collect observations
             if support_coords is None:
                 support_coords = step_output["object_list"]["supporting_object"]["dimensions"]
-            
-                try:
-                    target_trajectory.append(step_output["object_list"]["target_object"]["dimensions"])
-                    pole_states.append(step_output["structural_object_list"]["pole_object"])
-                except KeyError:  # Object / Pole is not in view yet
-                    pass
-            
-            obj_traj_orn = None
-            # print(i)
-            # if len(pole_states) > 0:
-                # print(self.determine_drop_step(pole_states))
-            if len(pole_states) > 0 and self.determine_drop_step(pole_states) == len(pole_states) - 1:
-                obj_traj_orn = pybullet_utilities.render_in_pybullet(step_output, self.level)
-                
-            if obj_traj_orn != None:
-                start_pos = obj_traj_orn['target_object']['pos'][0]
-                end_pos = obj_traj_orn['target_object']['pos'][-1]
-                dx = abs(start_pos[0] - end_pos[0]) 
-                dy = abs(start_pos[2] - end_pos[2])
-                dz = abs(start_pos[1] - end_pos[1])
-                print(dx, dy, dz)
 
+            try:
+                target_trajectory.append(step_output["object_list"]["target_object"]["dimensions"])
+                pole_states.append(step_output["structural_object_list"]["pole_object"])
+            except KeyError:  # Object / Pole is not in view yet
+                pass
 
+            if len(pole_states) > 1 and self.determine_drop_step(pole_states) == len(pole_states) - 2:
+                obj_traj_orn = pybullet_utilities.render_in_pybullet(previous_step, self.level)
+            
             choice = plausible_str(True)
             voe_xy_list = []
             voe_heatmap = None
             self.controller.make_step_prediction(
                 choice=choice, confidence=1.0, violations_xy_list=voe_xy_list,
                 heatmap_img=voe_heatmap)
+
+        if obj_traj_orn != None:
+            # simulator trajectory
+            sim_start_pos = np.array(obj_traj_orn['target_object']['pos'][0])
+            sim_end_pos = np.array(obj_traj_orn['target_object']['pos'][-1])
+            sim_dx = abs(sim_start_pos[0] - sim_end_pos[0]) 
+            sim_dy = abs(sim_start_pos[2] - sim_end_pos[2])
+            sim_dz = abs(sim_start_pos[1] - sim_end_pos[1])
+
+            #final step out
+            unity_end_pos = list(step_output["object_list"]["target_object"]["position"].values())
+            unity_end_pos = np.array([unity_end_pos[0], unity_end_pos[2], unity_end_pos[1]])
+            print("{} --- {}".format(unity_end_pos, sim_end_pos))
+            end_pos_diff = np.linalg.norm(unity_end_pos - sim_end_pos)
+            if end_pos_diff >= 0.12:
+                print("Physics Sim Suggests VoE!")
 
         drop_step = self.determine_drop_step(pole_states)
         voe_flag = self.sense_voe(drop_step, support_coords, target_trajectory)
