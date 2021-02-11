@@ -9,7 +9,10 @@ from MCS_exploration.sequence_generator import SequenceGenerator
 from voe.voe_agent import VoeAgent
 from voe.agency_voe_agent import AgencyVoeAgent
 import physics_voe_agent
+from rich.console import Console
+import sys
 
+console = Console()
 
 class Evaluation3_Agent:
 
@@ -80,4 +83,8 @@ if __name__ == "__main__":
 
     results = {}
     for one_scene in all_scenes:
+        console.log(one_scene)
         voe = agent.run_scene(one_scene)
+        console.print('VOE' if voe is True else 'Not VOE', style='bold red' if voe is True else 'green')
+        input()
+    console.print(all_scenes, style='yellow bold')

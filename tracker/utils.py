@@ -31,12 +31,12 @@ def get_mask_box(obj_mask):
     return (box_top_x, box_top_y), (box_bottom_x, box_bottom_y)
 
 
-def get_mask_box(obj_mask):
-    height, width = obj_mask.shape
-    rows, cols = np.where(obj_mask == True)
-    box_top_x, box_top_y = max(0, rows.min() - 1), max(0, cols.min() - 1)
-    box_bottom_x, box_bottom_y = min(rows.max() + 1, height - 1), min(cols.max() + 1, width - 1)
-    return (box_top_x, box_top_y), (box_bottom_x, box_bottom_y)
+# def get_mask_box(obj_mask):
+#     height, width = obj_mask.shape
+#     rows, cols = np.where(obj_mask == True)
+#     box_top_x, box_top_y = max(0, rows.min() - 1), max(0, cols.min() - 1)
+#     box_bottom_x, box_bottom_y = min(rows.max() + 1, height - 1), min(cols.max() + 1, width - 1)
+#     return (box_top_x, box_top_y), (box_bottom_x, box_bottom_y)
 
 
 def mask_img(mask, img):

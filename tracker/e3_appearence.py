@@ -135,7 +135,7 @@ def object_appearance_match(appearance_model, image, objects_info, device='cpu',
         obj_clr_hist_2 = cv2.calcHist([np.array(image)], [2], mask_image, [10], [0, 256])
         obj_clr_hist = (obj_clr_hist_0 + obj_clr_hist_1 + obj_clr_hist_2) / 3
 
-        if ('base_image' not in objects_info[obj_key]) or \
+        if ('base_image' not in objects_info[obj_key].keys()) or \
                 (len(objects_info[obj_key]['position_history']) < 5 and
                  (image_area > objects_info[obj_key]['base_image']['image_area'])):
             objects_info[obj_key]['base_image'] = {}
@@ -244,18 +244,18 @@ def rgb_to_grayscale(img, num_output_channels: int = 1):
     return l_img
 
 
-def rgb_to_grayscale(img, num_output_channels: int = 1):
-    if num_output_channels not in (1, 3):
-        raise ValueError('num_output_channels should be either 1 or 3')
+# def rgb_to_grayscale(img, num_output_channels: int = 1):
+#     if num_output_channels not in (1, 3):
+#         raise ValueError('num_output_channels should be either 1 or 3')
 
-    r, g, b = img.unbind(dim=-3)
-    l_img = (0.2989 * r + 0.587 * g + 0.114 * b).to(img.dtype)
-    l_img = l_img.unsqueeze(dim=-3)
+#     r, g, b = img.unbind(dim=-3)
+#     l_img = (0.2989 * r + 0.587 * g + 0.114 * b).to(img.dtype)
+#     l_img = l_img.unsqueeze(dim=-3)
 
-    if num_output_channels == 3:
-        return l_img.expand(img.shape)
+#     if num_output_channels == 3:
+#         return l_img.expand(img.shape)
 
-    return l_img
+#     return l_img
 
 
 class ObjectDataset(Dataset):
