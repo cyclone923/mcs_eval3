@@ -1,5 +1,4 @@
 from dataclasses import dataclass
-import pandas as pd
 from shapely.geometry import Polygon
 from scipy.spatial import ConvexHull
 
