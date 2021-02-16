@@ -1,5 +1,7 @@
 from dataclasses import dataclass
+import pandas as pd
 from shapely.geometry import Polygon
+from scipy.spatial import ConvexHull
 
 DEBUG = False
 
@@ -20,13 +22,18 @@ class ObjectFace:
         '''
         Returns True if `self` "appears" to be on `o`
         '''
-        # Doesn't check if method is invoked from top face and NOT bottom face
-        # Assuming Object is rigid & won't deform during the motion
+        # Doesn't verify if method is invoked from top face and NOT bottom face
         
-        polygons_intersect = self.polygon.intersects(o.polygon)
-        y_matches = abs(self.centroid[1] - o.centroid[1]) < tol
+        def get_3d_polygon(corners):
+            return Polygon([
+                list(pt.values()) for pt in corners
+            ])
         
-        return polygons_intersect and y_matches
+        this_polygon = get_3d_polygon(self.corners)
+        given_polygon = get_3d_polygon(o.corners)
+        polygons_touch = this_polygon.distance(given_polygon) < tol
+        
+        return polygons_touch
 
 
 class GravityAgent:
@@ -51,19 +58,28 @@ class GravityAgent:
             raise(Exception("Drop step not detected by observing color of pole"))
 
     @staticmethod
-    def get_object_bounding_simplices(dims, tol=1e-2):
+    def get_object_bounding_simplices(dims):
+        # Bounding along "y" direction
 
-        y_coords = [pt["y"] for pt in dims]
-        min_y, max_y = min(y_coords), max(y_coords)
+        def face_pts_from_hull(hull, target_y):
+            bounding_simplices_vtx = set(hull.simplices[hull.equations[:, 1] == target_y].flatten().tolist())
+            bounding_face_pts = [
+                {"x": hull.points[pt][0], "y": hull.points[pt][1], "z": hull.points[pt][2]}
+                for pt in bounding_simplices_vtx
+            ]
 
-        # Assuming "nice" placement with cubes
-        # For generalizing, calculate convex hull and findout extreme simplices 
-        bottom_face = ObjectFace(corners=[pt for pt in dims if abs(pt["y"] - min_y) < tol])
-        top_face = ObjectFace(corners=[pt for pt in dims if abs(pt["y"] - max_y) < tol])
+            return bounding_face_pts
+
+        ndims = [list(pt.values()) for pt in dims]
+        hull = ConvexHull(ndims)
+
+        smallest_y, largest_y = hull.equations[:, 1].min(), hull.equations[:, 1].max()
+        bottom_face = ObjectFace(corners=face_pts_from_hull(hull, smallest_y))
+        top_face = ObjectFace(corners=face_pts_from_hull(hull, largest_y))
 
         return top_face, bottom_face
 
-    def states_during_and_after_drop(self, drop_step, target_trajectory, support):
+    def states_during_and_after_drop(self, drop_step, target_trajectory, support, floor):
 
         # Assuming target is moving along "y"
         target_drop_coords = target_trajectory[drop_step]
@@ -74,11 +90,13 @@ class GravityAgent:
 
         support_top_face, _ = self.get_object_bounding_simplices(support)
 
-        return target_bottom_face, support_top_face, target_bottom_face_end_state
+        floor_top_face, _ = self.get_object_bounding_simplices(floor)
+
+        return target_bottom_face, target_bottom_face_end_state, support_top_face, floor_top_face
 
 
     @staticmethod
-    def target_should_be_stable(target, support):
+    def target_should_be_on_support(target, support):
 
         support_x_range = (min(pt["x"] for pt in support.corners), max(pt["x"] for pt in support.corners))
         support_z_range = (min(pt["z"] for pt in support.corners), max(pt["z"] for pt in support.corners))
@@ -88,7 +106,7 @@ class GravityAgent:
 
         return target_x_inrange and target_z_inrange
 
-    def sense_voe(self, drop_step, support_coords, target_trajectory):
+    def sense_voe(self, drop_step, support_coords, floor_coords, target_trajectory):
         '''
         Assumptions:
         -> Objects are assumed to be rigid with uniform mass density
@@ -97,38 +115,47 @@ class GravityAgent:
         -> Accn. due to gravity & target object velocity are along the "y" direction
         '''
         # Surface states when the target is (possibly) placed on support
-        target, support, target_end = self.states_during_and_after_drop(
-            drop_step, target_trajectory, support_coords
+        target, target_end, support, floor = self.states_during_and_after_drop(
+            drop_step, target_trajectory, support_coords, floor_coords
         )
-        # Determine if target should rest
-        target_should_rest = self.target_should_be_stable(target, support)
+        # Determine if target should rest on support
+        target_expected_on_support = self.target_should_be_on_support(target, support)
 
         # Now verify if the target's final state is consistent with the above
-        target_actually_rested = target_end.on(support)
+        target_actually_on_support = target_end.on(support)
 
-        return target_should_rest ^ target_actually_rested
+        # Sense if target is on floor
+        target_on_floor = target_end.on(floor)
+
+        # Target should either be on support or on floor
+        target_on_support_when_it_should = target_expected_on_support and target_actually_on_support
+        voe_flag = not (target_on_support_when_it_should ^ target_on_floor)
+
+        return voe_flag
 
     def run_scene(self, config, desc_name):
         if DEBUG:
             print("DEBUG MODE!")
             
-        # Filter to run specific examples :: debug help
-        specific_scenes = ["04", "12"]
-        if all(code not in config["name"] for code in specific_scenes):
-            return True
+        # # Filter to run specific examples :: debug help
+        # specific_scenes = ["01", "09"]
+        # if all(code not in config["name"] for code in specific_scenes):
+        #     return True
+        # else:
+        #     print(f"[x] Running {config['name']}")
 
-        # switchs some plausible scene to implausible
-        for o in config["objects"]:
-            if o["id"] == "target_object":
-                    for step in o["togglePhysics"]:
-                        step["stepBegin"] *= 100
+        # # switchs some plausible scene to implausible
+        # for o in config["objects"]:
+        #     if o["id"] == "target_object":
+        #             for step in o["togglePhysics"]:
+        #                 step["stepBegin"] *= 100
 
         self.controller.start_scene(config)
 
         # Inputs to determine VoE
         target_trajectory = []
         pole_states = []  # To determine drop step
-        support_coords = None
+        support_coords, floor_coords = None, None
 
         for i, x in enumerate(config['goal']['action_list']):
             step_output = self.controller.step(action=x[0])
@@ -141,6 +168,9 @@ class GravityAgent:
             # Collect observations
             if support_coords is None:
                 support_coords = step_output["object_list"]["supporting_object"]["dimensions"]
+
+            if floor_coords is None:
+                floor_coords = step_output["structural_object_list"]["floor"]["dimensions"]
             
             try:
                 target_trajectory.append(step_output["object_list"]["target_object"]["dimensions"])
@@ -156,7 +186,7 @@ class GravityAgent:
                 heatmap_img=voe_heatmap)
 
         drop_step = self.determine_drop_step(pole_states)
-        voe_flag = self.sense_voe(drop_step, support_coords, target_trajectory)
+        voe_flag = self.sense_voe(drop_step, support_coords, floor_coords, target_trajectory)
 
         if voe_flag:
             print(f"[x] VoE observed for {config['name']}")
