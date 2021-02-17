@@ -147,14 +147,10 @@ class GravityAgent:
             # simulator trajectory
             sim_start_pos = np.array(obj_traj_orn['target_object']['pos'][0])
             sim_end_pos = np.array(obj_traj_orn['target_object']['pos'][-1])
-            sim_dx = abs(sim_start_pos[0] - sim_end_pos[0]) 
-            sim_dy = abs(sim_start_pos[2] - sim_end_pos[2])
-            sim_dz = abs(sim_start_pos[1] - sim_end_pos[1])
 
             #final step out
             unity_end_pos = list(step_output["object_list"]["target_object"]["position"].values())
             unity_end_pos = np.array([unity_end_pos[0], unity_end_pos[2], unity_end_pos[1]])
-            print("{} --- {}".format(unity_end_pos, sim_end_pos))
             end_pos_diff = np.linalg.norm(unity_end_pos - sim_end_pos)
             if end_pos_diff >= 0.12:
                 print("Physics Sim Suggests VoE!")

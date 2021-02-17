@@ -3,10 +3,12 @@ import time
 import pybullet_data
 import sys
 import numpy as np
+import os
 
 def render_in_pybullet(step_output, level):
     physicsClient = p.connect(p.GUI)#or p.DIRECT for non-graphical version
     # physicsClient = p.connect(p.DIRECT)
+    # p.setAdditionalSearchPath(os.getcwd()) #optionally
     p.setAdditionalSearchPath(pybullet_data.getDataPath()) #optionally
     p.setGravity(0,0,-10)
     planeId = p.loadURDF("plane.urdf")
@@ -47,13 +49,11 @@ def render_in_pybullet(step_output, level):
     # p.resetBasePositionAndOrientation(boxId, startPos, startOrientation)
     for i in range (750):
         p.stepSimulation()
-        time.sleep(1./240.)
+        time.sleep(1./360.)
 
         # keep track of obj position
         for obj in obj_dict:
             cubePos, cubeOrn = p.getBasePositionAndOrientation(obj_dict[obj]["boxID"])
-            if obj == "target_object":
-                print(cubePos)
             obj_dict[obj]["pos"].append(cubePos)
             obj_dict[obj]["orn"].append(cubeOrn)
             
@@ -107,7 +107,7 @@ def createObjectShape(obj):
     meshScale = getDims(obj)
     
     shift = list(obj["rotation"].values())
-    # shift = [shift[0], shift[2], shift[1]]
+    shift = [shift[0], shift[2], shift[1]]
     start_orientation = p.getQuaternionFromEuler(shift)
     start_position = list(obj["position"].values())
     start_position = [start_position[0], start_position[2], start_position[1]]
@@ -132,13 +132,29 @@ def createObjectShape(obj):
         return -1
 
     # create visual and colision shapes
+    print("obj shape", obj["shape"])
     if obj["shape"] == "cube":
         visualShapeId = p.createVisualShape(shapeType=p.GEOM_MESH,fileName="cube.obj", rgbaColor=rgba_color, specularColor=[0.4,.4,0], visualFramePosition=shift, meshScale=meshScale)
         collisionShapeId = p.createCollisionShape(shapeType=p.GEOM_MESH, fileName="cube.obj", collisionFramePosition=shift,meshScale=meshScale)
+    elif obj["shape"] == "square frustum":
+        meshScale = [e * 0.01 for e in meshScale]
+        visualShapeId = p.createVisualShape(shapeType=p.GEOM_MESH,fileName="square_frustum.obj", rgbaColor=rgba_color, specularColor=[0.4,.4,0], visualFramePosition=shift, meshScale=meshScale)
+        collisionShapeId = p.createCollisionShape(shapeType=p.GEOM_MESH, fileName="square_frustum.obj", collisionFramePosition=shift, meshScale=meshScale)
+    elif obj["shape"] == "circle frustum":
+        meshScale = [e * 0.01 for e in meshScale]
+        visualShapeId = p.createVisualShape(shapeType=p.GEOM_MESH,fileName="circle_frustum.obj", rgbaColor=rgba_color, specularColor=[0.4,.4,0], visualFramePosition=shift, meshScale=meshScale)
+        collisionShapeId = p.createCollisionShape(shapeType=p.GEOM_MESH, fileName="circle_frustum.obj", collisionFramePosition=shift,meshScale=meshScale)
+    elif obj["shape"] == "cylinder":
+        meshScale = [e * 0.01 for e in meshScale]
+        start_orientation = [0, 0, 45, 1]
+        visualShapeId = p.createVisualShape(shapeType=p.GEOM_MESH,fileName="cylinder.obj", rgbaColor=rgba_color, specularColor=[0.4,.4,0], visualFramePosition=shift, meshScale=meshScale)
+        collisionShapeId = p.createCollisionShape(shapeType=p.GEOM_MESH, fileName="cylinder.obj", collisionFramePosition=shift,meshScale=meshScale)
     else:
         visualShapeId = p.createVisualShape(shapeType=p.GEOM_MESH,fileName="cube.obj", rgbaColor=rgba_color, specularColor=[0.4,.4,0], visualFramePosition=shift, meshScale=meshScale)
         collisionShapeId = p.createCollisionShape(shapeType=p.GEOM_MESH, fileName="cube.obj", collisionFramePosition=shift,meshScale=meshScale)
-    
+        
     # return body
+    # print(visualShapeId, collisionShapeId)
+    print(start_orientation)
     return p.createMultiBody(baseMass=obj["mass"], baseOrientation=start_orientation, baseInertialFramePosition=[0, 0, 0], baseCollisionShapeIndex=collisionShapeId, baseVisualShapeIndex=visualShapeId, basePosition=start_position, useMaximalCoordinates=True)
     
