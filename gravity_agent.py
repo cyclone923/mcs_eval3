@@ -1,4 +1,6 @@
 from dataclasses import dataclass
+from itertools import dropwhile
+import pdb
 from shapely.geometry import Polygon
 from scipy.spatial import ConvexHull
 
@@ -132,6 +134,28 @@ class GravityAgent:
 
         return voe_flag
 
+    @staticmethod
+    def target_obj_id(step_output):
+        if len(list(step_output['object_list'].keys())) > 0:
+            return list(step_output['object_list'].keys()).pop()
+        return None
+
+    @staticmethod
+    def struc_obj_ids(step_output):
+        
+        filtered_keys = [
+            key 
+            for key in step_output["structural_object_list"].keys() 
+            if len(key) > 35
+        ]
+        out = dict({
+            ("pole", so) if "pole_" in so else ("support", so)
+            for so in filtered_keys
+        }
+        )
+        # print(out)
+        return out.get("support"), out.get("pole")
+
     def run_scene(self, config, desc_name):
         if DEBUG:
             print("DEBUG MODE!")
@@ -164,17 +188,20 @@ class GravityAgent:
             else:
                 step_output = dict(step_output)
 
-            # Collect observations
-            if support_coords is None:
-                support_coords = step_output["object_list"]["supporting_object"]["dimensions"]
+            # Map dynamic object IDs to their respective roles
+            floor_object = "floor"  # Not a dynamic object ID
+            target_object = self.target_obj_id(step_output)
+            supporting_object, pole_object = self.struc_obj_ids(step_output)
 
-            if floor_coords is None:
-                floor_coords = step_output["structural_object_list"]["floor"]["dimensions"]
-            
+            # Collect observations            
             try:
-                target_trajectory.append(step_output["object_list"]["target_object"]["dimensions"])
-                pole_states.append(step_output["structural_object_list"]["pole_object"])
-            except KeyError:  # Object / Pole is not in view yet
+                # Expected to not dissapear until episode ends
+                support_coords = step_output["structural_object_list"][supporting_object]["dimensions"]
+                floor_coords = step_output["structural_object_list"][floor_object]["dimensions"]
+                # Target / Pole may not appear in view yet, start recording when available
+                target_trajectory.append(step_output["object_list"][target_object]["dimensions"])
+                pole_states.append(step_output["structural_object_list"][pole_object])
+            except KeyError:  
                 pass
             
             choice = plausible_str(True)
