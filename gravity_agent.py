@@ -1,6 +1,4 @@
 from dataclasses import dataclass
-from itertools import dropwhile
-import pdb
 from shapely.geometry import Polygon
 from scipy.spatial import ConvexHull
 
