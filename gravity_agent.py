@@ -1,14 +1,17 @@
 from dataclasses import dataclass
 from shapely.geometry import Polygon
 
+# Line added to test
+import csv
+
 DEBUG = False
+
 
 @dataclass
 class ObjectFace:
     corners: list
 
     def __post_init__(self):
-
         self.polygon = Polygon([(pt["x"], pt["z"]) for pt in self.corners])
 
         x = sum(pt["x"] for pt in self.corners) / 4
@@ -22,10 +25,10 @@ class ObjectFace:
         '''
         # Doesn't check if method is invoked from top face and NOT bottom face
         # Assuming Object is rigid & won't deform during the motion
-        
+
         polygons_intersect = self.polygon.intersects(o.polygon)
         y_matches = abs(self.centroid[1] - o.centroid[1]) < tol
-        
+
         return polygons_intersect and y_matches
 
 
@@ -48,7 +51,7 @@ class GravityAgent:
             if color != init_color:
                 return idx - 1
         else:
-            raise(Exception("Drop step not detected by observing color of pole"))
+            raise (Exception("Drop step not detected by observing color of pole"))
 
     @staticmethod
     def get_object_bounding_simplices(dims, tol=1e-2):
@@ -57,7 +60,7 @@ class GravityAgent:
         min_y, max_y = min(y_coords), max(y_coords)
 
         # Assuming "nice" placement with cubes
-        # For generalizing, calculate convex hull and findout extreme simplices 
+        # For generalizing, calculate convex hull and findout extreme simplices
         bottom_face = ObjectFace(corners=[pt for pt in dims if abs(pt["y"] - min_y) < tol])
         top_face = ObjectFace(corners=[pt for pt in dims if abs(pt["y"] - max_y) < tol])
 
@@ -68,14 +71,13 @@ class GravityAgent:
         # Assuming target is moving along "y"
         target_drop_coords = target_trajectory[drop_step]
         _, target_bottom_face = self.get_object_bounding_simplices(target_drop_coords)
-        
+
         target_resting_coords = target_trajectory[-1]
         _, target_bottom_face_end_state = self.get_object_bounding_simplices(target_resting_coords)
 
         support_top_face, _ = self.get_object_bounding_simplices(support)
 
         return target_bottom_face, support_top_face, target_bottom_face_end_state
-
 
     @staticmethod
     def target_should_be_stable(target, support):
@@ -111,17 +113,21 @@ class GravityAgent:
     def run_scene(self, config, desc_name):
         if DEBUG:
             print("DEBUG MODE!")
-            
+
+        with open('Gravity_test_output.csv', 'w', newline='') as file:
+            writer = csv.writer(file)
+            writer.writerow(["Scene_Name", "Output", "Test_result"])
+
         # Filter to run specific examples :: debug help
-        specific_scenes = ["04", "12"]
-        if all(code not in config["name"] for code in specific_scenes):
-            return True
+        # specific_scenes = ["04", "12"]
+        # if all(code not in config["name"] for code in specific_scenes):
+        #    return True
 
         # switchs some plausible scene to implausible
-        for o in config["objects"]:
-            if o["id"] == "target_object":
-                    for step in o["togglePhysics"]:
-                        step["stepBegin"] *= 100
+        # for o in config["objects"]:
+        #    if o["id"] == "target_object":
+        #            for step in o["togglePhysics"]:
+        #                step["stepBegin"] *= 100
 
         self.controller.start_scene(config)
 
@@ -141,13 +147,13 @@ class GravityAgent:
             # Collect observations
             if support_coords is None:
                 support_coords = step_output["object_list"]["supporting_object"]["dimensions"]
-            
+
             try:
                 target_trajectory.append(step_output["object_list"]["target_object"]["dimensions"])
                 pole_states.append(step_output["structural_object_list"]["pole_object"])
             except KeyError:  # Object / Pole is not in view yet
                 pass
-            
+
             choice = plausible_str(True)
             voe_xy_list = []
             voe_heatmap = None
@@ -158,16 +164,26 @@ class GravityAgent:
         drop_step = self.determine_drop_step(pole_states)
         voe_flag = self.sense_voe(drop_step, support_coords, target_trajectory)
 
+        #with open('Gravity_test_output.csv', 'a+', newline='') as file:
+         #   writer = csv.writer(file)
+
         if voe_flag:
-            print(f"[x] VoE observed for {config['name']}")
+            with open('Gravity_test_output.csv', 'a+', newline="") as file:
+                writer = csv.writer(file)
+                print(f"[x] VoE observed for {config['name']}")
+                writer.writerow([config['name'], "VoE observed"])
         else:
-            print(f"[x] No violation for {config['name']}")
+            with open('Gravity_test_output.csv', 'a+', newline="") as file:
+                writer = csv.writer(file)
+                print(f"[x] No violation for {config['name']}")
+                writer.writerow([config['name'], "No violation observed"])
 
         self.controller.end_scene(choice=plausible_str(voe_flag), confidence=1.0)
         return True
 
     def calc_voe(self, step_output, frame_num, scene_name=None):
         pass
+
 
 def plausible_str(violation_detected):
     return 'implausible' if violation_detected else 'plausible'
