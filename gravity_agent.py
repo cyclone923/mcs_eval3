@@ -43,7 +43,6 @@ class GravityAgent:
         return -1
     @staticmethod
     def get_object_bounding_simplices(dims):
-
         y_coords = [pt["y"] for pt in dims]
         min_y, max_y = min(y_coords), max(y_coords)
 
@@ -124,8 +123,8 @@ class GravityAgent:
 
 
             # Collect observations
-            if support_coords is None:
-                support_coords = step_output["object_list"]["supporting_object"]["dimensions"]
+            # if support_coords is None:
+            #     support_coords = step_output["object_list"]["supporting_object"]["dimensions"]
 
             try:
                 target_trajectory.append(step_output["object_list"]["target_object"]["dimensions"])

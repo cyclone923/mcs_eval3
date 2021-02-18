@@ -9,12 +9,14 @@ def render_in_pybullet(step_output, level):
     physicsClient = p.connect(p.GUI)#or p.DIRECT for non-graphical version
     # physicsClient = p.connect(p.DIRECT)
     # p.setAdditionalSearchPath(os.getcwd()) #optionally
-    p.setAdditionalSearchPath(pybullet_data.getDataPath()) #optionally
+    print(os.getcwd() + "/gravity/pybullet_objects/")
+    p.setAdditionalSearchPath(os.getcwd() + "/gravity/pybullet_objects/") #optionally
     p.setGravity(0,0,-10)
     planeId = p.loadURDF("plane.urdf")
     
     p.resetDebugVisualizerCamera(step_output["camera_height"] * 2, 0, -42.5, [0,0,0])
-
+    # print(step_output)
+    # quit()
     # get structural objects from output
     struct_obj_dict = {}
     if level == "oracle":
@@ -137,16 +139,13 @@ def createObjectShape(obj):
         visualShapeId = p.createVisualShape(shapeType=p.GEOM_MESH,fileName="cube.obj", rgbaColor=rgba_color, specularColor=[0.4,.4,0], visualFramePosition=shift, meshScale=meshScale)
         collisionShapeId = p.createCollisionShape(shapeType=p.GEOM_MESH, fileName="cube.obj", collisionFramePosition=shift,meshScale=meshScale)
     elif obj["shape"] == "square frustum":
-        meshScale = [e * 0.01 for e in meshScale]
         visualShapeId = p.createVisualShape(shapeType=p.GEOM_MESH,fileName="square_frustum.obj", rgbaColor=rgba_color, specularColor=[0.4,.4,0], visualFramePosition=shift, meshScale=meshScale)
         collisionShapeId = p.createCollisionShape(shapeType=p.GEOM_MESH, fileName="square_frustum.obj", collisionFramePosition=shift, meshScale=meshScale)
     elif obj["shape"] == "circle frustum":
-        meshScale = [e * 0.01 for e in meshScale]
+        print(start_orientation)
         visualShapeId = p.createVisualShape(shapeType=p.GEOM_MESH,fileName="circle_frustum.obj", rgbaColor=rgba_color, specularColor=[0.4,.4,0], visualFramePosition=shift, meshScale=meshScale)
         collisionShapeId = p.createCollisionShape(shapeType=p.GEOM_MESH, fileName="circle_frustum.obj", collisionFramePosition=shift,meshScale=meshScale)
     elif obj["shape"] == "cylinder":
-        meshScale = [e * 0.01 for e in meshScale]
-        start_orientation = [0, 0, 45, 1]
         visualShapeId = p.createVisualShape(shapeType=p.GEOM_MESH,fileName="cylinder.obj", rgbaColor=rgba_color, specularColor=[0.4,.4,0], visualFramePosition=shift, meshScale=meshScale)
         collisionShapeId = p.createCollisionShape(shapeType=p.GEOM_MESH, fileName="cylinder.obj", collisionFramePosition=shift,meshScale=meshScale)
     else:
