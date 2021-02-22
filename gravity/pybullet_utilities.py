@@ -4,66 +4,63 @@ import pybullet_data
 import sys
 import numpy as np
 import os
+import json
 
-def render_in_pybullet(step_output, level):
+def render_in_pybullet(step_output, target, supporting, level):
     physicsClient = p.connect(p.GUI)#or p.DIRECT for non-graphical version
     # physicsClient = p.connect(p.DIRECT)
-    # p.setAdditionalSearchPath(os.getcwd()) #optionally
-    print(os.getcwd() + "/gravity/pybullet_objects/")
+
     p.setAdditionalSearchPath(os.getcwd() + "/gravity/pybullet_objects/") #optionally
     p.setGravity(0,0,-10)
-    planeId = p.loadURDF("plane.urdf")
+    planeId = p.loadURDF("plane100.urdf")
     
     p.resetDebugVisualizerCamera(step_output["camera_height"] * 2, 0, -42.5, [0,0,0])
-    # print(step_output)
-    # quit()
-    # get structural objects from output
-    struct_obj_dict = {}
-    if level == "oracle":
-        for obj, val in step_output["structural_object_list"].items():
-            boxId = createObjectShape(val)
-            if boxId == -1:
-                print("trouble building struct object", obj)
-            else:
-                struct_obj_dict[obj] = {
-                    "boxID": boxId,
-                    "pos": [],
-                    "orn": []
-                }
     
     # get objects from output
     obj_dict = {}
-    for obj, val in step_output["object_list"].items():
-        boxId = createObjectShape(val)
-        if boxId == -1:
-            print("trouble building struct object", obj)
-        else:
-            obj_dict[obj] = {
-                "boxID": boxId,
-                "pos": [],
-                "orn": []
-            }
+    boxId = createObjectShape(step_output["structural_object_list"][supporting])
+    if boxId == -1:
+        print("trouble building supporting object")
+    else:
+        obj_dict[supporting] = {
+        "boxID": boxId,
+        "orn": [],
+        "pos": []
+        }
 
-    # startPos = [0,0,1]
-    # startOrientation = p.getQuaternionFromEuler([0,0,0])
-    # boxId = p.loadURDF("simple_box.urdf",startPos, startOrientation)
-    #set the center of mass frame (loadURDF sets base link frame) startPos/Orn
-    # p.resetBasePositionAndOrientation(boxId, startPos, startOrientation)
-    for i in range (750):
+    # print(json.dumps(step_output["object_list"][target], indent=4))
+    # print(json.dumps(step_output["structural_object_list"][supporting], indent=4))
+    # quit()
+    boxId = createObjectShape(step_output["object_list"][target])
+    if boxId == -1:
+        print("trouble building target object")
+    else:
+        obj_dict[target] = {
+            "boxID": boxId,
+            "pos": [],
+            "orn": []
+        }
+
+    print("numBodies=", p.getNumBodies())
+    # p.setRealTimeSimulation(1)
+    for i in range(3000):
         p.stepSimulation()
         time.sleep(1./360.)
-
+        
+        # confirm there aren't any overlaps on target object
+        aabb_min, aabb_max = p.getAABB(obj_dict[target]["boxID"])
+        overlaps = p.getOverlappingObjects(aabb_min, aabb_max)
+        print("overlaps", overlaps)
+        
+        # get contact points between target and supporting
+        contact = p.getContactPoints(obj_dict[target]["boxID"], obj_dict[supporting]["boxID"])
+        print("contact points", contact)
+        
         # keep track of obj position
         for obj in obj_dict:
             cubePos, cubeOrn = p.getBasePositionAndOrientation(obj_dict[obj]["boxID"])
             obj_dict[obj]["pos"].append(cubePos)
             obj_dict[obj]["orn"].append(cubeOrn)
-            
-        # if level == "oracle":
-        #     for obj in struct_obj_dict:
-        #         cubePos, cubeOrn = p.getBasePositionAndOrientation(struct_obj_dict[obj]["boxID"])
-        #         struct_obj_dict[obj]["pos"].append(cubePos)
-        #         obj_dict[obj]["orn"].append(cubeOrn)
 
     p.disconnect()
 
@@ -80,6 +77,7 @@ def getDims(obj):
     max_x = -1*sys.maxsize
     max_y = -1*sys.maxsize
     max_z = -1*sys.maxsize
+    
     for dim in dims:
         if dim['x'] <= min_x:
             min_x = dim['x']
@@ -95,7 +93,6 @@ def getDims(obj):
             min_z = dim['z']
         if dim['z'] >= max_z:
             max_z = dim['z']
-
     return [max_x - min_x, max_z - min_z, max_y - min_y]
 
 def getColor(color_vals):
@@ -108,52 +105,62 @@ def getColor(color_vals):
 def createObjectShape(obj):
     meshScale = getDims(obj)
     
-    shift = list(obj["rotation"].values())
-    shift = [shift[0], shift[2], shift[1]]
-    start_orientation = p.getQuaternionFromEuler(shift)
-    start_position = list(obj["position"].values())
-    start_position = [start_position[0], start_position[2], start_position[1]]
+    if obj["shape"] != "structural":
+        # generate noise on position and orientation
+        shift = [0, 0, 0]
+        # shift = list(obj["rotation"].values())
+        # shift_noise = np.random.normal(0,0.5,len(shift))
+        # shift = shift + shift_noise
+        shift = [round(shift[1]), round(shift[2]), round(shift[0])]
+        start_orientation = p.getQuaternionFromEuler(shift)
+         
+        start_position = list(obj["position"].values())
+        # pos_noise = np.random.normal(0,0.5,len(start_position))
+        # start_position = start_position + pos_noise
+        start_position = [start_position[0], start_position[2], start_position[1]]
+    else:
+        shift = list(obj["rotation"].values())
+        shift = [round(shift[0]), round(shift[2]), round(shift[1])]
+        start_orientation = p.getQuaternionFromEuler(shift)
+        
+        # shift = [0, 0, 0]
+        start_position = list(obj["position"].values())
+        start_position = [start_position[0], start_position[2], start_position[1]]
+
     # set color
     rgba_color = getColor(obj["color"])
 
     visualShapeId = ''
     collisionShapeId = ''
 
-    # TODO
-    # if a structural object was created - not needed for now??
-    if obj["shape"] == "structural":
-        # if "wall" in obj.uuid or "floor" in obj.uuid:
-        #     return -1 # say we can't build this. It's not really relevant at this point
-            
-        #     # TODO
-        #     # render the floors and walls without causing everything to fly up
-        # else:
-        #     # render the cylinder as a cube for now
-        #     visualShapeId = p.createVisualShape(shapeType=p.GEOM_MESH,fileName="cube.obj", rgbaColor=rgba_color, specularColor=[0.4,.4,0], visualFramePosition=shift, meshScale=meshScale)
-        #     collisionShapeId = p.createCollisionShape(shapeType=p.GEOM_MESH, fileName="cube.obj", collisionFramePosition=shift,meshScale=meshScale)
-        return -1
+    # TESTING - load duck instead of object
+    # if obj["shape"] != "structural":
+    #     return p.loadURDF("duck_vhacd.urdf", basePosition=start_position, baseOrientation=start_orientation)
 
     # create visual and colision shapes
     print("obj shape", obj["shape"])
-    if obj["shape"] == "cube":
+    if obj["shape"] == "cube" or obj["shape"] == "structural":
         visualShapeId = p.createVisualShape(shapeType=p.GEOM_MESH,fileName="cube.obj", rgbaColor=rgba_color, specularColor=[0.4,.4,0], visualFramePosition=shift, meshScale=meshScale)
         collisionShapeId = p.createCollisionShape(shapeType=p.GEOM_MESH, fileName="cube.obj", collisionFramePosition=shift,meshScale=meshScale)
     elif obj["shape"] == "square frustum":
         visualShapeId = p.createVisualShape(shapeType=p.GEOM_MESH,fileName="square_frustum.obj", rgbaColor=rgba_color, specularColor=[0.4,.4,0], visualFramePosition=shift, meshScale=meshScale)
         collisionShapeId = p.createCollisionShape(shapeType=p.GEOM_MESH, fileName="square_frustum.obj", collisionFramePosition=shift, meshScale=meshScale)
     elif obj["shape"] == "circle frustum":
-        print(start_orientation)
         visualShapeId = p.createVisualShape(shapeType=p.GEOM_MESH,fileName="circle_frustum.obj", rgbaColor=rgba_color, specularColor=[0.4,.4,0], visualFramePosition=shift, meshScale=meshScale)
         collisionShapeId = p.createCollisionShape(shapeType=p.GEOM_MESH, fileName="circle_frustum.obj", collisionFramePosition=shift,meshScale=meshScale)
     elif obj["shape"] == "cylinder":
         visualShapeId = p.createVisualShape(shapeType=p.GEOM_MESH,fileName="cylinder.obj", rgbaColor=rgba_color, specularColor=[0.4,.4,0], visualFramePosition=shift, meshScale=meshScale)
         collisionShapeId = p.createCollisionShape(shapeType=p.GEOM_MESH, fileName="cylinder.obj", collisionFramePosition=shift,meshScale=meshScale)
+    elif obj["shape"] == "letter l":
+        meshScale = [meshScale[0], meshScale[1], meshScale[2] * 0.75] # hard coded transformations to compensate for unknown wonkiness... needs to be tested
+        start_orientation = [start_orientation[0], start_orientation[1], 90, 0.011]
+        visualShapeId = p.createVisualShape(shapeType=p.GEOM_MESH,fileName="l_joint.obj", rgbaColor=rgba_color, specularColor=[0.4,.4,0], visualFramePosition=shift, meshScale=meshScale)
+        collisionShapeId = p.createCollisionShape(shapeType=p.GEOM_MESH, fileName="l_joint.obj", collisionFramePosition=shift, meshScale=meshScale)
     else:
+        meshScale = [meshScale[1], meshScale[2], meshScale[0]]
         visualShapeId = p.createVisualShape(shapeType=p.GEOM_MESH,fileName="cube.obj", rgbaColor=rgba_color, specularColor=[0.4,.4,0], visualFramePosition=shift, meshScale=meshScale)
-        collisionShapeId = p.createCollisionShape(shapeType=p.GEOM_MESH, fileName="cube.obj", collisionFramePosition=shift,meshScale=meshScale)
+        collisionShapeId = p.createCollisionShape(shapeType=p.GEOM_MESH, fileName="cube.obj", collisionFramePosition=shift, meshScale=meshScale)
         
     # return body
-    # print(visualShapeId, collisionShapeId)
-    print(start_orientation)
-    return p.createMultiBody(baseMass=obj["mass"], baseOrientation=start_orientation, baseInertialFramePosition=[0, 0, 0], baseCollisionShapeIndex=collisionShapeId, baseVisualShapeIndex=visualShapeId, basePosition=start_position, useMaximalCoordinates=True)
+    return p.createMultiBody(baseMass=obj["mass"], baseOrientation=start_orientation, baseInertialFramePosition=[0, 0, 0], baseCollisionShapeIndex=collisionShapeId, baseVisualShapeIndex=visualShapeId, basePosition=start_position)
     

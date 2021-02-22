@@ -19,7 +19,6 @@ class ObjectFace:
 
         return x_matches and y_matches
 
-
 class GravityAgent:
     def __init__(self, controller, level):
         self.controller = controller
@@ -78,6 +77,26 @@ class GravityAgent:
 
         return target_x_inrange and target_y_inrange
 
+    @staticmethod
+    def target_obj_id(step_output):
+        if len(list(step_output['object_list'].keys())) > 0:
+            return list(step_output['object_list'].keys()).pop()
+        return None
+
+    @staticmethod
+    def struc_obj_ids(step_output):
+        filtered_keys = [
+            key 
+            for key in step_output["structural_object_list"].keys() 
+            if len(key) > 35
+        ]
+        out = dict({
+            ("pole", so) if "pole_" in so else ("support", so)
+            for so in filtered_keys
+        }
+        )
+        return out.get("support"), out.get("pole")
+
     def sense_voe(self, drop_step, support_coords, target_trajectory):
         '''
         Assumptions:
@@ -121,19 +140,25 @@ class GravityAgent:
             else:
                 step_output = dict(step_output)
 
-
+            floor_object = "floor"  # Not a dynamic object ID
+            target_object = self.target_obj_id(step_output)
+            supporting_object, pole_object = self.struc_obj_ids(step_output)
             # Collect observations
             # if support_coords is None:
             #     support_coords = step_output["object_list"]["supporting_object"]["dimensions"]
 
             try:
-                target_trajectory.append(step_output["object_list"]["target_object"]["dimensions"])
-                pole_states.append(step_output["structural_object_list"]["pole_object"])
+                # Expected to not dissapear until episode ends
+                support_coords = step_output["structural_object_list"][supporting_object]["dimensions"]
+                floor_coords = step_output["structural_object_list"][floor_object]["dimensions"]
+                # Target / Pole may not appear in view yet, start recording when available
+                target_trajectory.append(step_output["object_list"][target_object]["dimensions"])
+                pole_states.append(step_output["structural_object_list"][pole_object])
             except KeyError:  # Object / Pole is not in view yet
                 pass
 
             if len(pole_states) > 1 and self.determine_drop_step(pole_states) == len(pole_states) - 2:
-                obj_traj_orn = pybullet_utilities.render_in_pybullet(previous_step, self.level)
+                obj_traj_orn = pybullet_utilities.render_in_pybullet(step_output, target_object, supporting_object, self.level)
             
             choice = plausible_str(True)
             voe_xy_list = []
@@ -144,14 +169,14 @@ class GravityAgent:
 
         if obj_traj_orn != None:
             # simulator trajectory
-            sim_start_pos = np.array(obj_traj_orn['target_object']['pos'][0])
-            sim_end_pos = np.array(obj_traj_orn['target_object']['pos'][-1])
-
+            sim_start_pos = np.array(obj_traj_orn[target_object]['pos'][0])
+            sim_end_pos = np.array(obj_traj_orn[target_object]['pos'][-1])
+            print("target start/end pos", sim_start_pos, sim_end_pos)
             #final step out
-            unity_end_pos = list(step_output["object_list"]["target_object"]["position"].values())
+            unity_end_pos = list(step_output["object_list"][target_object]["position"].values())
             unity_end_pos = np.array([unity_end_pos[0], unity_end_pos[2], unity_end_pos[1]])
             end_pos_diff = np.linalg.norm(unity_end_pos - sim_end_pos)
-            if end_pos_diff >= 0.12:
+            if end_pos_diff >= 0.25:
                 print("Physics Sim Suggests VoE!")
 
         drop_step = self.determine_drop_step(pole_states)
