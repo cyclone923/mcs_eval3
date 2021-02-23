@@ -43,6 +43,8 @@ class Evaluation3_Agent:
 
     def run_scene(self, one_scene):
         scene_config, status = mcs.load_config_json_file(one_scene)
+        if scene_config == {}:
+            raise ValueError("Scene Config is Empty", one_scene)
         goal_type = scene_config['goal']['category']
         if goal_type == "intuitive physics":
             if 'gravity' in scene_config['name']:

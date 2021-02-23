@@ -97,7 +97,7 @@ class GravityAgent:
         )
         return out.get("support"), out.get("pole")
 
-    def sense_voe(self, drop_step, support_coords, target_trajectory):
+    def sense_voe(self, drop_step, support_coords, target_trajectory, physics_flag):
         '''
         Assumptions:
         -> Objects are assumed to be rigid with uniform mass density
@@ -116,7 +116,7 @@ class GravityAgent:
         # Now verify if the target's final state is consistent with the above
         target_actually_rested = target == target_end
 
-        return target_should_rest ^ target_actually_rested
+        return (target_should_rest ^ target_actually_rested ^ physics_flag) # return xor of three flags, if return True, there was a voe
 
     def run_scene(self, config, desc_name):
         if DEBUG:
@@ -167,6 +167,7 @@ class GravityAgent:
                 choice=choice, confidence=1.0, violations_xy_list=voe_xy_list,
                 heatmap_img=voe_heatmap)
 
+        physics_flag = None
         if obj_traj_orn != None:
             # simulator trajectory
             sim_start_pos = np.array(obj_traj_orn[target_object]['pos'][0])
@@ -175,12 +176,16 @@ class GravityAgent:
             #final step out
             unity_end_pos = list(step_output["object_list"][target_object]["position"].values())
             unity_end_pos = np.array([unity_end_pos[0], unity_end_pos[2], unity_end_pos[1]])
-            end_pos_diff = np.linalg.norm(unity_end_pos - sim_end_pos)
+            end_pos_diff = np.linalg.norm(unity_end_pos[-1] - sim_end_pos[-1]) # difference in height
             if end_pos_diff >= 0.25:
                 print("Physics Sim Suggests VoE!")
+                physics_flag = True
+            else:
+                print("Physics Sim Suggests no VoE!")
+                physics_flag = False
 
         drop_step = self.determine_drop_step(pole_states)
-        voe_flag = self.sense_voe(drop_step, support_coords, target_trajectory)
+        voe_flag = self.sense_voe(drop_step, support_coords, target_trajectory, physics_flag)
 
         if voe_flag:
             print("VoE!")

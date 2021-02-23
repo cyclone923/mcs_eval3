@@ -13,12 +13,14 @@ def render_in_pybullet(step_output, target, supporting, level):
     p.setAdditionalSearchPath(os.getcwd() + "/gravity/pybullet_objects/") #optionally
     p.setGravity(0,0,-10)
     planeId = p.loadURDF("plane100.urdf")
+    print(planeId)
     
     p.resetDebugVisualizerCamera(step_output["camera_height"] * 2, 0, -42.5, [0,0,0])
     
     # get objects from output
     obj_dict = {}
     boxId = createObjectShape(step_output["structural_object_list"][supporting])
+    print(boxId)
     if boxId == -1:
         print("trouble building supporting object")
     else:
@@ -32,6 +34,8 @@ def render_in_pybullet(step_output, target, supporting, level):
     # print(json.dumps(step_output["structural_object_list"][supporting], indent=4))
     # quit()
     boxId = createObjectShape(step_output["object_list"][target])
+    print(boxId)
+    
     if boxId == -1:
         print("trouble building target object")
     else:
@@ -41,21 +45,23 @@ def render_in_pybullet(step_output, target, supporting, level):
             "orn": []
         }
 
-    print("numBodies=", p.getNumBodies())
     # p.setRealTimeSimulation(1)
-    for i in range(3000):
+    for i in range(750):
         p.stepSimulation()
         time.sleep(1./360.)
         
         # confirm there aren't any overlaps on target object
         aabb_min, aabb_max = p.getAABB(obj_dict[target]["boxID"])
         overlaps = p.getOverlappingObjects(aabb_min, aabb_max)
-        print("overlaps", overlaps)
+        # print("overlaps", overlaps)
         
         # get contact points between target and supporting
         contact = p.getContactPoints(obj_dict[target]["boxID"], obj_dict[supporting]["boxID"])
-        print("contact points", contact)
-        
+        # print("contact points", contact)
+        # if contact != ():
+        #     print("support and target are making contact")
+        #     print(contact)
+
         # keep track of obj position
         for obj in obj_dict:
             cubePos, cubeOrn = p.getBasePositionAndOrientation(obj_dict[obj]["boxID"])
