@@ -1,6 +1,7 @@
 from dataclasses import dataclass
 from shapely.geometry import Polygon
 from scipy.spatial import ConvexHull
+from vision.gravity import L2DataPacket
 
 DEBUG = False
 
@@ -41,13 +42,12 @@ class GravityAgent:
         self.level = level
 
     @staticmethod
-    def determine_drop_step(pole_state_history):
+    def determine_drop_step(pole_color_history):
         '''
         Find the precise point when the suction is off.
         '''
         # Based on an assumption that the pole color changes after the drop (suction off)
 
-        pole_color_history = [md["texture_color_list"][0] for md in pole_state_history]
         init_color = pole_color_history[0]
 
         for idx, color in enumerate(pole_color_history):
@@ -159,7 +159,7 @@ class GravityAgent:
             print("DEBUG MODE!")
             
         # # Filter to run specific examples :: debug help
-        # specific_scenes = ["01", "09"]
+        # specific_scenes = ["02", "01"]
         # if all(code not in config["name"] for code in specific_scenes):
         #     return True
         # else:
@@ -175,7 +175,7 @@ class GravityAgent:
 
         # Inputs to determine VoE
         target_trajectory = []
-        pole_states = []  # To determine drop step
+        pole_color_history = []  # To determine drop step
         support_coords, floor_coords = None, None
 
         for i, x in enumerate(config['goal']['action_list']):
@@ -183,25 +183,18 @@ class GravityAgent:
 
             if step_output is None:
                 break
-            else:
-                step_output = dict(step_output)
-
-            # Map dynamic object IDs to their respective roles
-            floor_object = "floor"  # Not a dynamic object ID
-            target_object = self.target_obj_id(step_output)
-            supporting_object, pole_object = self.struc_obj_ids(step_output)
-
-            # Collect observations            
-            try:
-                # Expected to not dissapear until episode ends
-                support_coords = step_output["structural_object_list"][supporting_object]["dimensions"]
-                floor_coords = step_output["structural_object_list"][floor_object]["dimensions"]
-                # Target / Pole may not appear in view yet, start recording when available
-                target_trajectory.append(step_output["object_list"][target_object]["dimensions"])
-                pole_states.append(step_output["structural_object_list"][pole_object])
-            except KeyError:  
-                pass
             
+            # Map visuals to semantic actors
+            step_output = L2DataPacket(step_number=i, step_meta=step_output)
+
+            # Collect observations
+            # TODO: handle cases where some of the signals are offline
+            # TODO: update L2DataPacket to set <role> as an attribute
+            pole_color_history.append(step_output.pole.color)
+            target_trajectory.append(step_output.target.dims)
+            support_coords = step_output.support.dims
+            floor_coords = step_output.floor.dims
+
             choice = plausible_str(True)
             voe_xy_list = []
             voe_heatmap = None
@@ -209,7 +202,7 @@ class GravityAgent:
                 choice=choice, confidence=1.0, violations_xy_list=voe_xy_list,
                 heatmap_img=voe_heatmap)
 
-        drop_step = self.determine_drop_step(pole_states)
+        drop_step = self.determine_drop_step(pole_color_history)
         voe_flag = self.sense_voe(drop_step, support_coords, floor_coords, target_trajectory)
 
         if voe_flag:
