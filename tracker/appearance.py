@@ -163,8 +163,93 @@ class AppearanceMatchModel():
         return objects_info
 
 
-    def train(self):
-        pass
+    def to_png(self, images):
+        print("generating images")
+        for i in tqdm(range(len(images))):
+            img = images[i].reshape(50,50,3)
+            plt.imshow(img)
+            plt.savefig('allTrainImages/trImg_'+str(i))
+
+        return os.listdir('allTrainImages/')
+
+    def train(self,scenes, model_path, checkpoint_path, restore_checkpoint):
+        print('entered training mode')
+
+        if restore_checkpoint:
+            checkpt = pickle.load(open(checkpoint_path, 'rb'))
+            image_idx = checkpt['image idx']
+            self.obj_dictionary = pickle.load(open(model_path, 'rb'))
+            
+        else:
+            image_idx = 0
+        scene_data = scenes.data   
+        train_imgs = []
+        shapes = scenes.shape_labels
+        colors = scenes.color_labels
+        self.obj_dictionary = pickle.load(open(model_path, 'rb'))
+        
+        # uncomment the below code to generate .png files since cv2.SIFT works only on jpg/png formatted files
+        #follow below code only if the dataset is not extremely large. If testing on eentire dataset, consider using the code below for-loop
+
+        # allTrainImages = self.to_png(scene_data['images'])
+        # allTrainImages = os.listdir('trainTrial/')
+        # # print(len(allTrainImages))
+        # allTrainImages = sorted(allTrainImages, key=lambda x: int(x.partition('_')[2].partition('.')[0]))
+        
+        
+        # for k in self.obj_dictionary.keys():
+        #     print(k, len(self.obj_dictionary[k]['descriptors']), len(self.obj_dictionary[k]['keypoints']))
+        
+        # print(sum([len(self.obj_dictionary[k]['descriptors']) for k in self.obj_dictionary.keys()]))
+        
+        for i in range(len(allTrainImages)):
+            train_imgs.append((allTrainImages[i], shapes[scene_data['shapes'][i]], colors[scene_data['color'][i]]))
+        
+        for i in range(len(scene_data['images'])):
+            train_imgs.append((scene_data['images'][i], shapes[scene_data['shapes'][i]], colors[scene_data['color'][i]]))
+        # print(train_imgs[3960])
+        for i,(img, shape, color) in tqdm(enumerate(train_imgs[3959:])):  
+
+            img = img.reshape(50,50,3)
+            plt.imshow(img)
+            plt.savefig('trainTrial/trImg_'+str(i+3959))   
+            if shape not in self.obj_dictionary:
+                self.obj_dictionary[shape] = dict()
+                self.obj_dictionary[shape]['color'] = [color]
+                self.obj_dictionary[shape]['keypoints'] = list()
+                self.obj_dictionary[shape]['descriptors'] = list()
+                
+                # path of the image directory + image number whose features to be detected
+                trimg = cv2.imread('trainTrial/trImg_'+str(i)+'.png')
+                # trimg = cv2.imread('trainTrial/'+str(img))
+                k,d = self.detector.detectAndCompute(trimg, None)
+                kpts = [p.pt for p in k]
+                self.obj_dictionary[shape]['keypoints'].append(kpts)
+                self.obj_dictionary[shape]['descriptors'].append(d)
+                
+            else:
+                self.obj_dictionary[shape]['color'].append(color)
+                trimg = cv2.imread('trainTrial/trImg_'+str(i+3959)+'.png')
+                # trimg = cv2.imread('trainTrial/'+str(img))
+                k,d = self.detector.detectAndCompute(trimg, None)
+                kpts = [p.pt for p in k]
+                self.obj_dictionary[shape]['keypoints'].append(kpts)
+                self.obj_dictionary[shape]['descriptors'].append(d)
+                # print(k.pt)
+            
+            #for some reason checkpt isn't storing the indices so manually added here:/
+            if (i+3959)%1000==0:
+                modelDict = open(model_path, 'wb')
+                pickle.dump(self.obj_dictionary, modelDict)
+
+                checkpoint = open(checkpoint_path,'wb')
+                pickle.dump({'image idx': i+3959, 'model': self.obj_dictionary}, checkpoint)
+                print("saved checkpoint and model at image {}".format(i+3959))
+
+        print(self.obj_dictionary.keys())
+        modelDict = open(model_path, 'wb')
+        pickle.dump(self.obj_dictionary, modelDict)
+
 
     def test(self):
         pass
