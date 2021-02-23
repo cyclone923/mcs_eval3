@@ -245,8 +245,8 @@ class AppearanceMatchModel():
         
         # print(sum([len(self.obj_dictionary[k]['descriptors']) for k in self.obj_dictionary.keys()]))
         
-        for i in range(len(allTrainImages)):
-            train_imgs.append((allTrainImages[i], shapes[scene_data['shapes'][i]], colors[scene_data['color'][i]]))
+        # for i in range(len(allTrainImages)):
+        #     train_imgs.append((allTrainImages[i], shapes[scene_data['shapes'][i]], colors[scene_data['color'][i]]))
         
         for i in range(len(scene_data['images'])):
             train_imgs.append((scene_data['images'][i], shapes[scene_data['shapes'][i]], colors[scene_data['color'][i]]))
@@ -489,7 +489,11 @@ if __name__ == '__main__':
         pickle.dump(data, open(args.test_dataset_path, 'wb'))
 
     elif args.opr == 'train':
-        pass    # TODO: Gulshan is working on training
+        train_object_dataset = ObjectDataset(pickle.load(open(args.train_dataset_path, 'rb')))
+        # dataloader = DataLoader(train_object_dataset, batch_size=args.batch_size, shuffle=False, num_workers=1)
+        model = AppearanceMatchModel(train_object_dataset)
+
+        model.train(train_object_dataset, 'siftModel_t.p','checkpoint_pth.p',False)
 
     elif args.opr == 'test':
         train_object_dataset = ObjectDataset(pickle.load(open(args.train_dataset_path, 'rb')),
