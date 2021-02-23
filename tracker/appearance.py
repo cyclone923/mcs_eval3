@@ -1,5 +1,6 @@
 from argparse import ArgumentParser
 import pickle
+import gzip
 from pathlib import Path
 import os
 from .utils import draw_bounding_boxes, draw_appearance_bars, split_obj_masks, get_obj_position, get_mask_box
@@ -29,6 +30,47 @@ class ObjectDataset():
 
         self.data['shapes'] = np.array(self.data['shapes'])
         self.data['color'] = np.array(data['textures']).squeeze(1)
+
+        for shape_id, shape in enumerate(self.shape_labels):
+            self.data['shapes'][self.data['shapes'] == shape] = shape_id
+
+        for color_id, color in enumerate(self.color_labels):
+            self.data['color'][self.data['color'] == color] = color_id
+
+        self.data['shapes'] = self.data['shapes'].astype(np.int)
+        self.data['color'] = self.data['color'].astype(np.int)
+        self.transform = transform
+
+    def shape_label_name(self, label_id):
+        return self.shape_labels[label_id]
+
+    def shape_labels_count(self):
+        _labels, counts = np.unique(self.data['shapes'], return_counts=True)
+        return [counts[_labels == label_i][0] for label_i, _ in enumerate(self.shape_labels)]
+
+    def color_label_name(self, label_id):
+        return self.color_labels[label_id]
+
+    def color_labels_count(self):
+        _labels, counts = np.unique(self.data['color'], return_counts=True)
+        return [counts[_labels == label_i][0] for label_i, _ in enumerate(self.shape_labels)]
+    
+    def __len__(self):
+        return len(self.data['images'])
+
+    def __getitem__(self, idx):
+        if torch.is_tensor(idx):
+            idx = idx.tolist()
+
+        sample = {'images': self.data['images'][idx],
+                  'shapes': self.data['shapes'][idx],
+                  'color': self.data['color'][idx]}
+
+        if self.transform:
+            sample['gray_images'] = rgb_to_grayscale(torch.FloatTensor(sample['images']))
+
+        return sample
+
 class AppearanceMatchModel():
     def __init__(self):
         ### ATTRIBUTES LEARNED DURING TRAINING ###
@@ -70,20 +112,21 @@ class AppearanceMatchModel():
                 o_match_rates.append(len(o_good) / len(o_matches))
 
             o_match_rates = np.array(o_match_rates)
-            o_match_avg = np.sum(o_match_rates) / len(o_match_rates)
+            o_match_avg = np.mean(o_match_rates)
             match_avgs[obj_id] = o_match_avg
         max_o = max(match_avgs, key=lambda o: match_avgs[o])
         return max_o if match_avgs[max_o] >= 1 - self.feature_match_slack else None
 
     # Match feature descriptors
     def detectFeatureMatch(self, img_kp, img_des, obj):
-        if obj['base_image']['shape_id'] is None:
+        shape_id = obj['base_image']['shape_id']
+        if shape_id is None:
             match = self.frameMatch(img_kp, img_des, obj)  # fall back to frame-by-frame feature matching
         else:
             # feature match
-            avg_match_rate = 1     # TODO: Implement good match rate (see OpenCV Python SIFT docs)
+            # avg_match_rate = 1     # TODO: Implement good match rate (see OpenCV Python SIFT docs)
             l_match_rates = list()
-            for l_obj_img in self.obj_dictionary['shape_id']:
+            for l_obj_img in self.obj_dictionary[shape_id]:
                 l_matches = self.flann.knnMatch(img_des, l_obj_img.descriptors, k=2)
 
                 l_good = list()
@@ -93,7 +136,7 @@ class AppearanceMatchModel():
                 l_match_rates.append(len(l_good) / len(l_matches))
             
             l_match_rates = np.array(l_match_rates)
-            avg_match_rate = np.sum(l_match_rates) / len(l_match_rates)
+            avg_match_rate = np.mean(l_match_rates)
             if avg_match_rate >= 1 - self.feature_match_slack:
                 match = True
             else:
@@ -114,9 +157,9 @@ class AppearanceMatchModel():
         return len(f_good) / len(f_matches) >= 1 - self.feature_match_slack
 
     # Check for any appearance mismatches in the provided images
-    def match(self, image, objects_info, device='cpu', level='level2'):
+    def appearanceMatch(self, image, objects_info, device='cpu', level='level2'):
         for key, obj in objects_info.items():
-            if not obj['visible']:
+            if not obj['visible']:  # if the object is not visible, don't check for an appearance match; just go with the last match decision
                 continue
             top_x, top_y, bottom_x, bottom_y = obj['bounding_box']
             obj_current_image = image.crop((top_y, top_x, bottom_y, bottom_x))
@@ -251,8 +294,67 @@ class AppearanceMatchModel():
         pickle.dump(self.obj_dictionary, modelDict)
 
 
-    def test(self):
+    def test(self, dataloader):     # Tests how good the robot was at building the object dictionary
+        # batch_acc = { 'shape': list(), 'color': list() }
+        batch_acc = list()
+        for i, batch in enumerate(dataloader):  # for each object
+            object_image = batch['images']
+            object_gray_image = batch['gray_images']
+            object_shape = batch['shapes']
+            object_color = batch['color']
+            
+            object_image_kp, object_image_des = self.detector.detectAndCompute(object_image, None)
+            
+            l_match_rates = list()
+            for l_obj_img in self.obj_dictionary[object_shape]:
+                l_matches = self.flann.knnMatch(object_image_des, l_obj_img.descriptors, k=2)
+
+                l_good = list()
+                for m, n in l_matches:
+                    if m.distance < 0.7 * n.distance:
+                        l_good.append([m])
+                l_match_rates.append(len(l_good) / len(l_matches))
+            
+            l_match_rates = np.array(l_match_rates)
+            avg_match_rate = np.mean(l_match_rates)
+            batch_acc.append(avg_match_rate)
+        
+        print('Accuracy:', np.mean(batch_acc))
+            
         pass
+
+    def process_video(self, video_data, save_path=None, save_mp4=False, save_gif=False, device='cpu'):
+        track_info = dict()
+        processed_frames = list()
+        violation = False
+        for frame_num, frame in enumerate(video_data):
+            track_info = track_objects(frame.obj_mask, track_info)
+            track_info['objects'] = self.appearanceMatch(frame.image, track_info['objects'], device)
+
+            if save_gif:
+                img = draw_bounding_boxes(frame.image, track_info['objects'])
+                img = draw_appearance_bars(img, track_info['objects'])
+                processed_frames.append(img)
+            
+            if 'objects' in track_info and len(track_info['objects'].keys()) > 0:
+                for o in track_info['objects'].values():
+                    if not o['appearance']['match']:
+                        # print('Appearance Mismatch')
+                        violation = True
+        
+        # save gif
+        if save_gif:
+            processed_frames[0].save(save_path + '.gif', save_all=True,
+                                    append_images=processed_frames[1:], optimize=False, loop=1)
+
+        # save video
+        if save_gif and save_mp4:
+            import moviepy.editor as mp
+            clip = mp.VideoFileClip(save_path + '.gif')
+            clip.write_videofile(save_path + '.mp4')
+            os.remove(save_path + '.gif')
+
+        return violation
 
 # Convert the image to a Tensor
 def obj_image_to_tensor(obj_image, gray=False):
@@ -279,6 +381,149 @@ def rgb_to_grayscale(img, num_output_channels: int = 1):
 
     return l_img
 
+def closest_colour(requested_colour):
+    min_colours = dict()
+    for key, name in webcolors.css3_hex_to_names.items():
+        r_c, g_c, b_c = webcolors.hex_to_rgb(key)
+        rd = (r_c - requested_colour[0]) ** 2
+        gd = (g_c - requested_colour[1]) ** 2
+        bd = (b_c - requested_colour[2]) ** 2
+        min_colours[(rd + gd + bd)] = name
+    return min_colours[min(min_colours.keys())]
+
+
+def getNearestWebSafeColor(x):
+    r, g, b = x
+    r = int(round((r / 255.0) * 5) * 51)
+    g = int(round((g / 255.0) * 5) * 51)
+    b = int(round((b / 255.0) * 5) * 51)
+    return (r, g, b)
+
+
+def get_colour_name(requested_colour):
+    try:
+        closest_name = actual_name = webcolors.rgb_to_name(requested_colour)
+    except ValueError:
+        closest_name = closest_colour(requested_colour)
+        actual_name = None
+    return actual_name, closest_name
+
+def generate_data(scenes_files):
+    data = {'images': [], 'shapes': [], 'materials': [], 'textures': []}
+    for scene_file in tqdm(sorted(scenes_files)):
+        with gzip.open(scene_file, 'rb') as fd:
+            scene_data = pickle.load(fd)
+
+        for frame_num, frame in enumerate(scene_data):
+
+            objs = frame.obj_data
+            obj_masks = split_obj_masks(frame.obj_mask, len(objs))
+
+            for obj_i, (obj, obj_mask) in enumerate(zip(objs, obj_masks)):
+                if True not in obj_mask:
+                    # Remove any object which doesn't have a valid mask.
+                    print('Empty Mask found. It will be ignored for scene processing')
+                    objs.remove(obj)
+                    del obj_masks[obj_i]
+                else:
+                    (top_left_x, top_left_y), (bottom_right_x, bottom_right_y) = get_mask_box(obj_mask)
+                    obj_image = frame.image.crop((top_left_y, top_left_x, bottom_right_y, bottom_right_x))
+
+                    # Todo: Think again about this re-sizing
+                    # this is to ensure all images have same size.
+                    obj_image = obj_image.resize((50, 50))
+                    obj_image = np.array(obj_image).reshape(3, 50, 50)  # Because channels comes first for Conv2d
+                    data['images'].append(np.array(obj_image))
+                    data['shapes'].append(obj.shape)
+                    data['materials'].append(obj.material_list)
+                    data['textures'].append(obj.texture_color_list)
+
+    for x in data:
+        data[x] = np.array(data[x])
+
+    print('Len of Dataset:', len(data['images']))
+    return data
+
 def make_parser():
     parser = ArgumentParser()
+    parser.add_argument('--test-scenes-path', required=True, type=Path)
+    parser.add_argument('--train-scenes-path', required=True, type=Path)
+    parser.add_argument('--train-dataset-path', required=False, type=Path,
+                        default=os.path.join(os.getcwd(), 'train_object_dataset.p'))
+    parser.add_argument('--test-dataset-path', required=False, type=Path,
+                        default=os.path.join(os.getcwd(), 'test_object_dataset.p'))
+    parser.add_argument('--batch-size', required=False, type=int, default=32)
+    parser.add_argument('--results-dir', required=False, type=Path, default=os.path.join(os.getcwd(), 'results'))
+    parser.add_argument('--run', required=False, type=int, default=1)
+    parser.add_argument('--lr', required=False, type=float, default=0.001)
+    parser.add_argument('--epochs', required=False, type=int, default=50)
+    parser.add_argument('--checkpoint-interval', required=False, type=int, default=1)
+    parser.add_argument('--log-interval', required=False, type=int, default=1)
+    parser.add_argument('--opr', choices=['generate_dataset', 'train', 'test', 'demo'], default='demo',
+                        help='operation (opr) to be performed')
+
     return parser
+
+if __name__ == '__main__':
+    from torch.utils.tensorboard import SummaryWriter
+    from tqdm import tqdm
+
+    args = make_parser().parse_args()
+    args.device = 'cuda' if torch.cuda_is_available() else 'cpu'
+
+    # paths
+    experiment_path = os.path.join(args.results_dir, 'run_{}'.format(args.run), )
+    os.makedirs(experiment_path, exist_ok=True)
+    log_path = os.path.join(experiment_path, 'logs')
+    model_path = os.path.join(experiment_path, 'model.p')
+    checkpoint_path = os.path.join(experiment_path, 'checkpoint.p')
+
+    # Determine the operation to be performed
+    if args.opr == 'generate_dataset':
+        train_scenes = list(args.train_scenes_path.glob('*.pkl.gz'))
+        data = generate_data(train_scenes)
+        pickle.dump(data, open(args.train_dataset_path, 'wb'))
+
+        test_scenes = list(args.test_scenes_path.glob('*.pkl.gz'))
+        data = generate_data(test_scenes)
+        pickle.dump(data, open(args.test_dataset_path, 'wb'))
+
+    elif args.opr == 'train':
+        pass    # TODO: Gulshan is working on training
+
+    elif args.opr == 'test':
+        train_object_dataset = ObjectDataset(pickle.load(open(args.train_dataset_path, 'rb')),
+                                             transform=transforms.Compose([transforms.Grayscale()]))
+        dataloader = DataLoader(train_object_dataset, batch_size=args.batch_size, shuffle=False, num_workers=1)
+        model = pickle.load(model_path)
+
+        model.test(dataloader)
+
+    elif args.opr == 'demo':
+        all_scenes = list(args.train_scenes_path.glob('*.pkl.gz'))
+        print(f'Found {len(all_scenes)} scenes')
+
+        model = pickle.load(model_path)
+
+        violations = list()
+        np.random.seed(0)
+        np.random.shuffle(all_scenes)
+        mismatch_cases = list()
+
+        for idx, scene_file in enumerate(all_scenes):
+            with gzip.open(scene_file, 'rb') as fd:
+                scene_data = pickle.load(fd)
+            
+            print(f'{idx:} {scene_file.name}')
+            v = model.process_video(scene_data, os.path.join(os.getcwd(), scene_file.name), save_mp4=True, device=args.device, save_gif=True)
+
+            if v:
+                mismatch_cases.append(scene_file)
+            violations.append(v)
+        print(mismatch_cases)
+        print((len(violations) - sum(violations)) / len(violations))
+
+
+
+
+
