@@ -50,3 +50,5 @@ results/
 mcs_config.yaml
 unity_path.yaml
 
+tracker/siftModel_t.p
+tracker/train_object_dataset_f.p

@@ -3,7 +3,7 @@ from physicsvoe import framewisevoe, occlude
 from physicsvoe.timer import Timer
 from physicsvoe.data.types import make_camera
 
-from tracker import track, e3_appearence as appearence, filter_masks
+from tracker import track, e3_appearence as appearence, filter_masks, appearance as e4_appearance
 import visionmodule.inference as vision
 
 from pathlib import Path
@@ -28,9 +28,9 @@ class VoeAgent:
             self.prefix = out_prefix
         self.device = 'cuda' if torch.cuda.is_available() else 'cpu'
         # Create appearace model, load its (hardcoded) pretrained weights
-        self.app_model = appearence.AppearanceMatchModel()
-        self.app_model.load_state_dict(torch.load(APP_MODEL_PATH, map_location=torch.device(self.device)))
-        self.app_model = self.app_model.to(self.device).eval()
+        self.app_model = e4_appearance.AppearanceMatchModel()
+        # self.app_model.load_state_dict(torch.load(APP_MODEL_PATH, map_location=torch.device(self.device)))
+        # self.app_model = self.app_model.to(self.device).eval()
         # The full vision model is used for object mask prediction, so it
         # isn't used for the level2/oracle levels (where masks are provided).
         if self.level == 'level1':
@@ -91,6 +91,7 @@ class VoeAgent:
         # output
         depth_map = step_output.depth_map_list[-1]
         rgb_image = step_output.image_list[-1]
+        # print(rgb_image)
         # We need to calculate+store some camera properties so that we can
         # project points between screen space into world space
         camera_info = make_camera(step_output)
@@ -125,14 +126,13 @@ class VoeAgent:
         obj_occluded = occlude.detect_occlusions(depth_map, tracked_masks, all_obj_ids, area_hists)
         console.print('[yellow]Objects occluded?[/yellow]', obj_occluded)
 
-        for o_id in obj_occluded:
-            self.track_info['objects'][o_id] = obj_occluded[o_id]
+        for o_id in range(0, len(obj_occluded)):
+            # print(o_id)
+            self.track_info['objects'][o_id]['occluded'] = obj_occluded[o_id]
+            # print(self.track_info['objects'])
 
         # Add appearance model's output to the object tracking info.
-        self.track_info['objects'] = \
-            appearence.object_appearance_match(self.app_model, rgb_image,
-                                               self.track_info['objects'],
-                                               self.device, self.level)
+        self.track_info['objects'] = self.app_model.appearanceMatch(rgb_image, self.track_info['objects'], self.device, self.level)
         if DEBUG:
             # Generate+output appearance model's thoughts
             img = appearence.draw_bounding_boxes(rgb_image, self.track_info['objects'])

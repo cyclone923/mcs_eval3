@@ -16,6 +16,10 @@ import torch.nn as nn
 import cv2
 import webcolors
 import sys
+import matplotlib.pyplot as plt
+from rich.console import Console
+
+console = Console()
 
 class ObjectFeatures():
     def __init__(self, kp, des):
@@ -77,7 +81,7 @@ class AppearanceMatchModel():
 
         # The learned amount of leeway in feature match distance
         # to allow without raising an appearance mismatch
-        self.feature_match_slack = 0
+        self.feature_match_slack = 0.25
         self.obj_dictionary = dict()    # The dictionary of learned objects and their keypoints and descriptors
         
         ### ATTRIBUTES USED IN TESTING/EVAL ###
@@ -87,11 +91,15 @@ class AppearanceMatchModel():
         # using the learned object dictionary and the robot
         # must fall back to frame-by-frame matching.
         # self.prev_obj_features = dict()
-        self.detector = cv2.SIFT()      # The SIFT feature detection object
+        self.detector = cv2.SIFT_create()      # The SIFT feature detection object
         FLANN_INDEX_KDTREE = 0
         index_params = dict(algorithm=FLANN_INDEX_KDTREE, trees=5)
         search_params = dict(checks=50)
         self.flann = cv2.FlannBasedMatcher(index_params, search_params)       # FLANN based matcher
+
+    def eval(self):
+        obj_dictionary_pth = 'tracker/siftModel_t.p'
+        self.obj_dictionary = pickle.load( open(obj_dictionary_pth, 'rb') )
 
     # Search the learned object space to identify what the initial object is
     def identifyInitialObject(self, img_kp, img_des):
@@ -100,9 +108,9 @@ class AppearanceMatchModel():
         match_avgs = dict()
         for obj_id, obj in self.obj_dictionary.items():
             o_match_rates = list()
-            for o_img in obj:
-                o_kp = o_img.keypoints
-                o_des = o_img.descriptors
+            for o_img in range(0, len(obj['descriptors'])):
+                o_kp = obj['keypoints'][o_img]
+                o_des = obj['descriptors'][o_img]
                 o_matches = self.flann.knnMatch(img_des, o_des, k=2)
                 
                 o_good = list()
@@ -119,10 +127,10 @@ class AppearanceMatchModel():
 
     # Match feature descriptors
     def detectFeatureMatch(self, img_kp, img_des, obj):
-        shape_id = obj['base_image']['shape_id']
-        if shape_id is None:
+        if 'base_image' not in obj.keys() or obj['base_image']['shape_id'] is None:
             match = self.frameMatch(img_kp, img_des, obj)  # fall back to frame-by-frame feature matching
         else:
+            shape_id = obj['base_image']['shape_id']
             # feature match
             # avg_match_rate = 1     # TODO: Implement good match rate (see OpenCV Python SIFT docs)
             l_match_rates = list()
@@ -146,8 +154,11 @@ class AppearanceMatchModel():
 
     # Determine feature match with the state of the object in the previous frame
     def frameMatch(self, img_kp, img_des, obj):
-        prev_kp = obj['appearance']['keypoint_history'][-1]
-        prev_des = obj['appearance']['descriptor_history'][-1]
+        try:
+            prev_kp = obj['appearance']['keypoint_history'][-1]
+            prev_des = obj['appearance']['descriptor_history'][-1]
+        except KeyError:
+            return True
         f_matches = self.flann.knnMatch(img_des, prev_des, k=2) # k=2 so we can apply the ratio test next
         f_good = list()
         for m, n in f_matches:
@@ -166,8 +177,10 @@ class AppearanceMatchModel():
 
             image_area = np.prod(obj_current_image.size)
             base_image = np.array(image)
-            mask_image = np.zeroes(obj['mask'].shape, dtype=base_image.dtype)
+            mask_image = np.zeros(obj['mask'].shape, dtype=base_image.dtype)
             mask_image[obj['mask']] = 255
+
+            console.log('base image for obj', key, 'created')
 
             # obj_clr_hist_0 = cv2.calcHist([np.array(image)], [0], mask_image, [10], [0, 256])
             # obj_clr_hist_1 = cv2.calcHist([np.array(image)], [1], mask_image, [10], [0, 256])
@@ -175,16 +188,18 @@ class AppearanceMatchModel():
             # obj_clr_hist = (obj_clr_hist_0 + obj_clr_hist_1 + obj_clr_hist_2) / 3
 
             # run SIFT on image
-            img_kp, img_des = self.detector.detectAndCompute(obj_current_image, None)
+            img_kp, img_des = self.detector.detectAndCompute(base_image, None)
 
-            if 'base_image' not in obj.keys() or (len(obj['position_history'] < 5) and obj['base_image']['image_area'] < image_area):
+            if 'base_image' not in obj.keys() or (len(obj['position_history']) < 5 and obj['base_image']['image_area'] < image_area):
                 obj['base_image'] = dict()
+                obj['base_image']['image_area'] = image_area
                 obj['base_image']['shape_id'] = self.identifyInitialObject(img_kp, img_des)
+                obj['appearance'] = dict()
                 obj['appearance']['feature_history'] = dict()
                 obj['appearance']['feature_history']['keypoints'] = list()
                 obj['appearance']['feature_history']['descriptors'] = list()
+                obj['appearance']['match'] = True
                 # obj['base_image']['histogram'] = obj_clr_hist
-                obj['appearance'] = dict()
 
             # Run detectFeatureMatch
             obj, feature_match = self.detectFeatureMatch(img_kp, img_des, obj)
@@ -215,7 +230,7 @@ class AppearanceMatchModel():
 
         return os.listdir('allTrainImages/')
 
-    def train(self,scenes, model_path, checkpoint_path, restore_checkpoint):
+    def train(self, scenes, model_path, checkpoint_path, restore_checkpoint):
         print('entered training mode')
 
         if restore_checkpoint:
@@ -491,7 +506,7 @@ if __name__ == '__main__':
     elif args.opr == 'train':
         train_object_dataset = ObjectDataset(pickle.load(open(args.train_dataset_path, 'rb')))
         # dataloader = DataLoader(train_object_dataset, batch_size=args.batch_size, shuffle=False, num_workers=1)
-        model = AppearanceMatchModel(train_object_dataset)
+        model = AppearanceMatchModel()
 
         model.train(train_object_dataset, 'siftModel_t.p','checkpoint_pth.p',False)
 
