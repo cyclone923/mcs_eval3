@@ -75,6 +75,60 @@ class ObjectDataset():
 
         return sample
 
+class OpenCVModel():
+    def __init__(self):
+        self.OPENCV_OBJECT_TRACKERS = {
+            'csrt': cv2.TrackerCSRT_create,
+            'kcf': cv2.TrackerKCF_create,
+            'mil': cv2.TrackerMIL_create,
+            'goturn': cv2.TrackerGOTURN_create
+        }
+
+    def initNewTracker(self, frame, bbox, type='csrt'):
+        return self.OPENCV_OBJECT_TRACKERS[type]().init(frame, bbox)
+
+    def match(self, frame, objects_info, device='cpu', level='level2'):
+        for key, obj in objects_info.items():
+            if not ['visible']:
+                continue
+
+            # if 'appearance' not in obj.keys():
+            #     obj['appearance'] = dict()
+            #     obj['appearance']['match'] = True
+            
+            # if obj['occluded']:
+            #     continue
+
+            init_bb = obj['bounding_box']
+            obj_current_image = frame.crop(init_bb)
+
+            image_area = np.prod(obj_current_image.size)
+            base_image = np.array(frame)
+            mask_image = np.zeros(obj['mask'].shape, dtype=base_image.dtype)
+            mask_image[obj['mask']] = 255
+
+            # opencv_image = cv2.cvtColor(base_image, cv2.COLOR_RGB2BGR)
+
+            if 'base_image' not in obj.keys():
+                obj['base_image'] = dict()
+                obj['tracker'] = self.initNewTracker(base_image, init_bb, type='csrt')
+                obj['appearance'] = dict()
+
+            ok, curr_bb = obj['tracker'].update(base_image)
+
+            if not obj['occluded']:
+                obj['appearance']['match'] = ok
+
+                if 'mismatch_count' not in obj['appearance']:
+                    obj['appearance']['mismatch_count'] = 0
+
+                if obj['appearance']['match']:
+                    obj['appearance']['mismatch_count'] = 0
+                else:
+                    obj['appearance']['mismatch_count'] += 1
+
+        return objects_info
+
 class SIFTModel():
     def __init__(self):
         self.feature_match_slack = 0.25         # The amount of match rate to allow without declaring a mismatch 
@@ -218,10 +272,10 @@ class SIFTModel():
 
 class AppearanceMatchModel():
     def __init__(self, modeler):
-        if modeler == 'SIFT':
+        if modeler == 'sift':
             self.modeler = SIFTModel()
         else:
-            self.modeler = SIFTModel()  # TEMP: Replace with KCF/CSRT here when implemented
+            self.modeler = OpenCVModel()  # TEMP: Replace with KCF/CSRT here when implemented
 
     # Check for any appearance mismatches in the provided images
     def appearanceMatch(self, image, objects_info, device='cpu', level='level2'):
@@ -513,7 +567,7 @@ if __name__ == '__main__':
     elif args.opr == 'train':
         train_object_dataset = ObjectDataset(pickle.load(open(args.train_dataset_path, 'rb')))
         # dataloader = DataLoader(train_object_dataset, batch_size=args.batch_size, shuffle=False, num_workers=1)
-        model = AppearanceMatchModel('SIFT')
+        model = AppearanceMatchModel('sift')
 
         model.train(train_object_dataset, 'siftModel_t.p','checkpoint_pth.p',False)
 
