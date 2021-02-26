@@ -28,7 +28,7 @@ class VoeAgent:
             self.prefix = out_prefix
         self.device = 'cuda' if torch.cuda.is_available() else 'cpu'
         # Create appearace model, load its (hardcoded) pretrained weights
-        self.app_model = e4_appearance.AppearanceMatchModel()
+        self.app_model = e4_appearance.AppearanceMatchModel('SIFT')
         # self.app_model.load_state_dict(torch.load(APP_MODEL_PATH, map_location=torch.device(self.device)))
         # self.app_model = self.app_model.to(self.device).eval()
         # The full vision model is used for object mask prediction, so it

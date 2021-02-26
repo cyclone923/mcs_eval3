@@ -73,7 +73,7 @@ def make_parser():
 if __name__ == "__main__":
     args = make_parser().parse_args()
     agent = Evaluation3_Agent(args.unity_path, args.config, args.prefix)
-    agent.phys_voe.app_model.eval()
+    agent.phys_voe.app_model.modeler.eval()
     goal_dir = args.scenes
     all_scenes = [
         os.path.join(goal_dir, one_scene)
