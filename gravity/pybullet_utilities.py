@@ -160,7 +160,7 @@ def createObjectShape(obj):
         visualShapeId = p.createVisualShape(shapeType=p.GEOM_MESH,fileName="l_joint.obj", rgbaColor=rgba_color, specularColor=[0.4,.4,0], visualFramePosition=shift, meshScale=meshScale)
         collisionShapeId = p.createCollisionShape(shapeType=p.GEOM_MESH, fileName="l_joint.obj", collisionFramePosition=shift, meshScale=meshScale)
     elif "triangular prism" == obj["shape"]:
-        meshScale = [meshScale[1], meshScale[2], meshScale[0]] # these might be correct, have to create a mesh
+        meshScale = [meshScale[1], meshScale[2], meshScale[0]]
         visualShapeId = p.createVisualShape(shapeType=p.GEOM_MESH,fileName="triangular prism.obj", rgbaColor=rgba_color, specularColor=[0.4,.4,0], visualFramePosition=shift, meshScale=meshScale)
         collisionShapeId = p.createCollisionShape(shapeType=p.GEOM_MESH, fileName="triangular prism.obj", collisionFramePosition=shift, meshScale=meshScale)
     else:

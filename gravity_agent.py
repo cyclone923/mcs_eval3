@@ -117,7 +117,7 @@ class GravityAgent:
         # Now verify if the target's final state is consistent with the above
         target_actually_rested = target == target_end
 
-        return (target_should_rest ^ target_actually_rested ^ physics_flag) # return xor of three flags, if return = True, there was a voe
+        return (target_should_rest ^ target_actually_rested) or physics_flag # return xor of three flags, if return = True, there was a voe
 
     def run_scene(self, config, desc_name):
         if DEBUG:
