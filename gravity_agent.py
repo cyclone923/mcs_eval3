@@ -40,6 +40,7 @@ class GravityAgent:
         # else:
         #     raise(Exception("Drop step not detected by observing color of pole"))
         return -1
+
     @staticmethod
     def get_object_bounding_simplices(dims):
         y_coords = [pt["y"] for pt in dims]
@@ -116,7 +117,7 @@ class GravityAgent:
         # Now verify if the target's final state is consistent with the above
         target_actually_rested = target == target_end
 
-        return (target_should_rest ^ target_actually_rested ^ physics_flag) # return xor of three flags, if return True, there was a voe
+        return (target_should_rest ^ target_actually_rested ^ physics_flag) # return xor of three flags, if return = True, there was a voe
 
     def run_scene(self, config, desc_name):
         if DEBUG:
@@ -143,9 +144,6 @@ class GravityAgent:
             floor_object = "floor"  # Not a dynamic object ID
             target_object = self.target_obj_id(step_output)
             supporting_object, pole_object = self.struc_obj_ids(step_output)
-            # Collect observations
-            # if support_coords is None:
-            #     support_coords = step_output["object_list"]["supporting_object"]["dimensions"]
 
             try:
                 # Expected to not dissapear until episode ends
@@ -167,25 +165,26 @@ class GravityAgent:
                 choice=choice, confidence=1.0, violations_xy_list=voe_xy_list,
                 heatmap_img=voe_heatmap)
 
-        physics_flag = None
+        physics_voe_flag = None
         if obj_traj_orn != None:
             # simulator trajectory
             sim_start_pos = np.array(obj_traj_orn[target_object]['pos'][0])
             sim_end_pos = np.array(obj_traj_orn[target_object]['pos'][-1])
-            print("target start/end pos", sim_start_pos, sim_end_pos)
+            print("pybullet end pos", sim_end_pos)
             #final step out
             unity_end_pos = list(step_output["object_list"][target_object]["position"].values())
             unity_end_pos = np.array([unity_end_pos[0], unity_end_pos[2], unity_end_pos[1]])
-            end_pos_diff = np.linalg.norm(unity_end_pos[-1] - sim_end_pos[-1]) # difference in height
-            if end_pos_diff >= 0.25:
+            end_pos_diff = abs(unity_end_pos[-1] - sim_end_pos[-1]) # difference in height
+            print("unit end pos:", unity_end_pos)
+            if end_pos_diff >= 0.3:
                 print("Physics Sim Suggests VoE!")
-                physics_flag = True
+                physics_voe_flag = True
             else:
                 print("Physics Sim Suggests no VoE!")
-                physics_flag = False
+                physics_voe_flag = False
 
         drop_step = self.determine_drop_step(pole_states)
-        voe_flag = self.sense_voe(drop_step, support_coords, target_trajectory, physics_flag)
+        voe_flag = self.sense_voe(drop_step, support_coords, target_trajectory, physics_voe_flag)
 
         if voe_flag:
             print("VoE!")

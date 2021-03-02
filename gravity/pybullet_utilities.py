@@ -114,10 +114,7 @@ def createObjectShape(obj):
     if obj["shape"] != "structural":
         # generate noise on position and orientation
         shift = [0, 0, 0]
-        # shift = list(obj["rotation"].values())
-        # shift_noise = np.random.normal(0,0.5,len(shift))
-        # shift = shift + shift_noise
-        shift = [round(shift[1]), round(shift[2]), round(shift[0])]
+        # print(list(obj["rotation"].values()))
         start_orientation = p.getQuaternionFromEuler(shift)
          
         start_position = list(obj["position"].values())
@@ -157,16 +154,18 @@ def createObjectShape(obj):
     elif obj["shape"] == "cylinder":
         visualShapeId = p.createVisualShape(shapeType=p.GEOM_MESH,fileName="cylinder.obj", rgbaColor=rgba_color, specularColor=[0.4,.4,0], visualFramePosition=shift, meshScale=meshScale)
         collisionShapeId = p.createCollisionShape(shapeType=p.GEOM_MESH, fileName="cylinder.obj", collisionFramePosition=shift,meshScale=meshScale)
-    elif obj["shape"] == "letter l":
+    elif "letter l" in obj["shape"]:
         meshScale = [meshScale[0], meshScale[1], meshScale[2] * 0.75] # hard coded transformations to compensate for unknown wonkiness... needs to be tested
         start_orientation = [start_orientation[0], start_orientation[1], 90, 0.011]
         visualShapeId = p.createVisualShape(shapeType=p.GEOM_MESH,fileName="l_joint.obj", rgbaColor=rgba_color, specularColor=[0.4,.4,0], visualFramePosition=shift, meshScale=meshScale)
         collisionShapeId = p.createCollisionShape(shapeType=p.GEOM_MESH, fileName="l_joint.obj", collisionFramePosition=shift, meshScale=meshScale)
+    elif "triangular prism" == obj["shape"]:
+        meshScale = [meshScale[1], meshScale[2], meshScale[0]] # these might be correct, have to create a mesh
+        visualShapeId = p.createVisualShape(shapeType=p.GEOM_MESH,fileName="triangular prism.obj", rgbaColor=rgba_color, specularColor=[0.4,.4,0], visualFramePosition=shift, meshScale=meshScale)
+        collisionShapeId = p.createCollisionShape(shapeType=p.GEOM_MESH, fileName="triangular prism.obj", collisionFramePosition=shift, meshScale=meshScale)
     else:
-        meshScale = [meshScale[1], meshScale[2], meshScale[0]]
         visualShapeId = p.createVisualShape(shapeType=p.GEOM_MESH,fileName="cube.obj", rgbaColor=rgba_color, specularColor=[0.4,.4,0], visualFramePosition=shift, meshScale=meshScale)
         collisionShapeId = p.createCollisionShape(shapeType=p.GEOM_MESH, fileName="cube.obj", collisionFramePosition=shift, meshScale=meshScale)
-        
     # return body
     return p.createMultiBody(baseMass=obj["mass"], baseOrientation=start_orientation, baseInertialFramePosition=[0, 0, 0], baseCollisionShapeIndex=collisionShapeId, baseVisualShapeIndex=visualShapeId, basePosition=start_position)
     
