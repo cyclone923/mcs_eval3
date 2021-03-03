@@ -66,7 +66,6 @@ def track_objects(frame_mask, track_info={}):
         track_info['objects'][_key]['visible'] = True
         track_info['objects'][_key]['hidden_for'] = 0
         track_info['objects'][_key]['visible_count'] += 1
-        console.log(track_info['objects'][_key]['bounding_box'])
 
     for obj_key, obj in track_info['objects'].items():
         if obj_key not in resolved_objs:

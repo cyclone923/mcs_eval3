@@ -85,22 +85,26 @@ class OpenCVModel():
         }
 
     def initNewTracker(self, frame, bbox, type='csrt'):
-        return self.OPENCV_OBJECT_TRACKERS[type]().init(frame, bbox)
+        tracker = self.OPENCV_OBJECT_TRACKERS[type]()
+        tracker.init(frame, bbox)
+        return tracker
 
     def match(self, frame, objects_info, device='cpu', level='level2'):
         for key, obj in objects_info.items():
+
+            if 'appearance' not in obj.keys():
+                obj['appearance'] = dict()
+                obj['appearance']['match'] = True
+
             if not ['visible']:
                 continue
 
-            # if 'appearance' not in obj.keys():
-            #     obj['appearance'] = dict()
-            #     obj['appearance']['match'] = True
-            
             # if obj['occluded']:
             #     continue
 
-            init_bb = obj['bounding_box']
-            obj_current_image = frame.crop(init_bb)
+            top_x, top_y, bottom_x, bottom_y = obj['bounding_box']
+            obj_current_image = frame.crop((top_x, top_y, bottom_x, bottom_y))
+            init_bb = (top_x, top_y, bottom_x - top_x, bottom_y - top_y)
 
             image_area = np.prod(obj_current_image.size)
             base_image = np.array(frame)
@@ -112,14 +116,29 @@ class OpenCVModel():
             if 'base_image' not in obj.keys():
                 obj['base_image'] = dict()
                 obj['tracker'] = self.initNewTracker(base_image, init_bb, type='csrt')
-                obj['appearance'] = dict()
+                console.log(obj['tracker'])
 
             ok, curr_bb = obj['tracker'].update(base_image)
+
+            if ok:
+                (x, y, w, h) = [int(v) for v in curr_bb]
+                cv2.rectangle(base_image, (x, y), (x+w, y+h), (0, 255, 0), 2)
+                info = [
+                    ("Tracker", 'CSRT'),
+                    ("Success", "Yes" if ok else "No")
+                ]
+                (H, W) = base_image.shape[:2]
+                for (i, (k, v)) in enumerate(info):
+                    text = "{}: {}".format(k, v)
+                    cv2.putText(base_image, text, (10, H - ((i * 20) + 20)),
+                        cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 0, 255), 2)
+                cv2.imshow("Frame", base_image)
+                key = cv2.waitKey(1) & 0xFF
 
             if not obj['occluded']:
                 obj['appearance']['match'] = ok
 
-                if 'mismatch_count' not in obj['appearance']:
+                if 'mismatch_count' not in obj['appearance'].keys():
                     obj['appearance']['mismatch_count'] = 0
 
                 if obj['appearance']['match']:
@@ -260,7 +279,7 @@ class SIFTModel():
                 obj['appearance']['feature_history']['descriptors'].append(img_des)
                 obj['appearance']['match'] = feature_match
 
-            if 'mismatch_count' not in obj['appearance']:
+            if 'mismatch_count' not in obj['appearance'].keys():
                 obj['appearance']['mismatch_count'] = 0
 
             if obj['appearance']['match']:
