@@ -104,7 +104,8 @@ class OpenCVModel():
 
             top_x, top_y, bottom_x, bottom_y = obj['bounding_box']
             obj_current_image = frame.crop((top_x, top_y, bottom_x, bottom_y))
-            init_bb = (top_x, top_y, bottom_x - top_x, bottom_y - top_y)
+            init_bb = (top_y, top_x, bottom_y - top_y, bottom_x - top_x)
+            console.log(init_bb)
 
             image_area = np.prod(obj_current_image.size)
             base_image = np.array(frame)
@@ -122,6 +123,7 @@ class OpenCVModel():
 
             if ok:
                 (x, y, w, h) = [int(v) for v in curr_bb]
+                console.log((x, y, w, h))
                 cv2.rectangle(base_image, (x, y), (x+w, y+h), (0, 255, 0), 2)
                 info = [
                     ("Tracker", 'CSRT'),
