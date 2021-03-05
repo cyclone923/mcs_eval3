@@ -1,6 +1,9 @@
 from dataclasses import dataclass
 from gravity import pybullet_utilities
 import numpy as np
+from fastdtw import fastdtw
+from scipy.spatial.distance import euclidean
+
 DEBUG = False
 
 @dataclass
@@ -125,6 +128,7 @@ class GravityAgent:
         self.controller.start_scene(config)
 
         # Inputs to determine VoE
+        targ_pos = []
         target_trajectory = []
         pole_states = []  # To determine drop step
         support_coords = None
@@ -151,6 +155,7 @@ class GravityAgent:
                 floor_coords = step_output["structural_object_list"][floor_object]["dimensions"]
                 # Target / Pole may not appear in view yet, start recording when available
                 target_trajectory.append(step_output["object_list"][target_object]["dimensions"])
+                targ_pos.append(step_output["object_list"][target_object]["position"])
                 pole_states.append(step_output["structural_object_list"][pole_object])
             except KeyError:  # Object / Pole is not in view yet
                 pass
@@ -165,17 +170,22 @@ class GravityAgent:
                 choice=choice, confidence=1.0, violations_xy_list=voe_xy_list,
                 heatmap_img=voe_heatmap)
 
+        drop_step = self.determine_drop_step(pole_states)
+
         physics_voe_flag = None
         if obj_traj_orn != None:
             # simulator trajectory
             sim_start_pos = np.array(obj_traj_orn[target_object]['pos'][0])
             sim_end_pos = np.array(obj_traj_orn[target_object]['pos'][-1])
             print("pybullet end pos", sim_end_pos)
-            #final step out
-            unity_end_pos = list(step_output["object_list"][target_object]["position"].values())
+            #final step output
+            unity_end_pos = list(targ_pos[-1].values())
             unity_end_pos = np.array([unity_end_pos[0], unity_end_pos[2], unity_end_pos[1]])
             end_pos_diff = abs(unity_end_pos[-1] - sim_end_pos[-1]) # difference in height
             print("unit end pos:", unity_end_pos)
+            # calc and print the plausability of the scene (distance between two trajectories)
+            plaus_prob = self.calc_simulator_voe(obj_traj_orn[target_object]['pos'], targ_pos, drop_step)
+            print("plausability of unity scene: ", plaus_prob)
             if end_pos_diff >= 0.3:
                 print("Physics Sim Suggests VoE!")
                 physics_voe_flag = True
@@ -183,7 +193,6 @@ class GravityAgent:
                 print("Physics Sim Suggests no VoE!")
                 physics_voe_flag = False
 
-        drop_step = self.determine_drop_step(pole_states)
         voe_flag = self.sense_voe(drop_step, support_coords, target_trajectory, physics_voe_flag)
 
         if voe_flag:
@@ -194,8 +203,14 @@ class GravityAgent:
         self.controller.end_scene(choice=plausible_str(voe_flag), confidence=1.0)
         return True
 
-    def calc_voe(self, step_output, frame_num, scene_name=None):
-        pass
+    def calc_simulator_voe(self, pybullet_traj, unity_traj, drop):
+        # calculate the difference in trajectory as the sum squared distance of each point in time
+        unity_traj = [[x["x"], x["z"], x["y"]] for x in unity_traj[drop:]]
+        
+        distance, path = fastdtw(pybullet_traj, unity_traj, dist=euclidean)
+
+        print(distance)
+        return distance
 
 def plausible_str(violation_detected):
     return 'implausible' if violation_detected else 'plausible'

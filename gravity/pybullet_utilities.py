@@ -45,7 +45,7 @@ def render_in_pybullet(step_output, target, supporting, level):
             "orn": []
         }
 
-    # p.setRealTimeSimulation(1)
+    # p.setRealTimeSimulation()
     for i in range(750):
         p.stepSimulation()
         time.sleep(1./360.)
