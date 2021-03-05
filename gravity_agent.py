@@ -3,6 +3,7 @@ from gravity import pybullet_utilities
 import numpy as np
 from fastdtw import fastdtw
 from scipy.spatial.distance import euclidean
+from vision.gravity_data_gen import ImageDataWriter
 
 DEBUG = False
 
@@ -136,32 +137,42 @@ class GravityAgent:
         obj_traj_orn = None
         previous_step = None
         step_output = None
+        step_output_dict = None
         for i, x in enumerate(config['goal']['action_list']):
-            previous_step = step_output
+            previous_step = step_output_dict
             step_output = self.controller.step(action=x[0])
 
             if step_output is None:
                 break
             else:
-                step_output = dict(step_output)
+                step_output_dict = dict(step_output)
 
             floor_object = "floor"  # Not a dynamic object ID
-            target_object = self.target_obj_id(step_output)
-            supporting_object, pole_object = self.struc_obj_ids(step_output)
+            target_object = self.target_obj_id(step_output_dict)
+            supporting_object, pole_object = self.struc_obj_ids(step_output_dict)
+            
+            image_data = None
+            # get image of unity simulation at t=0
+            if not i:
+                image_data = ImageDataWriter(step_number=i, step_meta=step_output, scene_id=config['name'], support_id=supporting_object, target_id=target_object, pole_id=pole_object)
 
             try:
                 # Expected to not dissapear until episode ends
-                support_coords = step_output["structural_object_list"][supporting_object]["dimensions"]
-                floor_coords = step_output["structural_object_list"][floor_object]["dimensions"]
+                support_coords = step_output_dict["structural_object_list"][supporting_object]["dimensions"]
+                floor_coords = step_output_dict["structural_object_list"][floor_object]["dimensions"]
                 # Target / Pole may not appear in view yet, start recording when available
-                target_trajectory.append(step_output["object_list"][target_object]["dimensions"])
-                targ_pos.append(step_output["object_list"][target_object]["position"])
-                pole_states.append(step_output["structural_object_list"][pole_object])
+                target_trajectory.append(step_output_dict["object_list"][target_object]["dimensions"])
+                targ_pos.append(step_output_dict["object_list"][target_object]["position"])
+                pole_states.append(step_output_dict["structural_object_list"][pole_object])
             except KeyError:  # Object / Pole is not in view yet
                 pass
 
             if len(pole_states) > 1 and self.determine_drop_step(pole_states) == len(pole_states) - 2:
-                obj_traj_orn = pybullet_utilities.render_in_pybullet(step_output, target_object, supporting_object, self.level)
+                # save images at the drop step
+                image_data = ImageDataWriter(step_number=i, step_meta=step_output, scene_id=config['name'], support_id=supporting_object, target_id=target_object, pole_id=pole_object)
+
+                # get physics simulator trajectory
+                obj_traj_orn = pybullet_utilities.render_in_pybullet(step_output_dict, target_object, supporting_object, self.level)
             
             choice = plausible_str(True)
             voe_xy_list = []
@@ -169,6 +180,10 @@ class GravityAgent:
             self.controller.make_step_prediction(
                 choice=choice, confidence=1.0, violations_xy_list=voe_xy_list,
                 heatmap_img=voe_heatmap)
+        
+        # save images at the end of the simulation
+        image_data = ImageDataWriter(step_number=i, step_meta=step_output, scene_id=config['name'], support_id=supporting_object, target_id=target_object, pole_id=pole_object)
+
 
         drop_step = self.determine_drop_step(pole_states)
 
@@ -178,14 +193,17 @@ class GravityAgent:
             sim_start_pos = np.array(obj_traj_orn[target_object]['pos'][0])
             sim_end_pos = np.array(obj_traj_orn[target_object]['pos'][-1])
             print("pybullet end pos", sim_end_pos)
+            
             #final step output
             unity_end_pos = list(targ_pos[-1].values())
             unity_end_pos = np.array([unity_end_pos[0], unity_end_pos[2], unity_end_pos[1]])
             end_pos_diff = abs(unity_end_pos[-1] - sim_end_pos[-1]) # difference in height
             print("unit end pos:", unity_end_pos)
+            
             # calc and print the plausability of the scene (distance between two trajectories)
             plaus_prob = self.calc_simulator_voe(obj_traj_orn[target_object]['pos'], targ_pos, drop_step)
-            print("plausability of unity scene: ", plaus_prob)
+            print("plausability of unity scene: ", 1 / plaus_prob)
+            
             if end_pos_diff >= 0.3:
                 print("Physics Sim Suggests VoE!")
                 physics_voe_flag = True
