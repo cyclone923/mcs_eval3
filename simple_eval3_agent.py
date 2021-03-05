@@ -39,7 +39,7 @@ class Evaluation3_Agent:
 
         self.exploration_agent = SequenceGenerator(None,self.controller,self.level)
         self.agency_voe_agent = AgencyVoeAgent(self.controller, self.level)
-        self.phys_voe = physics_voe_agent.VoeAgent(self.controller, self.level, prefix)
+        self.phys_voe = physics_voe_agent.VoeAgent(self.controller, self.level, prefix, type='tld')
 
         if seed != -1:
             random.seed(seed)

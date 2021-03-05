@@ -21,7 +21,7 @@ VISION_MODEL_PATH = './visionmodule/dvis_resnet50_mc_voe.pth'
 DEBUG = False
 
 class VoeAgent:
-    def __init__(self, controller, level, out_prefix=None, type='csrt'):
+    def __init__(self, controller, level, type, out_prefix=None):
         self.controller = controller
         self.level = level
         if DEBUG:

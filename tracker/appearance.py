@@ -78,29 +78,32 @@ class ObjectDataset():
 class OpenCVModel():
     def __init__(self):
         self.OPENCV_OBJECT_TRACKERS = {
-            'csrt': cv2.TrackerCSRT_create,
-            'kcf': cv2.TrackerKCF_create,
-            'mil': cv2.TrackerMIL_create,
-            'goturn': cv2.TrackerGOTURN_create
+            'csrt': cv2.TrackerCSRT_create(),
+            'kcf': cv2.TrackerKCF_create(),
+            'mil': cv2.TrackerMIL_create(),
+            'tld': cv2.TrackerTLD_create(),
+            'goturn': cv2.TrackerGOTURN_create()
         }
 
-    def initNewTracker(self, frame, bbox, type='csrt'):
-        tracker = self.OPENCV_OBJECT_TRACKERS[type]()
+    def initNewTracker(self, frame, bbox, type='tld'):
+        tracker = self.OPENCV_OBJECT_TRACKERS[type]
         tracker.init(frame, bbox)
         return tracker
 
     def match(self, frame, objects_info, device='cpu', level='level2'):
+        base_image = np.array(frame)
+        (H, W) = base_image.shape[:2]
         for key, obj in objects_info.items():
 
             if 'appearance' not in obj.keys():
                 obj['appearance'] = dict()
                 obj['appearance']['match'] = True
 
-            if not ['visible']:
-                continue
-
-            # if obj['occluded']:
+            # if not obj['visible']:
             #     continue
+
+            if obj['occluded']:
+                continue
 
             top_x, top_y, bottom_x, bottom_y = obj['bounding_box']
             obj_current_image = frame.crop((top_x, top_y, bottom_x, bottom_y))
@@ -108,7 +111,6 @@ class OpenCVModel():
             console.log(init_bb)
 
             image_area = np.prod(obj_current_image.size)
-            base_image = np.array(frame)
             mask_image = np.zeros(obj['mask'].shape, dtype=base_image.dtype)
             mask_image[obj['mask']] = 255
 
@@ -116,7 +118,7 @@ class OpenCVModel():
 
             if 'base_image' not in obj.keys():
                 obj['base_image'] = dict()
-                obj['tracker'] = self.initNewTracker(base_image, init_bb, type='csrt')
+                obj['tracker'] = self.initNewTracker(base_image, init_bb, type='tld')
                 console.log(obj['tracker'])
 
             ok, curr_bb = obj['tracker'].update(base_image)
@@ -126,16 +128,12 @@ class OpenCVModel():
                 console.log((x, y, w, h))
                 cv2.rectangle(base_image, (x, y), (x+w, y+h), (0, 255, 0), 2)
                 info = [
-                    ("Tracker", 'CSRT'),
-                    ("Success", "Yes" if ok else "No")
+                    ("Object " + str(key) + " Success", "Yes" if ok else "No")
                 ]
-                (H, W) = base_image.shape[:2]
-                for (i, (k, v)) in enumerate(info):
+                for (k, v) in info:
                     text = "{}: {}".format(k, v)
-                    cv2.putText(base_image, text, (10, H - ((i * 20) + 20)),
+                    cv2.putText(base_image, text, (10, H - ((key * 20) + 20)),
                         cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 0, 255), 2)
-                cv2.imshow("Frame", base_image)
-                key = cv2.waitKey(1) & 0xFF
 
             if not obj['occluded']:
                 obj['appearance']['match'] = ok
@@ -147,6 +145,14 @@ class OpenCVModel():
                     obj['appearance']['mismatch_count'] = 0
                 else:
                     obj['appearance']['mismatch_count'] += 1
+        
+        i = len(objects_info.keys())
+        text="Tracker: TLD"
+        cv2.putText(base_image, text, (10, H - ((i * 20) + 20)),
+            cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 0, 255), 2)
+        cv2.imshow("Frame", base_image)
+        key = cv2.waitKey(1) & 0xFF
+
 
         return objects_info
 
