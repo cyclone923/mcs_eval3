@@ -7,8 +7,8 @@ import os
 import json
 
 def render_in_pybullet(step_output, target, supporting, level):
-    # physicsClient = p.connect(p.GUI)#or p.DIRECT for non-graphical version
-    physicsClient = p.connect(p.DIRECT)
+    physicsClient = p.connect(p.GUI)#or p.DIRECT for non-graphical version
+    # physicsClient = p.connect(p.DIRECT)
 
     p.setAdditionalSearchPath(os.getcwd() + "/gravity/pybullet_objects/") #optionally
     p.setGravity(0,0,-10)
@@ -42,7 +42,9 @@ def render_in_pybullet(step_output, target, supporting, level):
         obj_dict[target] = {
             "boxID": boxId,
             "pos": [],
-            "orn": []
+            "orn": [],
+            "support_contact": [],
+            "floor_contact": []
         }
 
     # p.setRealTimeSimulation()
@@ -56,14 +58,17 @@ def render_in_pybullet(step_output, target, supporting, level):
         # print("overlaps", overlaps)
         
         # get contact points between target and supporting
-        contact = p.getContactPoints(obj_dict[target]["boxID"], obj_dict[supporting]["boxID"])
-        # print("contact points", contact)
+        object_contact = p.getContactPoints(obj_dict[target]["boxID"], obj_dict[supporting]["boxID"])
+        floor_contact = p.getContactPoints(obj_dict[target]["boxID"], planeId)
         # if contact != ():
         #     print("support and target are making contact")
         #     print(contact)
 
         # keep track of obj position
         for obj in obj_dict:
+            if obj == target:
+                obj_dict[obj]["support_contact"].append(object_contact)
+                obj_dict[obj]["floor_contact"].append(floor_contact) 
             cubePos, cubeOrn = p.getBasePositionAndOrientation(obj_dict[obj]["boxID"])
             obj_dict[obj]["pos"].append(cubePos)
             obj_dict[obj]["orn"].append(cubeOrn)

@@ -4,6 +4,7 @@ import numpy as np
 from fastdtw import fastdtw
 from scipy.spatial.distance import euclidean
 from vision.gravity_data_gen import ImageDataWriter
+import sys
 
 DEBUG = False
 
@@ -189,45 +190,101 @@ class GravityAgent:
 
         physics_voe_flag = None
         if obj_traj_orn != None:
-            # simulator trajectory
-            sim_start_pos = np.array(obj_traj_orn[target_object]['pos'][0])
-            sim_end_pos = np.array(obj_traj_orn[target_object]['pos'][-1])
-            print("pybullet end pos", sim_end_pos)
+            # get the inverse distance as plausability of scene 
+            plaus_prob = 1 / self.calc_simulator_voe(obj_traj_orn[target_object]['pos'], targ_pos, drop_step)
+       
+            # calculate if unity target object is resting on support
+            target_dims = self.getMinMax(step_output_dict["object_list"][target_object])
+            unity_support_position = list(step_output_dict["structural_object_list"][supporting_object]['position'].values())
+            unity_target_on_support = self.getIntersectionOrContact(step_output_dict["object_list"][target_object], step_output_dict["structural_object_list"][supporting_object])
+            unity_target_on_floor = round(target_dims[2][0]) == 0
+            unity_target_floating = False
+            if not unity_target_on_floor and not unity_target_on_support:
+                unity_target_floating = True
+                plaus_prob = 0
+
+            # print(unity_target_on_support)
+            # print(unity_target_on_floor)
+
+            #calculate if pybullet object is resting on support
+            pb_support_position = obj_traj_orn[supporting_object]['pos'][-1]
+            pb_target_on_support = obj_traj_orn[target_object]["support_contact"][-1] != ()
+            pb_target_on_floor = obj_traj_orn[target_object]["floor_contact"][-1] != () 
             
-            #final step output
-            unity_end_pos = list(targ_pos[-1].values())
-            unity_end_pos = np.array([unity_end_pos[0], unity_end_pos[2], unity_end_pos[1]])
-            end_pos_diff = abs(unity_end_pos[-1] - sim_end_pos[-1]) # difference in height
-            print("unit end pos:", unity_end_pos)
+            # print(pb_target_on_support)
+            # print(pb_target_on_floor)
+
+            # if simulators are in agreement on the object being on or below the support
+            on_support_agreement = not (unity_target_on_support ^ pb_target_on_support) # 1 is good
+            on_floor_agreement = not (unity_target_on_floor ^ pb_target_on_floor) # 1 is good
+
+            # print(on_support_agreement)
+            # print(on_floor_agreement)
             
-            # calc and print the plausability of the scene (distance between two trajectories)
-            plaus_prob = self.calc_simulator_voe(obj_traj_orn[target_object]['pos'], targ_pos, drop_step)
-            print("plausability of unity scene: ", 1 / plaus_prob)
-            
-            if end_pos_diff >= 0.3:
-                print("Physics Sim Suggests VoE!")
-                physics_voe_flag = True
-            else:
+            if (on_floor_agreement or on_support_agreement) and not unity_target_floating:
                 print("Physics Sim Suggests no VoE!")
                 physics_voe_flag = False
+            else:
+                print("Physics Sim Suggests VoE!")
+                physics_voe_flag = True
+            print("plausability of unity scene: ", plaus_prob)
 
-        voe_flag = self.sense_voe(drop_step, support_coords, target_trajectory, physics_voe_flag)
+        voe_flag = physics_voe_flag
 
         if voe_flag:
-            print("VoE!")
+            print("VoE in", config["name"])
         else:
-            print("No VoE.")
+            print("No VoE in", config["name"])
 
         self.controller.end_scene(choice=plausible_str(voe_flag), confidence=1.0)
         return True
 
+    def getIntersectionOrContact(self, obj1, obj2):
+        obj1_dims = self.getMinMax(obj1)
+        obj2_dims = self.getMinMax(obj2)
+        # print(obj1_dims)
+        # print(obj2_dims)
+        x_check = (obj1_dims[0][0] <= obj2_dims[0][1] and obj1_dims[0][1] >= obj2_dims[0][0])
+        z_check = (obj1_dims[1][0] <= obj2_dims[1][1] and obj1_dims[1][1] >= obj2_dims[1][0])
+        y_check = (obj1_dims[2][0] <= obj2_dims[2][1] and obj1_dims[2][1] >= obj2_dims[2][0])
+        # print("x", x_check)
+        # print("z", z_check)
+        # print("y", y_check)
+
+        return x_check and z_check and y_check
+
+    def getMinMax(self, obj):
+        dims = obj["dimensions"]
+        min_x = sys.maxsize
+        min_y = sys.maxsize
+        min_z = sys.maxsize
+        max_x = -1*sys.maxsize
+        max_y = -1*sys.maxsize
+        max_z = -1*sys.maxsize
+        
+        for dim in dims:
+            if dim['x'] <= min_x:
+                min_x = dim['x']
+            if dim['x'] >= max_x:
+                max_x = dim['x']
+
+            if dim['y'] <= min_y:
+                min_y = dim['y']
+            if dim['y'] >= max_y:
+                max_y = dim['y']
+
+            if dim['z'] <= min_z:
+                min_z = dim['z']
+            if dim['z'] >= max_z:
+                max_z = dim['z']
+        
+        return [(min_x, max_x), (min_z, max_z), (min_y, max_y)]
+    
     def calc_simulator_voe(self, pybullet_traj, unity_traj, drop):
         # calculate the difference in trajectory as the sum squared distance of each point in time
         unity_traj = [[x["x"], x["z"], x["y"]] for x in unity_traj[drop:]]
         
         distance, path = fastdtw(pybullet_traj, unity_traj, dist=euclidean)
-
-        print(distance)
         return distance
 
 def plausible_str(violation_detected):

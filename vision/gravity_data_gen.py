@@ -40,9 +40,9 @@ class ImageDataWriter:
         if not os.path.exists("gravity/Data/{}/{}/".format(self.scene_id, self.step_number)):
             os.mkdir("gravity/Data/{}/{}/".format(self.scene_id, self.step_number))
 
-        self.rgb_path = "gravity/Data/{}/{}/rgb.jpg".format(self.scene_id, self.step_number) 
-        self.mask_path = "gravity/Data/{}/{}/mask.jpg".format(self.scene_id, self.step_number) 
-        self.depth_path = "gravity/Data/{}/{}/depth.jpg".format(self.scene_id, self.step_number) 
+        self.rgb_path = "gravity/Data/{}/{}/rgb.jpg".format(self.scene_id, self.step_number)
+        self.mask_path = "gravity/Data/{}/{}/mask.jpg".format(self.scene_id, self.step_number)
+        self.depth_path = "gravity/Data/{}/{}/depth.jpg".format(self.scene_id, self.step_number)
 
         # write images to local dir 
         # cv2.imshow("rgb", self.rgb_im)
@@ -63,18 +63,23 @@ class ImageDataWriter:
         new_entry["depth_path"] = self.depth_path
 
         # pole and support kind are hard coded for eval 3.5
-
         # get pole data
-        new_entry["pole_kind"] = 'cylinder'
-        new_entry["pole_bboxes"] = [list(x.values()) for x in self.step_output["structural_object_list"][self.pole_id]['dimensions']]
+        if self.pole_id in self.step_output["structural_object_list"]:
+            new_entry["pole_kind"] = 'cylinder'
+            new_entry["pole_bboxes"] = [list(x.values()) for x in self.step_output["structural_object_list"][self.pole_id]['dimensions']]
+            new_entry["pole_pos"] = list(self.step_output["structural_object_list"][self.pole_id]['position'].values())
 
         # get target data
-        new_entry["target_kind"] = self.step_output["object_list"][self.target_id]['shape']
-        new_entry["target_bboxes"] = [list(x.values()) for x in self.step_output["object_list"][self.target_id]['dimensions']]
+        if self.target_id in self.step_output["object_list"]:
+            new_entry["target_kind"] = self.step_output["object_list"][self.target_id]['shape']
+            new_entry["target_bboxes"] = [list(x.values()) for x in self.step_output["object_list"][self.target_id]['dimensions']]
+            new_entry["target_pos"] = list(self.step_output["object_list"][self.target_id]['position'].values())
         
         # get support data
-        new_entry["support_kind"] = 'cube'
-        new_entry["support_bboxes"] = [list(x.values()) for x in self.step_output["structural_object_list"][self.support_id]['dimensions']]
+        if self.support_id in self.step_output["structural_object_list"]:
+            new_entry["support_kind"] = 'cube'
+            new_entry["support_bboxes"] = [list(x.values()) for x in self.step_output["structural_object_list"][self.support_id]['dimensions']]
+            new_entry["support_pos"] = list(self.step_output["structural_object_list"][self.support_id]['position'].values())
 
         # append the new entry into the json database
         json_data = ''
