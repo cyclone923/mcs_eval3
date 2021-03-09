@@ -49,7 +49,6 @@ class GravityAgent:
         # Based on an assumption that the pole color changes after the drop (suction off)
 
         init_color = pole_color_history[0]
-
         for idx, color in enumerate(pole_color_history):
             if color != init_color:
                 return idx - 1
@@ -184,16 +183,20 @@ class GravityAgent:
             if step_output is None:
                 break
             
-            # Map visuals to semantic actors
-            step_output = L2DataPacket(step_number=i, step_meta=step_output)
+            try:
+                # Map visuals to semantic actors
+                step_output = L2DataPacket(step_number=i, step_meta=step_output)
 
-            # Collect observations
-            # TODO: handle cases where some of the signals are offline
-            # TODO: update L2DataPacket to set <role> as an attribute
-            pole_color_history.append(step_output.pole.color)
-            target_trajectory.append(step_output.target.dims)
-            support_coords = step_output.support.dims
-            floor_coords = step_output.floor.dims
+                # Collect observations
+                if step_output.pole:
+                    pole_color_history.append(step_output.pole.color)
+                if step_output.target:
+                    target_trajectory.append(step_output.target.dims)
+                support_coords = step_output.support.dims
+                floor_coords = step_output.floor.dims
+
+            except AssertionError:
+                print(f"Couldn't extract states of {i}th frame, using fallback...")
 
             choice = plausible_str(True)
             voe_xy_list = []
