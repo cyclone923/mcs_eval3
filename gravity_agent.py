@@ -263,19 +263,19 @@ class GravityAgent:
             on_floor_agreement = not (unity_target_on_floor ^ pb_target_on_floor) # 1 is good
             
             if final_confidence >= 0.5 and (on_floor_agreement or on_support_agreement) and not unity_target_floating:
-                print("Physics Sim Suggests no VoE!")
+                print("Physics Sim Suggests no VoE for", config['name'])
                 physics_voe_flag = False
             else:
-                print("Physics Sim Suggests VoE!")
+                print("Physics Sim Suggests VoE for",config['name'])
                 physics_voe_flag = True
             print("plausability of unity scene: ", final_confidence)
 
         voe_flag = physics_voe_flag
 
         if voe_flag:
-            print("VoE in", config["name"])
+            print("VoE observed for", config["name"])
         else:
-            print("No VoE in", config["name"])
+            print("No violation for", config["name"])
 
         self.controller.end_scene(choice=plausible_str(voe_flag), confidence=final_confidence)
         return True
