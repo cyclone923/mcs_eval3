@@ -20,5 +20,5 @@ elif [ "$(expr substr $(uname -s) 1 5)" == "Linux" ]; then
 
 fi
 
-echo metadata: \'oracle\' > ../mcs_config.yaml
+echo metadata: \'oracle\' > ../mcs_config.ini
 cd ../

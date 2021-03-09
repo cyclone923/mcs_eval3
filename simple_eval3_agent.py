@@ -3,7 +3,7 @@ import yaml
 import pickle
 import os
 import random
-import argparse
+import argparse, configparser
 from exploration.controller_agent import ExploreAgent
 from MCS_exploration.sequence_generator import SequenceGenerator
 from voe.voe_agent import VoeAgent
@@ -17,20 +17,22 @@ class Evaluation3_Agent:
 
         try:
             assert "unity_path.yaml" in os.listdir(os.getcwd())
-            assert "mcs_config.yaml" in os.listdir(os.getcwd())
+            assert "mcs_config.ini" in os.listdir(os.getcwd())
         except:
             raise FileNotFoundError("You might not set up mcs config and unity path yet. Please run 'bash setup_unity.sh'.")
 
         with open("./unity_path.yaml", 'r') as config_file:
             config = yaml.safe_load(config_file)
 
-        self.controller = mcs.create_controller(
-            os.path.join(config['unity_path'])
-        )
-        with open(config_path, 'r') as config_file:
-            config = yaml.safe_load(config_file)
-        self.level = config['metadata']
+        config_ini = configparser.ConfigParser()
+        config_ini.read(config_path)
 
+        self.controller = mcs.create_controller(
+            os.path.join(config['unity_path']),
+            config_file_path=config_path
+        )
+
+        self.level = config_ini['MCS']['metadata']
         assert self.level in ['oracle', 'level1', 'level2']
 
         self.exploration_agent = SequenceGenerator(None, self.controller, self.level)
@@ -42,7 +44,7 @@ class Evaluation3_Agent:
             random.seed(seed)
 
     def run_scene(self, one_scene):
-        scene_config, status = mcs.load_config_json_file(one_scene)
+        scene_config, status = mcs.load_scene_json_file(one_scene)
         if scene_config == {}:
             raise ValueError("Scene Config is Empty", one_scene)
         goal_type = scene_config['goal']['category']
@@ -66,7 +68,7 @@ class Evaluation3_Agent:
 def make_parser():
     parser = argparse.ArgumentParser()
     parser.add_argument('--unity-path', default='unity_path.yaml')
-    parser.add_argument('--config', default='mcs_config.yaml')
+    parser.add_argument('--config', default='mcs_config.ini')
     parser.add_argument('--prefix', default='out')
     parser.add_argument('--scenes', default='different_scenes')
     return parser

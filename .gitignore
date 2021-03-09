@@ -48,5 +48,6 @@ results/
 
 #ignore the yaml files 
 mcs_config.yaml
+mcs_config.ini
 unity_path.yaml
 
