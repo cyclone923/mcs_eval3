@@ -83,8 +83,13 @@ class ImageDataWriter:
 
         # append the new entry into the json database
         json_data = ''
-        with open("gravity/Data/scene_data.json") as json_file:
-            json_data = json.load(json_file)
+        if os.path.exists("gravity/Data/scene_data.json"):
+            with open("gravity/Data/scene_data.json", "r") as json_file:
+                json_data = json.load(json_file)
+        else:
+            json_data = {
+                "entries": []
+            }
 
         json_data["entries"].append(new_entry)
 
