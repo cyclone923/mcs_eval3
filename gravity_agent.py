@@ -136,11 +136,11 @@ class GravityAgent:
         support_coords = None
 
         obj_traj_orn = None
-        previous_step = None
         step_output = None
         step_output_dict = None
+        drop_step = -1
+        voe_xy_list = []
         for i, x in enumerate(config['goal']['action_list']):
-            previous_step = step_output_dict
             step_output = self.controller.step(action=x[0])
 
             if step_output is None:
@@ -167,67 +167,108 @@ class GravityAgent:
                 pole_states.append(step_output_dict["structural_object_list"][pole_object])
             except KeyError:  # Object / Pole is not in view yet
                 pass
-
-            if len(pole_states) > 1 and self.determine_drop_step(pole_states) == len(pole_states) - 2:
-                # save images at the drop step
-                image_data = ImageDataWriter(step_number=i, step_meta=step_output, scene_id=config['name'], support_id=supporting_object, target_id=target_object, pole_id=pole_object)
-
-                # get physics simulator trajectory
-                obj_traj_orn = pybullet_utilities.render_in_pybullet(step_output_dict, target_object, supporting_object, self.level)
             
-            choice = plausible_str(True)
-            voe_xy_list = []
+            if len(pole_states) > 1:
+                drop_step = self.determine_drop_step(pole_states)
+                if drop_step == len(pole_states) - 2:
+                    # save images at the drop step
+                    image_data = ImageDataWriter(step_number=i, step_meta=step_output, scene_id=config['name'], support_id=supporting_object, target_id=target_object, pole_id=pole_object)
+
+                    # get physics simulator trajectory
+                    obj_traj_orn = pybullet_utilities.render_in_pybullet(step_output_dict, target_object, supporting_object, self.level)
+            
+            choice = plausible_str(False)
             voe_heatmap = None
-            self.controller.make_step_prediction(
-                choice=choice, confidence=1.0, violations_xy_list=voe_xy_list,
-                heatmap_img=voe_heatmap)
-        
+
+            if len(pole_states) > 1 and drop_step != -1:
+                # calc confidence:
+                unity_traj = [[x["x"], x["z"], x["y"]] for x in targ_pos[drop_step:]]
+                distance, path = self.calc_simulator_voe(obj_traj_orn[target_object]['pos'], unity_traj)
+                confidence = 100 * np.tanh(1 / distance)
+                
+                # calc point in pixels
+                # real_world_coordinates = camera_matrix^-1 * pixel_coordinates
+                camera_matrix = [
+                    [step_output_dict["camera_clipping_planes"][1] * 1/step_output_dict["camera_field_of_view"], 0, step_output_dict["camera_aspect_ratio"][0] / 2],
+                    [0, step_output_dict["camera_clipping_planes"][1] * 1/step_output_dict["camera_height"], step_output_dict["camera_aspect_ratio"][1] / 2],
+                    [0, 0, 1]
+                ]
+                pixel_coords = np.dot(camera_matrix, [unity_traj[-1][0], unity_traj[-1][2], 1])
+                pixel_coords[1] = step_output_dict["camera_aspect_ratio"][1] - pixel_coords[1]
+
+                # confidence has to be bounded between 0 and 1
+                if confidence >= 1:
+                    confidence = 1.0
+                    # if confidence is 1, throw a no voe signal in the pixels
+                    voe_xy_list.append(
+                        {
+                            "x": -1, # no voe 
+                            "y": -1  # noe voe
+                        }
+                    )
+                else:
+                    voe_xy_list.append(
+                        {
+                            "x": round(pixel_coords[0]),
+                            "y": round(pixel_coords[1]) 
+                        }
+                    )
+
+                if confidence <= 0.5:
+                    choice = plausible_str(False)
+
+                self.controller.make_step_prediction(
+                    choice=choice, confidence=confidence, violations_xy_list=voe_xy_list[-1],
+                    heatmap_img=voe_heatmap)
+            else:
+                self.controller.make_step_prediction(
+                    choice=choice, confidence=1.0, violations_xy_list=[{"x": -1, "y": -1}],
+                    heatmap_img=voe_heatmap)
+
         # save images at the end of the simulation
         image_data = ImageDataWriter(step_number=i, step_meta=step_output, scene_id=config['name'], support_id=supporting_object, target_id=target_object, pole_id=pole_object)
 
-
+        voe_by_frame = [-1 for j in range(i)]
         drop_step = self.determine_drop_step(pole_states)
 
         physics_voe_flag = None
+        final_confidence = 0
         if obj_traj_orn != None:
-            # get the inverse distance as plausability of scene 
-            plaus_prob = 1 / self.calc_simulator_voe(obj_traj_orn[target_object]['pos'], targ_pos, drop_step)
-       
+            # get the inverse distance as plausability of scene
+            unity_traj = [[x["x"], x["z"], x["y"]] for x in targ_pos[drop_step:]]
+            distance, path = self.calc_simulator_voe(obj_traj_orn[target_object]['pos'], unity_traj)
+            final_confidence = 100 * np.tanh(1 / distance)
+            if final_confidence >= 1:
+                final_confidence = 1.0
+
             # calculate if unity target object is resting on support
             target_dims = self.getMinMax(step_output_dict["object_list"][target_object])
             unity_support_position = list(step_output_dict["structural_object_list"][supporting_object]['position'].values())
             unity_target_on_support = self.getIntersectionOrContact(step_output_dict["object_list"][target_object], step_output_dict["structural_object_list"][supporting_object])
             unity_target_on_floor = round(target_dims[2][0]) == 0
             unity_target_floating = False
+
+            # if unity target isn't on the floor or the support, its floating, automatic voe
             if not unity_target_on_floor and not unity_target_on_support:
                 unity_target_floating = True
-                plaus_prob = 0
-
-            # print(unity_target_on_support)
-            # print(unity_target_on_floor)
+                final_confidence = 0
 
             #calculate if pybullet object is resting on support
             pb_support_position = obj_traj_orn[supporting_object]['pos'][-1]
             pb_target_on_support = obj_traj_orn[target_object]["support_contact"][-1] != ()
             pb_target_on_floor = obj_traj_orn[target_object]["floor_contact"][-1] != () 
-            
-            # print(pb_target_on_support)
-            # print(pb_target_on_floor)
 
             # if simulators are in agreement on the object being on or below the support
             on_support_agreement = not (unity_target_on_support ^ pb_target_on_support) # 1 is good
             on_floor_agreement = not (unity_target_on_floor ^ pb_target_on_floor) # 1 is good
-
-            # print(on_support_agreement)
-            # print(on_floor_agreement)
             
-            if (on_floor_agreement or on_support_agreement) and not unity_target_floating:
+            if final_confidence >= 0.5 and (on_floor_agreement or on_support_agreement) and not unity_target_floating:
                 print("Physics Sim Suggests no VoE!")
                 physics_voe_flag = False
             else:
                 print("Physics Sim Suggests VoE!")
                 physics_voe_flag = True
-            print("plausability of unity scene: ", plaus_prob)
+            print("plausability of unity scene: ", final_confidence)
 
         voe_flag = physics_voe_flag
 
@@ -236,7 +277,7 @@ class GravityAgent:
         else:
             print("No VoE in", config["name"])
 
-        self.controller.end_scene(choice=plausible_str(voe_flag), confidence=1.0)
+        self.controller.end_scene(choice=plausible_str(voe_flag), confidence=final_confidence)
         return True
 
     def getIntersectionOrContact(self, obj1, obj2):
@@ -280,12 +321,11 @@ class GravityAgent:
         
         return [(min_x, max_x), (min_z, max_z), (min_y, max_y)]
     
-    def calc_simulator_voe(self, pybullet_traj, unity_traj, drop):
+    def calc_simulator_voe(self, pybullet_traj, unity_traj):
         # calculate the difference in trajectory as the sum squared distance of each point in time
-        unity_traj = [[x["x"], x["z"], x["y"]] for x in unity_traj[drop:]]
         
         distance, path = fastdtw(pybullet_traj, unity_traj, dist=euclidean)
-        return distance
+        return distance, path
 
 def plausible_str(violation_detected):
     return 'implausible' if violation_detected else 'plausible'

@@ -44,7 +44,9 @@ def render_in_pybullet(step_output, target, supporting, level):
             "pos": [],
             "orn": [],
             "support_contact": [],
-            "floor_contact": []
+            "floor_contact": [],
+            "aabbMin": [],
+            "aabbMax": []
         }
 
     # p.setRealTimeSimulation()
@@ -68,7 +70,9 @@ def render_in_pybullet(step_output, target, supporting, level):
         for obj in obj_dict:
             if obj == target:
                 obj_dict[obj]["support_contact"].append(object_contact)
-                obj_dict[obj]["floor_contact"].append(floor_contact) 
+                obj_dict[obj]["floor_contact"].append(floor_contact)
+                obj_dict[obj]["aabbMin"].append(aabb_min)
+                obj_dict[obj]["aabbMax"].append(aabb_max)
             cubePos, cubeOrn = p.getBasePositionAndOrientation(obj_dict[obj]["boxID"])
             obj_dict[obj]["pos"].append(cubePos)
             obj_dict[obj]["orn"].append(cubeOrn)
