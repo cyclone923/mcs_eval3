@@ -34,6 +34,11 @@ OBJ_ROLES = {
 TUBE_WIDTH2HEIGHT_RATIO = 2.5
 MAX_Y = 400
 MAX_X = 600
+CAM_CLIP_PLANES = [0.01, 15.0]
+CAM_ASPECT = [600, 400]
+CAM_FOV = 42.5
+CAM_HEIGHT = 1.5
+
 
 @dataclass
 class Coord:
@@ -42,19 +47,24 @@ class Coord:
     y: int
     z: int
 
-    def transform(self, dw, dh, dd):
-        return Coord(
-            self.x + dw,
-            self.y + dh,
-            self.z + dd
-        )
+    @staticmethod
+    def _pixel_to_physical(x, y, z):
+        '''
+        Credits: Z
+        '''
+        cam_matrix = [
+            [CAM_CLIP_PLANES[1] * 1/CAM_FOV, 0, CAM_ASPECT[0] / 2],
+            [0, CAM_CLIP_PLANES[1] * 1/CAM_HEIGHT, CAM_ASPECT[1] / 2],
+            [0, 0, 1],
+        ]
+        inv_cam_matrix = np.linalg.inv(cam_matrix)
+        
+        return np.dot(inv_cam_matrix, [x, y, z]).tolist()
 
-    def to_dict(self):
-        return {
-            "x": self.x,
-            "y": self.y,
-            "z": self.z
-        }
+    def transform(self):
+        x, y, z = self._pixel_to_physical(self.x, self.y, self.z)
+
+        return {"x": x, "y": y, "z": z}
 
 
 @dataclass
@@ -177,7 +187,7 @@ class Object:
 
         # TODO: visualize it
         self.dims = [
-            dim.to_dict() for dim in dims
+            dim.transform() for dim in dims
         ]
 
         self.w_h_d = (w, h, d)
@@ -533,7 +543,7 @@ class ObjectV2:
             ]
             w_h_d = (w, h, d)
 
-        self.dims = [pt.to_dict() for pt in dims]
+        self.dims = [pt.transform() for pt in dims]
         self.w_h_d = w_h_d
 
     def extract_physical_props(self):
