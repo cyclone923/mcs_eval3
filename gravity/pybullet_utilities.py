@@ -15,7 +15,7 @@ def render_in_pybullet(step_output, target, supporting, level):
     planeId = p.loadURDF("plane100.urdf")
     print(planeId)
     
-    p.resetDebugVisualizerCamera(step_output["camera_height"] * 2, 0, -42.5, [0,0,0])
+    p.resetDebugVisualizerCamera(3, 0, -42.5, [0,0,0])
     
     # get objects from output
     obj_dict = {}

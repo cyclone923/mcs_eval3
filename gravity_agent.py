@@ -3,7 +3,7 @@ from gravity import pybullet_utilities
 import numpy as np
 from fastdtw import fastdtw
 from scipy.spatial.distance import euclidean
-from vision.gravity_data_gen import ImageDataWriter
+from vision.gravity import L2DataPacketV2
 import sys
 
 DEBUG = False
@@ -30,15 +30,12 @@ class GravityAgent:
         self.level = level
 
     @staticmethod
-    def determine_drop_step(pole_state_history):
+    def determine_drop_step(pole_color_history):
         '''
         Find the precise point when the suction is off.
         '''
         # Based on an assumption that the pole color changes after the drop (suction off)
-
-        pole_color_history = [md["texture_color_list"][0] for md in pole_state_history]
         init_color = pole_color_history[0]
-
         for idx, color in enumerate(pole_color_history):
             if color != init_color:
                 return idx - 1
@@ -124,6 +121,60 @@ class GravityAgent:
 
         return (target_should_rest ^ target_actually_rested) or physics_flag # return xor of three flags, if return = True, there was a voe
 
+    def convert_l2_to_dict(self, metadata):
+        step_output_dict = {
+            "structural_object_list": {
+                "support": {
+                    "dimensions": metadata.support.dims,
+                    "position": {
+                        "x": metadata.support.centroid[0],
+                        "y": metadata.support.centroid[1],
+                        "z": metadata.support.centroid[2]
+                    },
+                    "color": {
+                        "r": metadata.support.color[0],
+                        "g": metadata.support.color[1],
+                        "b": metadata.support.color[2],
+                    },
+                    "shape": metadata.support.kind,
+                    "mass": 100
+                },
+                "floor": {
+                    "dimensions": metadata.floor.dims,
+                    "position": metadata.floor.centroid,
+                    "color": metadata.floor.color,
+                    "shape": metadata.floor.kind
+                }
+            },
+            "object_list": {}
+        }
+        if hasattr(metadata, "pole"):
+            step_output_dict["structural_object_list"]["pole"] = {
+                "dimensions": metadata.pole.dims,
+                "position": metadata.pole.centroid,
+                "texture_color_list": metadata.pole.color,
+                "shape": metadata.pole.kind
+            }
+        
+        if hasattr(metadata, "target"):
+            step_output_dict["object_list"]["target"] = {
+                "dimensions": metadata.target.dims,
+                "position": {
+                    "x": metadata.target.centroid[0],
+                    "y": metadata.target.centroid[1],
+                    "z": metadata.target.centroid[2]
+                },
+                "color": {
+                        "g": metadata.target.color[1],
+                        "r": metadata.target.color[0],
+                        "b": metadata.target.color[2],
+                },
+                "shape": metadata.target.kind,
+                "mass": 4.0
+            }
+
+        return step_output_dict
+
     def run_scene(self, config, desc_name):
         if DEBUG:
             print("DEBUG MODE!")
@@ -143,20 +194,24 @@ class GravityAgent:
         for i, x in enumerate(config['goal']['action_list']):
             step_output = self.controller.step(action=x[0])
 
-            if step_output is None:
-                break
+            if self.level == "oracle":
+                if step_output is None:
+                    break
+                else:
+                    step_output_dict = dict(step_output)
+                
+                floor_object = "floor"  # Not a dynamic object ID
+                target_object = self.target_obj_id(step_output_dict)
+                supporting_object, pole_object = self.struc_obj_ids(step_output_dict)
             else:
-                step_output_dict = dict(step_output)
-
-            floor_object = "floor"  # Not a dynamic object ID
-            target_object = self.target_obj_id(step_output_dict)
-            supporting_object, pole_object = self.struc_obj_ids(step_output_dict)
+                step_output = L2DataPacketV2(step_number=i, step_meta=step_output)
+                # convert L2DataPacketV2 to dictionary
+                step_output_dict = self.convert_l2_to_dict(step_output)
+                floor_object = "floor"
+                supporting_object = "support"
+                pole_object = "pole"
+                target_object = "target"
             
-            image_data = None
-            # get image of unity simulation at t=0
-            if not i:
-                image_data = ImageDataWriter(step_number=i, step_meta=step_output, scene_id=config['name'], support_id=supporting_object, target_id=target_object, pole_id=pole_object)
-
             try:
                 # Expected to not dissapear until episode ends
                 support_coords = step_output_dict["structural_object_list"][supporting_object]["dimensions"]
@@ -164,69 +219,68 @@ class GravityAgent:
                 # Target / Pole may not appear in view yet, start recording when available
                 target_trajectory.append(step_output_dict["object_list"][target_object]["dimensions"])
                 targ_pos.append(step_output_dict["object_list"][target_object]["position"])
-                pole_states.append(step_output_dict["structural_object_list"][pole_object])
+                pole_states.append(step_output_dict["structural_object_list"][pole_object]["texture_color_list"])
             except KeyError:  # Object / Pole is not in view yet
                 pass
-            
+
             if len(pole_states) > 1:
                 drop_step = self.determine_drop_step(pole_states)
                 if drop_step == len(pole_states) - 2:
-                    # save images at the drop step
-                    image_data = ImageDataWriter(step_number=i, step_meta=step_output, scene_id=config['name'], support_id=supporting_object, target_id=target_object, pole_id=pole_object)
-
                     # get physics simulator trajectory
                     obj_traj_orn = pybullet_utilities.render_in_pybullet(step_output_dict, target_object, supporting_object, self.level)
             
             choice = plausible_str(False)
-            voe_heatmap = None
+            voe_heatmap = np.array([[1.0 for i in range(400)] for j in range(600)])
 
             if len(pole_states) > 1 and drop_step != -1:
                 # calc confidence:
                 unity_traj = [[x["x"], x["z"], x["y"]] for x in targ_pos[drop_step:]]
-                distance, path = self.calc_simulator_voe(obj_traj_orn[target_object]['pos'], unity_traj)
-                confidence = 100 * np.tanh(1 / distance)
-                
-                # calc point in pixels
-                # real_world_coordinates = camera_matrix^-1 * pixel_coordinates
-                camera_matrix = [
-                    [step_output_dict["camera_clipping_planes"][1] * 1/step_output_dict["camera_field_of_view"], 0, step_output_dict["camera_aspect_ratio"][0] / 2],
-                    [0, step_output_dict["camera_clipping_planes"][1] * 1/step_output_dict["camera_height"], step_output_dict["camera_aspect_ratio"][1] / 2],
-                    [0, 0, 1]
-                ]
-                pixel_coords = np.dot(camera_matrix, [unity_traj[-1][0], unity_traj[-1][2], 1])
-                pixel_coords[1] = step_output_dict["camera_aspect_ratio"][1] - pixel_coords[1]
+                if unity_traj[-1] != unity_traj[-2]:
+                    confidence = 1.0
+                else:
+                    distance, path = self.calc_simulator_voe(obj_traj_orn[target_object]['pos'], unity_traj)
+                    confidence = 100 * np.tanh(1 / distance)
 
-                # confidence has to be bounded between 0 and 1
+                    # calc point in pixels
+                    # real_world_coordinates = camera_matrix^-1 * pixel_coordinates
+                    # camera_matrix = [
+                    #     [step_output_dict["camera_clipping_planes"][1] * 1/step_output_dict["camera_field_of_view"], 0, step_output_dict["camera_aspect_ratio"][0] / 2],
+                    #     [0, step_output_dict["camera_clipping_planes"][1] * 1/step_output_dict["camera_height"], step_output_dict["camera_aspect_ratio"][1] / 2],
+                    #     [0, 0, 1]
+                    # ]
+                    camera_matrix = [[0.35294117647058826, 0, 300.0], [0, 10.0, 200.0], [0, 0, 1]]
+                    pixel_coords = np.dot(camera_matrix, [unity_traj[-1][0], unity_traj[-1][2], 1])
+                    pixel_coords[1] = 400 - pixel_coords[1]
+
+                # confidence has to be bounded between 0 and 1 or 
                 if confidence >= 1:
                     confidence = 1.0
-                    # if confidence is 1, throw a no voe signal in the pixels
+                    # if confidence is 1, throw a no voe signal in the pixels, or the object in unity hasn't stopped moving
                     voe_xy_list.append(
                         {
                             "x": -1, # no voe 
                             "y": -1  # noe voe
                         }
                     )
-                else:
+                else: # if unity object is in the same spot as before
                     voe_xy_list.append(
                         {
                             "x": round(pixel_coords[0]),
                             "y": round(pixel_coords[1]) 
                         }
                     )
+                    voe_heatmap[round(pixel_coords[0])][round(pixel_coords[1])] = confidence
 
-                if confidence <= 0.5:
-                    choice = plausible_str(False)
+                if confidence <= 0.3:
+                    choice = plausible_str(True)
 
                 self.controller.make_step_prediction(
                     choice=choice, confidence=confidence, violations_xy_list=voe_xy_list[-1],
                     heatmap_img=voe_heatmap)
-            else:
+            else: # drop step hasn't happened yet
                 self.controller.make_step_prediction(
                     choice=choice, confidence=1.0, violations_xy_list=[{"x": -1, "y": -1}],
                     heatmap_img=voe_heatmap)
-
-        # save images at the end of the simulation
-        image_data = ImageDataWriter(step_number=i, step_meta=step_output, scene_id=config['name'], support_id=supporting_object, target_id=target_object, pole_id=pole_object)
 
         voe_by_frame = [-1 for j in range(i)]
         drop_step = self.determine_drop_step(pole_states)
@@ -262,7 +316,7 @@ class GravityAgent:
             on_support_agreement = not (unity_target_on_support ^ pb_target_on_support) # 1 is good
             on_floor_agreement = not (unity_target_on_floor ^ pb_target_on_floor) # 1 is good
             
-            if final_confidence >= 0.5 and (on_floor_agreement or on_support_agreement) and not unity_target_floating:
+            if final_confidence >= 0.3 and (on_floor_agreement or on_support_agreement) and not unity_target_floating:
                 print("Physics Sim Suggests no VoE for", config['name'])
                 physics_voe_flag = False
             else:
