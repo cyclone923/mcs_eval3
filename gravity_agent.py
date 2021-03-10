@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 from shapely.geometry import Polygon
 from scipy.spatial import ConvexHull
-from vision.gravity import L2DataPacket
+from vision.gravity import L2DataPacketV2
 
 DEBUG = False
 
@@ -185,17 +185,18 @@ class GravityAgent:
             
             try:
                 # Map visuals to semantic actors
-                step_output = L2DataPacket(step_number=i, step_meta=step_output)
+                step_output = L2DataPacketV2(step_number=i, step_meta=step_output)
 
                 # Collect observations
-                if step_output.pole:
+                if hasattr(step_output, "pole"):
                     pole_color_history.append(step_output.pole.color)
-                if step_output.target:
+                if hasattr(step_output, "target"):
                     target_trajectory.append(step_output.target.dims)
                 support_coords = step_output.support.dims
                 floor_coords = step_output.floor.dims
 
-            except AssertionError:
+            except AssertionError as e:
+                print(e)
                 print(f"Couldn't extract states of {i}th frame, using fallback...")
 
             choice = plausible_str(True)
