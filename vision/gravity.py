@@ -7,27 +7,23 @@ from typing import List
 
 
 OBJ_KINDS = {
-    "default",
-    "circle_frustum",
-    "cone",
+    # Flat surfaces
     "cube",
-    "cylinder",
-    "pyramid",
-    "sphere",
-    "square_frustum",
-    "triangle",
-    "tube_narrow",
-    "tube_wide",
-    "cube_hollow_narrow",
-    "cube_hollow_wide",
-    "hash",
     "letter_l_narrow",
     "letter_l_wide",
-    "letter_x",
+    "triangle",  # Always assumed to be on side view
+
+    # Slant surfaces
+    "pyramid",
+    "square_frustum",
+    
+    # Curved surfaces
+    "circle_frustum",
+    "cone",
+    "cylinder",
 }
 
 OBJ_ROLES = {
-    "default"
     "pole",
     "target",
     "support",
@@ -455,7 +451,6 @@ class ObjectV2:
 
     def __post_init__(self):
         self.front_view = self._estimate_obj_mask_front_view()
-        self.find_obj_kind()
 
     @staticmethod
     def _color_prop(obj_mask, rgb_im):
@@ -629,43 +624,70 @@ class ObjectV2:
 
         return num_cc - 1  # Includes background component
 
+    @staticmethod
+    def _face_curve_classifier(dmap, obj_mask):
+
+        dx, dy = np.gradient(dmap)
+        dx, dy = np.abs(dx), np.abs(dy)
+        slant_mask = (dy > 0) & (dy < dy.max()) & (dx == 0)
+
+        kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (4, 3))
+        slant_mask = cv2.morphologyEx(
+            (slant_mask * 255).astype("uint8"), cv2.MORPH_CLOSE, kernel
+        )
+
+        obj_mask = np.squeeze(obj_mask)
+        intersection = (slant_mask & obj_mask).sum() / obj_mask.sum()
+
+        if intersection > 0.5:
+            return "slant"
+        elif intersection < 0.01:
+            return "flat"
+        else:
+            return "curved"
+
     def find_obj_kind(self) -> None:
         '''
         Takes a binary blob and returns one among OBJ_KINDS: sets `kind`
         '''
         obj_fv = (np.squeeze(self.front_view * self.obj_mask) * 255).astype("uint8")
-        if obj_fv.sum() == 0:
-            self.kind = "tube_wide"
-            return
 
         w, h = self._get_fv_dims(obj_fv, safe=True)
         n = self._count_corner_points(obj_fv)
 
+        face_type = self._face_curve_classifier(self.depth_map, self.obj_mask)
+
         self.n_corners = n
         self.fill_ratio = (obj_fv > 0).sum() / (w * h)
         self.is_symmetic = w == h
+        self.has_slant_face = face_type == "slant"
+        self.has_flat_face = face_type == "flat"
+        self.has_curved_face = face_type == "curved"
 
-        # TODO: include tolerance
-        if self.fill_ratio == 1.0 and n == 4 and self.is_symmetic:
-            self.kind = "cube"  # Can miss classify pyramids
-        elif self.fill_ratio > 0.8 and n == 4:
-            self.kind = "circle_frustum"  # Validate ratio, try to use area + prob
-        elif self.fill_ratio > 0.8 and n == 3:
-            self.kind = "cone"
-        elif self.fill_ratio == 1.0 and n == 4 and not self.is_symmetic:  # Could be cylinder
-            if h > w:
-                self.kind = "tube_narrow"
-        elif self.fill_ratio > 0.7 and n == 3:
-            self.kind = "pyramid" # Or triangle
-        elif self.fill_ratio > 0.75 and n > 10:
-            self.kind = "sphere"
-        elif self.fill_ratio < 0.5 and n == 6:
-            self.kind = "letter_l_narrow"
-        elif self.fill_ratio < 0.5 and n > 6:
-            self.kind = "letter_x"
+        if self.role in ["pole", "floor", "support", "back-wall"]:
+            self.kind = "cube"
         else:
-            self.kind = "default"
-            # raise(Exception("Couldn't guess object kind"))
+            # TODO: include tolerance
+            if self.has_flat_face and self.fill_ratio < 0.5 and n == 6:
+                self.kind = "letter_l_narrow"
+            elif self.has_flat_face and self.fill_ratio > 0.5 and n == 6:
+                self.kind = "letter_l_wide"
+            elif self.has_flat_face and n == 3:
+                self.kind = "triangle"
+            elif self.has_flat_face and n == 4 and self.fill_ratio > 0.9:
+                self.kind = "cube"
+            elif self.has_slant_face and n == 4 and self.fill_ratio < 0.9:
+                self.kind = "square_frustum"
+            elif self.has_slant_face:
+                self.kind = "pyramid"
+            elif self.has_curved_face and n == 3 and not self.is_symmetic:
+                self.kind = "cone"
+            elif self.has_curved_face and self.fill_ratio > 0.9:
+                self.kind = "cylinder"
+            elif self.has_curved_face:
+                self.kind = "circle_frustum"
+            else:
+                self.kind = "cube"
         
 @dataclass
 class L2DataPacketV2:
@@ -679,6 +701,7 @@ class L2DataPacketV2:
         self.objects = self.segment_objects()
         self.determine_obj_roles()
         self.calculate_physical_props()
+        self.guess_object_kinds()
         self.load_roles_as_attr()
 
     def get_images_from_meta(self):
@@ -799,7 +822,7 @@ class L2DataPacketV2:
                     if cY > biggest_cY:
                         target_idx = idx
                         biggest_cY = cY
-            if target_idx:
+            if target_idx is not None:
                 self.objects[target_idx].role = "target"
                 target_found = True
 
@@ -817,6 +840,11 @@ class L2DataPacketV2:
     def calculate_physical_props(self):
         for this_ob in self.objects:
             this_ob.extract_physical_props()
+
+    def guess_object_kinds(self):
+
+        for this_ob in self.objects:
+            this_ob.find_obj_kind()
 
     def load_roles_as_attr(self):
 
