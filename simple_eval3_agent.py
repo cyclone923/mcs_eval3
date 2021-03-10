@@ -3,7 +3,7 @@ import yaml
 import pickle
 import os
 import random
-import argparse
+import argparse, configparser
 from exploration.controller_agent import ExploreAgent
 from MCS_exploration.sequence_generator import SequenceGenerator
 from voe.voe_agent import VoeAgent
@@ -17,21 +17,20 @@ class Evaluation3_Agent:
 
         try:
             assert "unity_path.yaml" in os.listdir(os.getcwd())
-            assert "mcs_config.yaml" in os.listdir(os.getcwd())
+            assert "mcs_config.ini" in os.listdir(os.getcwd())
         except:
             raise FileNotFoundError("You might not set up mcs config and unity path yet. Please run 'bash setup_unity.sh'.")
 
         with open("./unity_path.yaml", 'r') as config_file:
             config = yaml.safe_load(config_file)
 
+        config_ini = configparser.ConfigParser()
+        config_ini.read(config_path)
+
         self.controller = mcs.create_controller(
-            os.path.join(config['unity_path'])
-        )
+            os.path.join(config['unity_path']), config_file_path=config_path)
 
-        with open(config_path, 'r') as config_file:
-            config = yaml.safe_load(config_file)
-        self.level = config['metadata']
-
+        self.level = config_ini['MCS']['metadata']
         assert self.level in ['oracle', 'level1', 'level2']
 
         self.exploration_agent = SequenceGenerator(None, self.controller, self.level)
@@ -43,7 +42,7 @@ class Evaluation3_Agent:
             random.seed(seed)
 
     def run_scene(self, one_scene):
-        scene_config, status = mcs.load_config_json_file(one_scene)
+        scene_config, status = mcs.load_scene_json_file(one_scene)
         goal_type = scene_config['goal']['category']
         if goal_type == "intuitive physics":
             if 'gravity' in scene_config['name']:
@@ -65,7 +64,7 @@ class Evaluation3_Agent:
 def make_parser():
     parser = argparse.ArgumentParser()
     parser.add_argument('--unity-path', default='unity_path.yaml')
-    parser.add_argument('--config', default='mcs_config.yaml')
+    parser.add_argument('--config', default='mcs_config.ini')
     parser.add_argument('--prefix', default='out')
     parser.add_argument('--scenes', default='different_scenes')
     return parser
@@ -75,7 +74,11 @@ if __name__ == "__main__":
     args = make_parser().parse_args()
     agent = Evaluation3_Agent(args.unity_path, args.config, args.prefix)
     goal_dir = args.scenes
-    all_scenes = [os.path.join(goal_dir, one_scene) for one_scene in sorted(os.listdir(goal_dir))]
+    all_scenes = [
+        os.path.join(goal_dir, one_scene)
+        for one_scene in sorted(os.listdir(goal_dir))
+        if one_scene.endswith(".json")  # All scene config files are JSON files
+    ]
     random.shuffle(all_scenes)
 
     results = {}
