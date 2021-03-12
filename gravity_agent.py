@@ -42,18 +42,35 @@ class GravityAgent:
         self.level = level
 
     @staticmethod
-    def determine_drop_step(pole_color_history):
+    def determine_drop_step(pole_centroid_history):
         '''
         Find the precise point when the suction is off.
+        Assumes the direction change in pole implies suction is off.
         '''
         # Based on an assumption that the pole color changes after the drop (suction off)
-
-        init_color = pole_color_history[0]
-        for idx, color in enumerate(pole_color_history):
-            if color != init_color:
-                return idx - 1
+        pole_y_position = [
+            pt[1] for pt in pole_centroid_history if pt is not None
+        ]
+        none_offset = len(pole_centroid_history) - len(pole_y_position)
+        
+        if len(pole_y_position) == 0:
+            raise(Exception("Drop step not calculated as pole was never detected."))
+        elif sorted(pole_y_position, reverse=True) == pole_y_position:
+            for idx in range(len(pole_centroid_history)):
+                if pole_centroid_history[idx] is not None:
+                    # Assumed to have recorded only pole retraction
+                    return none_offset + idx  
         else:
-            raise(Exception("Drop step not detected by observing color of pole"))
+            for idx in range(1, len(pole_y_position) - 1):
+                if pole_y_position[idx] > pole_y_position[idx + 1]:
+                    # First direction change of pole
+                    return none_offset + idx
+            else:  # pole_y_position is in ascending order all along
+                if pole_y_position[-2] == pole_y_position[-1]:
+                    # Pole stood still after drop
+                    return none_offset + pole_y_position.index(pole_y_position[-1])
+                else:
+                    raise(Exception("Drop step not calculated as pole never retracted."))
 
     @staticmethod
     def get_object_bounding_simplices(dims):
@@ -174,7 +191,7 @@ class GravityAgent:
 
         # Inputs to determine VoE
         target_trajectory = []
-        pole_color_history = []  # To determine drop step
+        pole_centroid_history = []  # To determine drop step
         support_coords, floor_coords = None, None
 
         for i, x in enumerate(config['goal']['action_list']):
@@ -189,7 +206,7 @@ class GravityAgent:
 
                 # Collect observations
                 if hasattr(step_output, "pole"):
-                    pole_color_history.append(step_output.pole.color)
+                    pole_centroid_history.append(step_output.pole.centroid)
                 if hasattr(step_output, "target"):
                     target_trajectory.append(step_output.target.dims)
                 support_coords = step_output.support.dims
@@ -206,7 +223,7 @@ class GravityAgent:
                 choice=choice, confidence=1.0, violations_xy_list=voe_xy_list,
                 heatmap_img=voe_heatmap)
 
-        drop_step = self.determine_drop_step(pole_color_history)
+        drop_step = self.determine_drop_step(pole_centroid_history)
         voe_flag = self.sense_voe(drop_step, support_coords, floor_coords, target_trajectory)
 
         if voe_flag:
