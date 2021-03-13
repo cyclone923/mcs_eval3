@@ -1,4 +1,4 @@
-from data.base_config import *
+from .base_config import *
 
 # ----------------------- DATASETS ----------------------- #
 
@@ -49,11 +49,11 @@ mcsvideo_dataset_base = Config({
 mcsvideo3_voe_dataset = mcsvideo_dataset_base.copy({
     'name': 'mcs video voe',
 
-    'train_images': '../dataset/mcsvideo/',
-    'train_info': '../dataset/mcsvideo3/intphy_scenes/train.txt',
+    'train_images': './data/dataset/MCSvideo3/',
+    'train_info': './data/dataset/MCSvideo3/intphy_scenes/train.txt',
 
-    'valid_images': '../dataset/mcsvideo/',
-    'valid_info': '../dataset/mcsvideo3/intphy_scenes/val.txt',
+    'valid_images': './data/dataset/MCSvideo/',
+    'valid_info': './data/dataset/MCSvideo3/intphy_scenes/val.txt',
 
     'class_names': MCSVIDEO_VOE_CLASSES,
     'label_map': MCSVIDEO_VOE_LABEL_MAP,
@@ -66,11 +66,11 @@ mcsvideo3_voe_dataset = mcsvideo_dataset_base.copy({
 mcsvideo3_voe_depth_dataset = mcsvideo_dataset_base.copy({
     'name': 'mcs video voe',
 
-    'train_images': '../dataset/mcsvideo3/',
-    'train_info': '../dataset/mcsvideo3/intphy_scenes/train.txt',
+    'train_images': './data/dataset/MCSvideo3/',
+    'train_info': './data/dataset/MCSvideo3/intphy_scenes/train.txt',
 
-    'valid_images': '../dataset/mcsvideo3/',
-    'valid_info': '../dataset/mcsvideo3/intphy_scenes/val.txt',
+    'valid_images': './data/dataset/MCSvideo3/',
+    'valid_info': './data/dataset/MCSvideo3/intphy_scenes/val.txt',
 
     'class_names': MCSVIDEO_VOE_CLASSES,
     'label_map': MCSVIDEO_VOE_LABEL_MAP,
