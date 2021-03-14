@@ -38,8 +38,8 @@ class Camera:
         self.cx = self.aspect_ratio[0] / 2
         self.cy = self.aspect_ratio[1] / 2
 
-        self.focal_x = self.cx / np.math.tanh(self.h_fov / 2) # probably wrong
-        self.focal_y = self.cy / np.math.tanh(self.v_fov / 2) # probably wrong
+        self.focal_x = self.cx / np.math.tan(self.fov / 2) # probably wrong
+        self.focal_y = self.cy / np.math.tan(self.fov / 2) # probably wrong
 
         self.pos = [0, 1.5, -4.5] #consistent over all scenes
 
@@ -57,8 +57,15 @@ class Camera:
 
         depth = z * np.sqrt(1. + x_z ** 2 + y_z ** 2)
 
-        u = -1 * ((self.focal_x * x) - self.cx) 
-        v = -1 * ((self.focal_y * y) - self.cy) 
+        u = -1 * ((self.focal_x * x) - self.cx) / depth 
+        v = -1 * ((self.focal_y * y) - self.cy) / depth
+
+        transform = [
+            [np.cos(45), -1*np.sin(45)],
+            [np.sin(45), np.cos(45)]
+        ]
+        
+        pixels = np.dot(np.array([u, v]), transform)
         return u, v
 
     # currently inaccurate
@@ -304,8 +311,34 @@ class GravityAgent:
                     # calc point in pixels
                     # pixel_coordinates = self.world_2_pixel(unity_traj[-1], step_output, step_output_dict)
                     # get the depth map
-                    world_coords = [unity_traj[-1][0], unity_traj[-1][2], unity_traj[-1][1]]
-                    pixel_coordinates = camera.world_2_pixel(world_coords)
+                    # world_coords = [unity_traj[-1][0], unity_traj[-1][2], unity_traj[-1][1]]
+
+                    #### FOR RAHUL
+                    ###############################################################################################################
+                    world_coords = [{'x': 285, 'y': 223, 'z': 200.0}, {'x': 285, 'y': 223, 'z': 232.0}, {'x': 317, 'y': 223, 'z': 200.0}, {'x': 317, 'y': 223, 'z': 232.0}, {'x': 317, 'y': 299, 'z': 200.0}, {'x': 317, 'y': 299, 'z': 232.0}, {'x': 285, 'y': 299, 'z': 200.0}, {'x': 285, 'y': 299, 'z': 232.0}]
+                    world_coords = [list(world_coords[i].values()) for i in range(len(world_coords))]
+                    
+                    voe_heatmap = np.float32([[[0,0,0] for i in range(600)] for j in range(400)])
+                    
+                    p = []
+                    for w in world_coords:
+                        pixel_coordinates = camera.world_2_pixel(w)
+                        p.append(pixel_coordinates)
+                    
+                    world_coords = [{'x': 333, 'y': 158, 'z': 200.0}, {'x': 333, 'y': 158, 'z': 220.0}, {'x': 371, 'y': 158, 'z': 200.0}, {'x': 371, 'y': 158, 'z': 220.0}, {'x': 371, 'y': 178, 'z': 200.0}, {'x': 371, 'y': 178, 'z': 220.0}, {'x': 333, 'y': 178, 'z': 200.0}, {'x': 333, 'y': 178, 'z': 220.0}]
+                    world_coords = [list(world_coords[i].values()) for i in range(len(world_coords))]
+                    for w in world_coords:
+                        pixel_coordinates = camera.world_2_pixel(w)
+                        p.append(pixel_coordinates)
+                    
+                    p = np.array(p)
+                    p[:,0] = p[:,0] + p[:,0].max()
+                    p[:,1] = p[:,1] + p[:,1].max()
+
+                    for coords in p:
+                        voe_heatmap[round(coords[1])][round(coords[0])] = [255, 255, 255]  
+                    cv2.imwrite("test_output.jpg", voe_heatmap)
+                    ################################################################################################################
                     # depth_map = depth_map * 255. / self.depth_map.max()
                     
                 # confidence has to be bounded between 0 and 1 or 
