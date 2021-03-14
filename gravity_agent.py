@@ -64,7 +64,7 @@ class Camera:
             [np.cos(45), -1*np.sin(45)],
             [np.sin(45), np.cos(45)]
         ]
-        
+
         pixels = np.dot(np.array([u, v]), transform)
         return u, v
 
@@ -315,29 +315,29 @@ class GravityAgent:
 
                     #### FOR RAHUL
                     ###############################################################################################################
-                    world_coords = [{'x': 285, 'y': 223, 'z': 200.0}, {'x': 285, 'y': 223, 'z': 232.0}, {'x': 317, 'y': 223, 'z': 200.0}, {'x': 317, 'y': 223, 'z': 232.0}, {'x': 317, 'y': 299, 'z': 200.0}, {'x': 317, 'y': 299, 'z': 232.0}, {'x': 285, 'y': 299, 'z': 200.0}, {'x': 285, 'y': 299, 'z': 232.0}]
-                    world_coords = [list(world_coords[i].values()) for i in range(len(world_coords))]
+                    # world_coords = [{'x': 285, 'y': 223, 'z': 200.0}, {'x': 285, 'y': 223, 'z': 232.0}, {'x': 317, 'y': 223, 'z': 200.0}, {'x': 317, 'y': 223, 'z': 232.0}, {'x': 317, 'y': 299, 'z': 200.0}, {'x': 317, 'y': 299, 'z': 232.0}, {'x': 285, 'y': 299, 'z': 200.0}, {'x': 285, 'y': 299, 'z': 232.0}]
+                    # world_coords = [list(world_coords[i].values()) for i in range(len(world_coords))]
                     
                     voe_heatmap = np.float32([[[0,0,0] for i in range(600)] for j in range(400)])
+                    pixel_coordinates = [-1, -1]
+                    # p = []
+                    # for w in world_coords:
+                    #     pixel_coordinates = camera.world_2_pixel(w)
+                    #     p.append(pixel_coordinates)
                     
-                    p = []
-                    for w in world_coords:
-                        pixel_coordinates = camera.world_2_pixel(w)
-                        p.append(pixel_coordinates)
+                    # world_coords = [{'x': 333, 'y': 158, 'z': 200.0}, {'x': 333, 'y': 158, 'z': 220.0}, {'x': 371, 'y': 158, 'z': 200.0}, {'x': 371, 'y': 158, 'z': 220.0}, {'x': 371, 'y': 178, 'z': 200.0}, {'x': 371, 'y': 178, 'z': 220.0}, {'x': 333, 'y': 178, 'z': 200.0}, {'x': 333, 'y': 178, 'z': 220.0}]
+                    # world_coords = [list(world_coords[i].values()) for i in range(len(world_coords))]
+                    # for w in world_coords:
+                    #     pixel_coordinates = camera.world_2_pixel(w)
+                    #     p.append(pixel_coordinates)
                     
-                    world_coords = [{'x': 333, 'y': 158, 'z': 200.0}, {'x': 333, 'y': 158, 'z': 220.0}, {'x': 371, 'y': 158, 'z': 200.0}, {'x': 371, 'y': 158, 'z': 220.0}, {'x': 371, 'y': 178, 'z': 200.0}, {'x': 371, 'y': 178, 'z': 220.0}, {'x': 333, 'y': 178, 'z': 200.0}, {'x': 333, 'y': 178, 'z': 220.0}]
-                    world_coords = [list(world_coords[i].values()) for i in range(len(world_coords))]
-                    for w in world_coords:
-                        pixel_coordinates = camera.world_2_pixel(w)
-                        p.append(pixel_coordinates)
-                    
-                    p = np.array(p)
-                    p[:,0] = p[:,0] + p[:,0].max()
-                    p[:,1] = p[:,1] + p[:,1].max()
+                    # p = np.array(p)
+                    # p[:,0] = p[:,0] + p[:,0].max()
+                    # p[:,1] = p[:,1] + p[:,1].max()
 
-                    for coords in p:
-                        voe_heatmap[round(coords[1])][round(coords[0])] = [255, 255, 255]  
-                    cv2.imwrite("test_output.jpg", voe_heatmap)
+                    # for coords in p:
+                    #     voe_heatmap[round(coords[1])][round(coords[0])] = [255, 255, 255]
+                    # cv2.imwrite("test_output.jpg", voe_heatmap)
                     ################################################################################################################
                     # depth_map = depth_map * 255. / self.depth_map.max()
                     
@@ -396,7 +396,7 @@ class GravityAgent:
             target_dims = self.getMinMax(step_output_dict["object_list"][target_object])
             unity_support_position = list(step_output_dict["structural_object_list"][supporting_object]['position'].values())
             unity_target_on_support = self.getIntersectionOrContact(step_output_dict["object_list"][target_object], step_output_dict["structural_object_list"][supporting_object])
-            unity_target_on_floor = round(target_dims[2][0]) == 0
+            unity_target_on_floor = target_dims[2][0] <= 0.4
             unity_target_floating = False
 
             # if unity target isn't on the floor or the support, its floating, automatic voe
