@@ -511,6 +511,9 @@ class ObjectV2:
         obj_point_cloud = o3d.geometry.PointCloud.create_from_rgbd_image(
             rgbd_input, intrinsic=pinhole_cam_intrinsic
         )
+
+        assert obj_point_cloud.dimension() == 3, "RGB-D couldn't return a 3D object!"
+
         obj_point_cloud.transform(
             [
                 [1, 0, 0, 0],
