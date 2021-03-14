@@ -38,6 +38,7 @@ CAM_CLIP_PLANES = [0.01, 15.0]
 CAM_ASPECT = [600, 400]
 CAM_FOV = 42.5
 CAM_HEIGHT = 1.5
+FOCAL = 30.8
 
 
 @dataclass
@@ -53,16 +54,19 @@ class Coord:
         Credits: Z
         '''
         cam_matrix = [
-            [CAM_CLIP_PLANES[1] * 1/CAM_FOV, 0, CAM_ASPECT[0] / 2],
-            [0, CAM_CLIP_PLANES[1] * 1/CAM_HEIGHT, CAM_ASPECT[1] / 2],
+            [FOCAL, 0, CAM_ASPECT[0] / 2],
+            [0, FOCAL, CAM_ASPECT[1] / 2],
             [0, 0, 1],
         ]
         inv_cam_matrix = np.linalg.inv(cam_matrix)
         
         return np.dot(inv_cam_matrix, [x, y, z]).tolist()
 
-    def transform(self):
-        x, y, z = self._pixel_to_physical(self.x, self.y, self.z)
+    def transform(self, scaled=False):
+        if scaled:
+            x, y, z = self._pixel_to_physical(self.x, self.y, self.z)
+        else:
+            x, y, z = self.x, self.y, self.z
 
         return {"x": x, "y": y, "z": z}
 
@@ -270,7 +274,7 @@ class L2DataPacket:
         
         # For debugging
         cv2.imwrite("rgb.jpg", self.rgb_im)
-        cv2.imwrite("mask.jpg", self.obj_mask)
+        cv2.imwrite("mask.png", self.obj_mask, [cv2.IMWRITE_PNG_COMPRESSION, 0])
         cv2.imwrite("depth.jpg", self.depth_map * 255. / self.depth_map.max())
 
     @staticmethod
@@ -491,22 +495,22 @@ class ObjectV2:
         '''
         obj_mask = obj.obj_mask
         all_nonzeros = np.nonzero(np.squeeze(obj_mask))
-        x, y = all_nonzeros[0][0], all_nonzeros[1][0]
+        y, x = all_nonzeros[0][0], all_nonzeros[1][0]
         w, h = self._get_obj_dims(obj_mask)
 
         if obj.role == "floor":
-            z = y
+            z = 0 # y
             y = MAX_Y
-            d = h
+            d = MAX_Y # h
             h = 1
             dims = [
-                Coord(x, y + h, z),
+                Coord(x, y, z),
                 Coord(x, y - h, z),
-                Coord(x + w, y + h, z),
+                Coord(x + w, y, z),
                 Coord(x + w, y - h, z),
-                Coord(x + w, y + h, z + d),
+                Coord(x + w, y, z + d),
                 Coord(x + w, y - h, z + d),
-                Coord(x, y + h, z + d),
+                Coord(x, y, z + d),
                 Coord(x, y - h, z + d),
             ]
             w_h_d = (w, h, d)
@@ -514,6 +518,7 @@ class ObjectV2:
         elif obj.role == "back-wall":
             z = 0
             d = 1
+            h = MAX_Y
             dims = [
                 Coord(x, y, z),
                 Coord(x, y, z + d),
@@ -528,7 +533,7 @@ class ObjectV2:
 
         else:
             # k = 15.0 - (np.squeeze(obj_mask) * self.depth_map).max()
-            k = MAX_X / 2
+            k = MAX_Y / 2
             z = k
             d = min(w, h)
             dims = [
@@ -543,7 +548,7 @@ class ObjectV2:
             ]
             w_h_d = (w, h, d)
 
-        self.dims = [pt.transform() for pt in dims]
+        self.dims = [pt.transform(scaled=True) for pt in dims]
         self.w_h_d = w_h_d
 
     def extract_physical_props(self):
@@ -725,9 +730,9 @@ class L2DataPacketV2:
         self.depth_map = self.step_meta.depth_map_list[0]
         
         # For debugging
-        cv2.imwrite("rgb.jpg", self.rgb_im)
-        cv2.imwrite("mask.jpg", self.obj_mask)
-        cv2.imwrite("depth.jpg", self.depth_map * 255. / self.depth_map.max())
+        cv2.imwrite("rgb.png", self.rgb_im, [cv2.IMWRITE_PNG_COMPRESSION, 0])
+        cv2.imwrite("mask.png", self.obj_mask, [cv2.IMWRITE_PNG_COMPRESSION, 0])
+        cv2.imwrite("depth.png", self.depth_map, [cv2.IMWRITE_PNG_COMPRESSION, 0])
 
     def _get_obj_masks(self) -> List[np.ndarray]:
         '''
