@@ -25,65 +25,65 @@ class ObjectFace:
 
         return x_matches and y_matches
 
-class Camera:
-    # should we pass in the floor or the support object's
-    def __init__(self, step_output_dict, obj, obj_width):
-        self.fov = step_output_dict["camera_field_of_view"]
-        self.aspect_ratio = step_output_dict["camera_aspect_ratio"]
+# class Camera:
+#     # should we pass in the floor or the support object's
+#     def __init__(self, step_output_dict, obj, obj_width):
+#         self.fov = step_output_dict["camera_field_of_view"]
+#         self.aspect_ratio = step_output_dict["camera_aspect_ratio"]
 
-        # from Erich's repo
-        self.h_fov = self.fov * (np.pi/180)
-        self.v_fov = 2 * np.math.atan(np.math.tan(self.h_fov / 2) * (self.aspect_ratio[0] / self.aspect_ratio[1]))
+#         # from Erich's repo
+#         self.h_fov = self.fov * (np.pi/180)
+#         self.v_fov = 2 * np.math.atan(np.math.tan(self.h_fov / 2) * (self.aspect_ratio[0] / self.aspect_ratio[1]))
 
-        self.cx = self.aspect_ratio[0] / 2
-        self.cy = self.aspect_ratio[1] / 2
+#         self.cx = self.aspect_ratio[0] / 2
+#         self.cy = self.aspect_ratio[1] / 2
 
-        self.focal_x = self.cx / np.math.tan(self.fov / 2) # probably wrong
-        self.focal_y = self.cy / np.math.tan(self.fov / 2) # probably wrong
+#         self.focal_x = self.cx / np.math.tan(self.fov / 2) # probably wrong
+#         self.focal_y = self.cy / np.math.tan(self.fov / 2) # probably wrong
 
-        self.pos = [0, 1.5, -4.5] #consistent over all scenes
+#         self.pos = [0, 1.5, -4.5] #consistent over all scenes
 
-        # probably wrong, ask Rahul if he has an algorithm or equation for this
-        # self.pix_per_unit = (obj depth in pixels) / obj depth in units
-        self.pix_per_unit = (obj_width[1] - obj_width[0]) / euclidean(self.pos, list(step_output_dict["structural_object_list"][obj]["position"].values()))
+#         # probably wrong, ask Rahul if he has an algorithm or equation for this
+#         # self.pix_per_unit = (obj depth in pixels) / obj depth in units
+#         self.pix_per_unit = (obj_width[1] - obj_width[0]) / euclidean(self.pos, list(step_output_dict["structural_object_list"][obj]["position"].values()))
 
 
-    # currently inaccurate
-    def world_2_pixel(self, world_coords):
-        x, y, z = world_coords
+#     # currently inaccurate
+#     def world_2_pixel(self, world_coords):
+#         x, y, z = world_coords
 
-        x_z = x / z
-        y_z = y / z
+#         x_z = x / z
+#         y_z = y / z
 
-        depth = z * np.sqrt(1. + x_z ** 2 + y_z ** 2)
+#         depth = z * np.sqrt(1. + x_z ** 2 + y_z ** 2)
 
-        u = -1 * ((self.focal_x * x) - self.cx) / depth 
-        v = -1 * ((self.focal_y * y) - self.cy) / depth
+#         u = -1 * ((self.focal_x * x) - self.cx) / depth 
+#         v = -1 * ((self.focal_y * y) - self.cy) / depth
 
-        transform = [
-            [np.cos(45), -1*np.sin(45)],
-            [np.sin(45), np.cos(45)]
-        ]
+#         transform = [
+#             [np.cos(45), -1*np.sin(45)],
+#             [np.sin(45), np.cos(45)]
+#         ]
 
-        pixels = np.dot(np.array([u, v]), transform)
-        return u, v
+#         pixels = np.dot(np.array([u, v]), transform)
+#         return u, v
 
-    # currently inaccurate
-    def pixel_2_world(self, pixel_coords, depth):
-        u = pixel_coords[0]
-        v = pixel_coords[1]
+#     # currently inaccurate
+#     def pixel_2_world(self, pixel_coords, depth):
+#         u = pixel_coords[0]
+#         v = pixel_coords[1]
 
-        depth *= self.pix_per_unit
+#         depth *= self.pix_per_unit
 
-        x_z = (self.cx - u) / self.focal_x
-        y_z = (self.cy - u) / self.focal_y
+#         x_z = (self.cx - u) / self.focal_x
+#         y_z = (self.cy - u) / self.focal_y
 
-        z = depth / np.sqrt(1. + x_z ** 2 + y_z ** 2)
+#         z = depth / np.sqrt(1. + x_z ** 2 + y_z ** 2)
 
-        x = x_z * z
-        y = y_z * z
+#         x = x_z * z
+#         y = y_z * z
 
-        return x, y, z
+#         return x, y, z
         
 
 class GravityAgent:
@@ -185,6 +185,8 @@ class GravityAgent:
 
     def convert_l2_to_dict(self, metadata):
         step_output_dict = {
+            "camera_field_of_view": 42.5,
+            "camera_aspect_ratio": (600, 400),
             "structural_object_list": {
                 "support": {
                     "dimensions": metadata.support.dims,
@@ -287,7 +289,7 @@ class GravityAgent:
                 pass
 
             #define camera based on support object
-            camera = Camera(step_output_dict, floor_object, self.getMinMax(step_output_dict["structural_object_list"][floor_object])[2])
+            # camera = Camera(step_output_dict, floor_object, self.getMinMax(step_output_dict["structural_object_list"][floor_object])[2])
 
             if len(pole_states) > 2:
                 drop_step = self.determine_drop_step(pole_states)
@@ -318,7 +320,7 @@ class GravityAgent:
                     # world_coords = [{'x': 285, 'y': 223, 'z': 200.0}, {'x': 285, 'y': 223, 'z': 232.0}, {'x': 317, 'y': 223, 'z': 200.0}, {'x': 317, 'y': 223, 'z': 232.0}, {'x': 317, 'y': 299, 'z': 200.0}, {'x': 317, 'y': 299, 'z': 232.0}, {'x': 285, 'y': 299, 'z': 200.0}, {'x': 285, 'y': 299, 'z': 232.0}]
                     # world_coords = [list(world_coords[i].values()) for i in range(len(world_coords))]
                     
-                    voe_heatmap = np.float32([[[0,0,0] for i in range(600)] for j in range(400)])
+                    # voe_heatmap = np.float32([[[0,0,0] for i in range(600)] for j in range(400)])
                     pixel_coordinates = [-1, -1]
                     # p = []
                     # for w in world_coords:
@@ -396,10 +398,10 @@ class GravityAgent:
             target_dims = self.getMinMax(step_output_dict["object_list"][target_object])
             unity_support_position = list(step_output_dict["structural_object_list"][supporting_object]['position'].values())
             unity_target_on_support = self.getIntersectionOrContact(step_output_dict["object_list"][target_object], step_output_dict["structural_object_list"][supporting_object])
-            unity_target_on_floor = target_dims[2][0] <= 0.4
-            unity_target_floating = False
+            unity_target_on_floor = target_dims[2][0] <= 0.3
 
             # if unity target isn't on the floor or the support, its floating, automatic voe
+            unity_target_floating = False
             if not unity_target_on_floor and not unity_target_on_support:
                 unity_target_floating = True
                 final_confidence = 0
