@@ -5,6 +5,7 @@ from fastdtw import fastdtw
 from scipy.spatial.distance import euclidean
 from vision.gravity import L2DataPacketV2
 import sys
+import cv2
 
 DEBUG = False
 
@@ -23,6 +24,60 @@ class ObjectFace:
         y_matches = abs(self.centroid[1] - o.centroid[1]) < tol
 
         return x_matches and y_matches
+
+class Camera:
+    # should we pass in the floor or the support object's
+    def __init__(self, step_output_dict, obj, obj_width):
+        self.fov = step_output_dict["camera_field_of_view"]
+        self.aspect_ratio = step_output_dict["camera_aspect_ratio"]
+
+        # from Erich's repo
+        self.h_fov = self.fov * (np.pi/180)
+        self.v_fov = 2 * np.math.atan(np.math.tan(self.h_fov / 2) * (self.aspect_ratio[0] / self.aspect_ratio[1]))
+
+        self.cx = self.aspect_ratio[0] / 2
+        self.cy = self.aspect_ratio[1] / 2
+
+        self.focal_x = self.cx / np.math.tanh(self.h_fov / 2) # probably wrong
+        self.focal_y = self.cy / np.math.tanh(self.v_fov / 2) # probably wrong
+
+        self.pos = [0, 1.5, -4.5] #consistent over all scenes
+
+        # probably wrong, ask Rahul if he has an algorithm or equation for this
+        # self.pix_per_unit = (obj depth in pixels) / obj depth in units
+        self.pix_per_unit = (obj_width[1] - obj_width[0]) / euclidean(self.pos, list(step_output_dict["structural_object_list"][obj]["position"].values()))
+
+
+    # currently inaccurate
+    def world_2_pixel(self, world_coords):
+        x, y, z = world_coords
+
+        x_z = x / z
+        y_z = y / z
+
+        depth = z * np.sqrt(1. + x_z ** 2 + y_z ** 2)
+
+        u = -1 * ((self.focal_x * x) - self.cx) 
+        v = -1 * ((self.focal_y * y) - self.cy) 
+        return u, v
+
+    # currently inaccurate
+    def pixel_2_world(self, pixel_coords, depth):
+        u = pixel_coords[0]
+        v = pixel_coords[1]
+
+        depth *= self.pix_per_unit
+
+        x_z = (self.cx - u) / self.focal_x
+        y_z = (self.cy - u) / self.focal_y
+
+        z = depth / np.sqrt(1. + x_z ** 2 + y_z ** 2)
+
+        x = x_z * z
+        y = y_z * z
+
+        return x, y, z
+        
 
 class GravityAgent:
     def __init__(self, controller, level):
@@ -165,14 +220,13 @@ class GravityAgent:
                     "z": metadata.target.centroid[2]
                 },
                 "color": {
-                        "g": metadata.target.color[1],
                         "r": metadata.target.color[0],
+                        "g": metadata.target.color[1],
                         "b": metadata.target.color[2],
                 },
                 "shape": metadata.target.kind,
                 "mass": 4.0
             }
-
         return step_output_dict
 
     def run_scene(self, config, desc_name):
@@ -191,6 +245,7 @@ class GravityAgent:
         step_output_dict = None
         drop_step = -1
         voe_xy_list = []
+        camera = None
         for i, x in enumerate(config['goal']['action_list']):
             step_output = self.controller.step(action=x[0])
 
@@ -215,6 +270,7 @@ class GravityAgent:
             try:
                 # Expected to not dissapear until episode ends
                 support_coords = step_output_dict["structural_object_list"][supporting_object]["dimensions"]
+                
                 floor_coords = step_output_dict["structural_object_list"][floor_object]["dimensions"]
                 # Target / Pole may not appear in view yet, start recording when available
                 target_trajectory.append(step_output_dict["object_list"][target_object]["dimensions"])
@@ -223,7 +279,10 @@ class GravityAgent:
             except KeyError:  # Object / Pole is not in view yet
                 pass
 
-            if len(pole_states) > 1:
+            #define camera based on support object
+            camera = Camera(step_output_dict, floor_object, self.getMinMax(step_output_dict["structural_object_list"][floor_object])[2])
+
+            if len(pole_states) > 2:
                 drop_step = self.determine_drop_step(pole_states)
                 if drop_step == len(pole_states) - 2:
                     # get physics simulator trajectory
@@ -235,23 +294,20 @@ class GravityAgent:
             if len(pole_states) > 1 and drop_step != -1:
                 # calc confidence:
                 unity_traj = [[x["x"], x["z"], x["y"]] for x in targ_pos[drop_step:]]
+                
                 if unity_traj[-1] != unity_traj[-2]:
                     confidence = 1.0
-                else:
+                elif obj_traj_orn != None:
                     distance, path = self.calc_simulator_voe(obj_traj_orn[target_object]['pos'], unity_traj)
                     confidence = 100 * np.tanh(1 / distance)
-
+                    
                     # calc point in pixels
-                    # real_world_coordinates = camera_matrix^-1 * pixel_coordinates
-                    # camera_matrix = [
-                    #     [step_output_dict["camera_clipping_planes"][1] * 1/step_output_dict["camera_field_of_view"], 0, step_output_dict["camera_aspect_ratio"][0] / 2],
-                    #     [0, step_output_dict["camera_clipping_planes"][1] * 1/step_output_dict["camera_height"], step_output_dict["camera_aspect_ratio"][1] / 2],
-                    #     [0, 0, 1]
-                    # ]
-                    camera_matrix = [[0.35294117647058826, 0, 300.0], [0, 10.0, 200.0], [0, 0, 1]]
-                    pixel_coords = np.dot(camera_matrix, [unity_traj[-1][0], unity_traj[-1][2], 1])
-                    pixel_coords[1] = 400 - pixel_coords[1]
-
+                    # pixel_coordinates = self.world_2_pixel(unity_traj[-1], step_output, step_output_dict)
+                    # get the depth map
+                    world_coords = [unity_traj[-1][0], unity_traj[-1][2], unity_traj[-1][1]]
+                    pixel_coordinates = camera.world_2_pixel(world_coords)
+                    # depth_map = depth_map * 255. / self.depth_map.max()
+                    
                 # confidence has to be bounded between 0 and 1 or 
                 if confidence >= 1:
                     confidence = 1.0
@@ -262,16 +318,25 @@ class GravityAgent:
                             "y": -1  # noe voe
                         }
                     )
-                else: # if unity object is in the same spot as before
+                else:
                     voe_xy_list.append(
                         {
-                            "x": round(pixel_coords[0]),
-                            "y": round(pixel_coords[1]) 
+                            "x": round(pixel_coordinates[0]),
+                            "y": round(pixel_coordinates[1]) 
                         }
                     )
-                    voe_heatmap[round(pixel_coords[0])][round(pixel_coords[1])] = confidence
 
-                if confidence <= 0.3:
+                    # print(pixel_coordinates)
+                    # print(confidence)
+
+                    # voe_heatmap = step_output.object_mask_list[0]
+                    # voe_heatmap = np.array(voe_heatmap)[:,:,::-1]
+                    # voe_heatmap[np.all(voe_heatmap == voe_heatmap[round(pixel_coordinates[1])][round(pixel_coordinates[0])], axis=-1)] = [255 * confidence, 255 * confidence, 255 * confidence]
+                    # voe_heatmap[round(pixel_coordinates[1])][round(pixel_coordinates[0])] = [255, 255, 255]
+                    # # voe_heatmap[np.all(voe_heatmap != voe_heatmap[round(pixel_coordinates[1])][round(pixel_coordinates[0])], axis=-1)] = 1.0
+                    # cv2.imwrite("test_output.jpg", voe_heatmap)
+                    # quit()
+                if confidence <= 0.5:
                     choice = plausible_str(True)
 
                 self.controller.make_step_prediction(
@@ -282,7 +347,6 @@ class GravityAgent:
                     choice=choice, confidence=1.0, violations_xy_list=[{"x": -1, "y": -1}],
                     heatmap_img=voe_heatmap)
 
-        voe_by_frame = [-1 for j in range(i)]
         drop_step = self.determine_drop_step(pole_states)
 
         physics_voe_flag = None
@@ -312,11 +376,18 @@ class GravityAgent:
             pb_target_on_support = obj_traj_orn[target_object]["support_contact"][-1] != ()
             pb_target_on_floor = obj_traj_orn[target_object]["floor_contact"][-1] != () 
 
+            # this means target is on floor and touching support, not on support
+            if pb_target_on_floor and pb_target_on_support:
+                pb_target_on_support = not pb_target_on_support
+
+            if unity_target_on_floor and unity_target_on_support:
+                unity_target_on_support = not unity_target_on_support
+
             # if simulators are in agreement on the object being on or below the support
-            on_support_agreement = not (unity_target_on_support ^ pb_target_on_support) # 1 is good
             on_floor_agreement = not (unity_target_on_floor ^ pb_target_on_floor) # 1 is good
-            
-            if final_confidence >= 0.3 and (on_floor_agreement or on_support_agreement) and not unity_target_floating:
+            on_support_agreement = not (unity_target_on_support ^ pb_target_on_support) # 1 is good
+
+            if (on_floor_agreement or on_support_agreement) and not unity_target_floating:
                 print("Physics Sim Suggests no VoE for", config['name'])
                 physics_voe_flag = False
             else:
