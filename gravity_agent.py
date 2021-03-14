@@ -35,6 +35,13 @@ class ObjectFace:
         
         return polygons_touch
 
+    def __repr__(self) -> str:
+
+        out_str = ""
+        for cpt in self.corners:
+            out_str += f'({cpt["x"]}, {cpt["y"]}, {cpt["z"]}) -> '
+
+        return out_str
 
 class GravityAgent:
     def __init__(self, controller, level):
@@ -165,9 +172,7 @@ class GravityAgent:
         out = dict({
             ("pole", so) if "pole_" in so else ("support", so)
             for so in filtered_keys
-        }
-        )
-        # print(out)
+        })
         return out.get("support"), out.get("pole")
 
     def run_scene(self, config, desc_name):
@@ -175,7 +180,7 @@ class GravityAgent:
             print("DEBUG MODE!")
             
         # # Filter to run specific examples :: debug help
-        # specific_scenes = ["02", "01"]
+        # specific_scenes = ["04", "08", "12"]
         # if all(code not in config["name"] for code in specific_scenes):
         #     return True
         # else:
@@ -222,14 +227,20 @@ class GravityAgent:
             self.controller.make_step_prediction(
                 choice=choice, confidence=1.0, violations_xy_list=voe_xy_list,
                 heatmap_img=voe_heatmap)
+        
+        # Run inference
+        try:
+            drop_step = self.determine_drop_step(pole_centroid_history)
+            voe_flag = self.sense_voe(drop_step, support_coords, floor_coords, target_trajectory)
 
-        drop_step = self.determine_drop_step(pole_centroid_history)
-        voe_flag = self.sense_voe(drop_step, support_coords, floor_coords, target_trajectory)
+            if voe_flag:
+                print(f"[x] VoE observed for {config['name']}")
+            else:
+                print(f"[x] No violation for {config['name']}")
 
-        if voe_flag:
-            print(f"[x] VoE observed for {config['name']}")
-        else:
-            print(f"[x] No violation for {config['name']}")
+        except Exception as e:
+            print(e)
+            print(f"[x] Rule based agent failed on {config['name']}")
 
         self.controller.end_scene(choice=plausible_str(voe_flag), confidence=1.0)
         return True
