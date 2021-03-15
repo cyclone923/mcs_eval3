@@ -463,9 +463,11 @@ class ObjectV2:
 
     role: str = "default"
     kind: str = "default"
+
     dims: tuple = None
     w_h_d: tuple = None
     centroid: tuple = None
+    centroid_px: tuple = None
 
     def __post_init__(self):
         self.front_view = self._estimate_obj_mask_front_view()
@@ -571,7 +573,6 @@ class ObjectV2:
             for pt in bbox_corners
         ]
         self.w_h_d = np.abs(bbox.get_extent()).tolist()
-        print(bbox_corners)
 
     def extract_physical_props(self):
         '''
@@ -585,6 +586,8 @@ class ObjectV2:
         y = sum(pt["y"] for pt in self.dims) / 8
         z = sum(pt["z"] for pt in self.dims) / 8
         self.centroid = (x, y, z)
+
+        self.centroid_px = L2DataPacketV2._get_obj_moments(self.obj_mask)
 
     @staticmethod
     def _apply_good_contours(img, min_area=20, min_width=5, min_height=5) -> tuple:
