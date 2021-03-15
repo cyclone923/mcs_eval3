@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+import pdb
 from shapely.geometry import Polygon
 from scipy.spatial import ConvexHull
 from vision.gravity import L2DataPacketV2
@@ -49,7 +50,29 @@ class GravityAgent:
         self.level = level
 
     @staticmethod
-    def determine_drop_step(pole_centroid_history):
+    def determine_drop_step(pole_color_history):
+        def _bgr2gray(b, g, r):
+            '''
+            Formula designed to expand gap between magenta & cyan
+            '''
+            return 0.01 * g + 0.99 * r
+
+        gray_values = [
+            _bgr2gray(*md["color"]) 
+            for md in pole_color_history
+        ]
+        dhistory = []
+        for i in range(1, len(gray_values)):
+            dc = gray_values[i] - gray_values[i - 1]
+            dhistory.append(abs(dc))
+
+        offset = dhistory.index(max(dhistory))
+        drop_step = pole_color_history[offset]["step_id"]
+
+        return drop_step + 1
+        
+    @staticmethod
+    def _determine_drop_step(pole_centroid_history):
         '''
         Find the precise point when the suction is off.
         Assumes the direction change in pole implies suction is off.
@@ -197,6 +220,7 @@ class GravityAgent:
         # Inputs to determine VoE
         target_trajectory = []
         pole_centroid_history = []  # To determine drop step
+        pole_color_history = []
         support_coords, floor_coords = None, None
 
         for i, x in enumerate(config['goal']['action_list']):
@@ -212,6 +236,10 @@ class GravityAgent:
                 # Collect observations
                 if hasattr(step_output, "pole"):
                     pole_centroid_history.append(step_output.pole.centroid)
+                    pole_color_history.append({
+                        "color": step_output.pole.color,
+                        "step_id": i
+                    })
                 if hasattr(step_output, "target"):
                     target_trajectory.append(step_output.target.dims)
                 support_coords = step_output.support.dims
@@ -230,7 +258,7 @@ class GravityAgent:
         
         # Run inference
         try:
-            drop_step = self.determine_drop_step(pole_centroid_history)
+            drop_step = self.determine_drop_step(pole_color_history)
             voe_flag = self.sense_voe(drop_step, support_coords, floor_coords, target_trajectory)
 
             if voe_flag:
