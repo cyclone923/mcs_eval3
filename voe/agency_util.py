@@ -354,44 +354,44 @@ def dist_agent_obj(a_pos, obj):
     euclid_dist = ((o_x - a_x)**2 + (o_y - a_y)**2)**0.5
     return euclid_dist
 
-        # now modulate confidence based on # of tied acc classifiers
-        # and whether or not those tied ones agree or not...
-        if tied_count == 2:
-            if h_1_chosen == h_2_chosen:
-                if h_1_chosen == 1:
-                    o_x, o_y = get_obj_pos(o_1["rgb"])
-                else:
-                    o_x, o_y = get_obj_pos(o_2["rgb"])
-            else:
-                pref_confidence *= 0.5
-                print("[get_pref_obj_pos()] just pick one i.e. guessing at this point")
-                # can use cv2_show() to show which 2 were picked
-                o_x, o_y = get_obj_pos(o_1["rgb"])
-        elif tied_count == 3:
-            if h_1_chosen == h_2_chosen == h_3_chosen:
-                if h_1_chosen == 1:
-                    o_x, o_y = get_obj_pos(o_1["rgb"])
-                else:
-                    o_x, o_y = get_obj_pos(o_2["rgb"])
-            elif h_1_chosen == h_2_chosen:
-                pref_confidence *= 0.66
-                if h_1_chosen == 1:
-                    o_x, o_y = get_obj_pos(o_1["rgb"])
-                else:
-                    o_x, o_y = get_obj_pos(o_2["rgb"])
-            elif h_1_chosen == h_3_chosen:
-                pref_confidence *= 0.66
-                if h_1_chosen == 1:
-                    o_x, o_y = get_obj_pos(o_1["rgb"])
-                else:
-                    o_x, o_y = get_obj_pos(o_2["rgb"])
-            else:
-                # must be h_2 and h_3 that agreed
-                pref_confidence *= 0.66
-                if h_2_chosen == 1:
-                    o_x, o_y = get_obj_pos(o_1["rgb"])
-                else:
-                    o_x, o_y = get_obj_pos(o_2["rgb"])
+        # # now modulate confidence based on # of tied acc classifiers
+        # # and whether or not those tied ones agree or not...
+        # if tied_count == 2:
+        #     if h_1_chosen == h_2_chosen:
+        #         if h_1_chosen == 1:
+        #             o_x, o_y = get_obj_pos(o_1["rgb"])
+        #         else:
+        #             o_x, o_y = get_obj_pos(o_2["rgb"])
+        #     else:
+        #         pref_confidence *= 0.5
+        #         print("[get_pref_obj_pos()] just pick one i.e. guessing at this point")
+        #         # can use cv2_show() to show which 2 were picked
+        #         o_x, o_y = get_obj_pos(o_1["rgb"])
+        # elif tied_count == 3:
+        #     if h_1_chosen == h_2_chosen == h_3_chosen:
+        #         if h_1_chosen == 1:
+        #             o_x, o_y = get_obj_pos(o_1["rgb"])
+        #         else:
+        #             o_x, o_y = get_obj_pos(o_2["rgb"])
+        #     elif h_1_chosen == h_2_chosen:
+        #         pref_confidence *= 0.66
+        #         if h_1_chosen == 1:
+        #             o_x, o_y = get_obj_pos(o_1["rgb"])
+        #         else:
+        #             o_x, o_y = get_obj_pos(o_2["rgb"])
+        #     elif h_1_chosen == h_3_chosen:
+        #         pref_confidence *= 0.66
+        #         if h_1_chosen == 1:
+        #             o_x, o_y = get_obj_pos(o_1["rgb"])
+        #         else:
+        #             o_x, o_y = get_obj_pos(o_2["rgb"])
+        #     else:
+        #         # must be h_2 and h_3 that agreed
+        #         pref_confidence *= 0.66
+        #         if h_2_chosen == 1:
+        #             o_x, o_y = get_obj_pos(o_1["rgb"])
+        #         else:
+        #             o_x, o_y = get_obj_pos(o_2["rgb"])
 
     return o_x, o_y, pref_confidence
 
