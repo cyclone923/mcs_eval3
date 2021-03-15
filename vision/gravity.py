@@ -1,5 +1,7 @@
+from MCS_exploration.constants import FOV
 import pdb
 import cv2
+import math
 import open3d as o3d
 import numpy as np
 import machine_common_sense as mcs
@@ -487,6 +489,50 @@ class ObjectV2:
 
         return w, h
 
+    @staticmethod
+    def depth_to_local(depth, clip_planes, fov_deg):
+        """ Calculate local offset of each pixel in a depth mask.
+        Args:
+            depth (np.ndarray): HxW depth image array with values between 0-255
+            clip_planes: Tuple of (near, far) clip plane distances.
+            fov_deg: Vertical FOV in degrees.
+        Returns:
+            HxWx3 np.ndarray of each pixel's local (x,y,z) offset from the camera.
+        """
+        """ Determine the 'UV' image-space coodinates for each pixel.
+        These range from (-1, 1), with the top left pixel at index [0,0] having
+        UV coords (-1, 1).
+        """
+        aspect_ratio = (depth.shape[1], depth.shape[0])
+        #print ("aspect ratio" ,aspect_ratio)
+
+        idx_grid = np.meshgrid(*[np.arange(ar) for ar in aspect_ratio])
+
+        px_arr = np.stack(idx_grid, axis=-1) # Each pixel's index
+        uv_arr = px_arr*[2/w for w in aspect_ratio]-1
+
+        uv_arr[:, :, 1] *= -1 # Each pixel's UV coords
+
+        """ Convert the depth mask values into per-pixel world-space depth
+        measurements using the provided clip plane distances.
+        """
+        z_depth = depth[:]
+        """ Determine vertical & horizontal FOV in radians.
+        Use the UV coordinate values and tan(fov/2) to determine the 'XY' direction
+        vector for each pixel.
+        """
+        vfov = np.radians(fov_deg)
+        #hfov = np.radians(fov_deg*aspect_ratio[0]/aspect_ratio[1])
+        hfov = 2*math.atan(math.tan(vfov/2) * (aspect_ratio[0]/aspect_ratio[1]))
+        tans = np.array([np.tan(fov/2) for fov in (hfov, vfov)])
+        px_dir_vec = uv_arr * tans
+        """ Add Z coordinate and scale to the pixel's known depth.  """
+        const_zs = np.ones((px_dir_vec.shape[0:2])+(1,))
+        px_dir_vec = np.concatenate((px_dir_vec, const_zs), axis=-1)
+        camera_offsets = px_dir_vec * np.expand_dims(z_depth, axis=-1)
+
+        return camera_offsets
+
     def _dims_prop(self, obj, visualize=False):
         '''
         Uses isometric view to approximate 3D coordinates of an object
@@ -494,37 +540,18 @@ class ObjectV2:
         Limitations: Width & height will be slightly off and depth will be guessed
         Assumptions: Depth is assumed to be min{width, height}
         '''
-        obj_mask = obj.obj_mask
-
-        pinhole_cam_intrinsic = o3d.camera.PinholeCameraIntrinsic()
-        pinhole_cam_intrinsic.set_intrinsics(
-            MAX_X, MAX_Y, FOCAL, FOCAL, MAX_X / 2, MAX_Y / 2
+        obj_depth = np.squeeze(obj.obj_mask) * obj.depth_map
+        obj_points = self.depth_to_local(
+            depth=obj_depth, clip_planes=CAM_CLIP_PLANES, fov_deg=FOV
         )
-        obj_depth = np.squeeze(obj_mask) * obj.depth_map
-        obj_color = obj_mask * obj.rgb_im
-        rgbd_input = o3d.geometry.RGBDImage().create_from_color_and_depth(
-            o3d.geometry.Image(obj_color), 
-            o3d.geometry.Image(obj_depth),
-            depth_scale=15.0,
-            convert_rgb_to_intensity=False
-        )
-        obj_point_cloud = o3d.geometry.PointCloud.create_from_rgbd_image(
-            rgbd_input, intrinsic=pinhole_cam_intrinsic
+        obj_point_cloud = o3d.geometry.PointCloud()
+        obj_point_cloud.points = o3d.utility.Vector3dVector(
+            obj_points.reshape(-1, 3)
         )
 
         assert obj_point_cloud.dimension() == 3, "RGB-D couldn't return a 3D object!"
-
-        obj_point_cloud.transform(
-            [
-                [1, 0, 0, 0],
-                [0, -1, 0, 0],
-                [0, 0, -1, 0],
-                [0, 0, 0, 1]
-            ]
-        )
-
-        if visualize:
-            o3d.visualization.draw_geometries([obj_point_cloud])
+        
+        o3d.visualization.draw_geometries([obj_point_cloud])
 
         bbox = obj_point_cloud.get_axis_aligned_bounding_box()
         self.dims = [
