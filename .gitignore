@@ -8,6 +8,9 @@ interaction_scenes/transferral/
 interaction_scenes/traversal/
 interaction_scenes/debug/
 interaction_scenes/experiment/
+gravity_scenes/
+physics_scenes/
+scenes/*
 
 #ignore all generated files
 **/*.pyc
@@ -51,3 +54,12 @@ mcs_config.yaml
 mcs_config.ini
 unity_path.yaml
 
+#ignore models not currently being used
+tracker/siftModel_t.p
+tracker/train_object_dataset_f.p
+
+#other
+out/
+out.zip
+machine.sh
+Open3D/
