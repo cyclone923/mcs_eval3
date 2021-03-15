@@ -1,7 +1,7 @@
 #!/bin/bash -x
 
 # Expects appropriate virtualenv is activated and $(which python) point to it
-
+# Only works with Python 3.6 on Linux & 3.8 on OSX
 # If the script breaks, 
 # 1. Check if you are using the right dev wheel for your corresponding Python version here:
 # http://www.open3d.org/docs/latest/getting_started.html
