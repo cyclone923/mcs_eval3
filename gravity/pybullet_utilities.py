@@ -53,7 +53,7 @@ def render_in_pybullet(step_output, target, supporting, level):
     for i in range(750):
         p.stepSimulation()
         time.sleep(1./360.)
-        
+    
         # confirm there aren't any overlaps on target object
         aabb_min, aabb_max = p.getAABB(obj_dict[target]["boxID"])
         overlaps = p.getOverlappingObjects(aabb_min, aabb_max)
@@ -119,7 +119,7 @@ def getColor(color_vals):
 
 def createObjectShape(obj):
     meshScale = getDims(obj)
-    
+    print(meshScale)
     if obj["shape"] != "structural":
         # generate noise on position and orientation
         shift = [0, 0, 0]
@@ -138,7 +138,7 @@ def createObjectShape(obj):
         # shift = [0, 0, 0]
         start_position = list(obj["position"].values())
         start_position = [start_position[0], start_position[2], start_position[1]]
-
+    print(start_position)
     # set color
     rgba_color = getColor(obj["color"])
 
