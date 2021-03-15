@@ -563,9 +563,9 @@ class ObjectV2:
         bbox = obj_point_cloud.get_axis_aligned_bounding_box()
         bbox_corners = np.asarray(bbox.get_box_points())
 
-        dy = min(bbox_corners[:, 1].min(), 0)
+        dy = 3.2317
         bbox_corners = np.asarray(
-            bbox.translate([0, -dy, 0], relative=True)
+            bbox.translate([0, dy, 0], relative=True)
                 .get_box_points()
             )
         self.dims = [
