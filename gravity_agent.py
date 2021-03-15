@@ -31,44 +31,51 @@ class GravityAgent:
         self.level = level
 
     @staticmethod
-    def determine_drop_step(pole_dimension_history):
+    def _determine_drop_step(pole_dimension_history):
         '''
         Find the precise point when the suction is off.
         '''
         
         # Based on an assumption that the pole color changes after the drop (suction off)
-        if type(pole_dimension_history[0]) != type({}):
-            pole_y_position = [
-                pt[2][0] for pt in pole_dimension_history if pt is not None
+        
+
+    def determine_drop_step(self, pole_history):
+        if self.level == 'level2':
+            def _bgr2gray(b, g, r):
+                '''
+                Formula designed to expand gap between magenta & cyan
+                '''
+                return 0.01 * g + 0.99 * r
+            gray_values = [
+                _bgr2gray(*md["color"])
+                for md in pole_history
             ]
+            dhistory = []
+            for i in range(1, len(gray_values)):
+                dc = gray_values[i] - gray_values[i - 1]
+                dhistory.append(abs(dc))
 
-        lowest_point = sys.maxsize
-        for i in range(len(pole_y_position)):
-            if pole_y_position[i] <= lowest_point:
-                lowest_point = pole_y_position[i]
+            if len(dhistory) != 0:
+                offset = dhistory.index(max(dhistory))
+                drop_step = pole_history[offset]["step_id"]
+
+                return drop_step + 1
             else:
-                return i
-        return -1
+                return -1
+        else:
+            if type(pole_history[0]) != type({}):
+                pole_y_position = [
+                    pt[2][0] for pt in pole_history if pt is not None
+                ]
 
-        # if len(pole_y_position) == 0:
-        #     raise(Exception("Drop step not calculated as pole was never detected."))
-        # elif sorted(pole_y_position, reverse=True) == pole_y_position:
-        #     for idx in range(len(pole_y_position)):
-        #         if pole_y_position[idx] == min(pole_y_position) and :
-        #             # Assumed to have recorded only pole retraction
-        #             return none_offset + idx
-        # else:
-        #     for idx in range(1, len(pole_y_position) - 1):
-        #         if pole_y_position[idx] > pole_y_position[idx + 1]:
-        #             # First direction change of pole
-        #             return none_offset + idx
-        #     else:  # pole_y_position is in ascending order all along
-        #         if pole_y_position[-2] == pole_y_position[-1]:
-        #             # Pole stood still after drop
-        #             print("b")
-        #             return none_offset + pole_y_position.index(pole_y_position[-1])
-        #         else:
-        #             raise(Exception("Drop step not calculated as pole never retracted."))
+            lowest_point = sys.maxsize
+            for i in range(len(pole_y_position)):
+                if pole_y_position[i] <= lowest_point:
+                    lowest_point = pole_y_position[i]
+                else:
+                    return i
+            return -1
+
 
     @staticmethod
     def get_object_bounding_simplices(dims):
@@ -177,11 +184,12 @@ class GravityAgent:
             },
             "object_list": {}
         }
+
         if hasattr(metadata, "pole"):
             step_output_dict["structural_object_list"]["pole"] = {
                 "dimensions": metadata.pole.dims,
                 "position": metadata.pole.centroid,
-                "texture_color_list": metadata.pole.color,
+                "color": metadata.pole.color,
                 "shape": metadata.pole.kind
             }
         
@@ -221,7 +229,7 @@ class GravityAgent:
         # Inputs to determine VoE
         targ_pos = []
         target_trajectory = []
-        pole_states = []  # To determine drop step
+        pole_history = []  # To determine drop step
         support_coords = None
 
         obj_traj_orn = None
@@ -259,19 +267,23 @@ class GravityAgent:
                 # Target / Pole may not appear in view yet, start recording when available
                 target_trajectory.append(step_output_dict["object_list"][target_object]["dimensions"])
                 targ_pos.append(step_output_dict["object_list"][target_object]["position"])
-                pole_states.append(self.getMinMax(step_output_dict["structural_object_list"][pole_object]))
-               
+                if self.level == 'level2':
+                    pole_history.append({
+                            "color": step_output_dict["structural_object_list"][pole_object]['color'],
+                            "step_id": i
+                        })
+                elif self.level == "oracle":
+                    pole_history.append(self.getMinMax(step_output_dict["structural_object_list"][pole_object]['dimensions']))
+                    
             except KeyError:  # Object / Pole is not in view yet
                 pass
 
             #define camera based on support object
             # camera = Camera(step_output_dict, floor_object, self.getMinMax(step_output_dict["structural_object_list"][floor_object])[2])
 
-            if len(pole_states) != 0:
-                drop_step = self.determine_drop_step(pole_states)
-                print(len(pole_states) - 1)
-                print(drop_step)
-                if drop_step == len(pole_states) - 1:
+            if len(pole_history) != 0:
+                drop_step = self.determine_drop_step(pole_history)
+                if drop_step == len(pole_history) - 1:
                     # get physics simulator trajectory
                     obj_traj_orn = pybullet_utilities.render_in_pybullet(step_output_dict, target_object, supporting_object, self.level)
             
@@ -283,7 +295,7 @@ class GravityAgent:
 
             voe_heatmap = np.array([[1.0 for i in range(400)] for j in range(600)])
 
-            if len(pole_states) > 1 and drop_step != -1:
+            if len(pole_history) > 1 and drop_step != -1:
                 # calc confidence:
                 unity_traj = [[x["x"], x["z"], x["y"]] for x in targ_pos]
 
@@ -323,7 +335,7 @@ class GravityAgent:
                     choice=choice, confidence=1.0, violations_xy_list=[{"x": -1, "y": -1}],
                     heatmap_img=voe_heatmap)
 
-        drop_step = self.determine_drop_step(pole_states)
+        drop_step = self.determine_drop_step(pole_history)
 
         physics_voe_flag = None
         final_confidence = 0
@@ -426,7 +438,6 @@ class GravityAgent:
             if dim['z'] >= max_z:
                 max_z = dim['z']
         
-        print([(min_x, max_x), (min_z, max_z), (min_y, max_y)])
         return [(min_x, max_x), (min_z, max_z), (min_y, max_y)]
     
     def calc_simulator_voe(self, pybullet_traj, unity_traj):
