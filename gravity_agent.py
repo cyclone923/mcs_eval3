@@ -66,11 +66,18 @@ class GravityAgent:
             dc = gray_values[i] - gray_values[i - 1]
             dhistory.append(abs(dc))
 
-        offset = dhistory.index(max(dhistory))
-        drop_step = pole_color_history[offset]["step_id"]
+        if dhistory:
+            if  max(dhistory) < 100:
+                return -1
 
-        return drop_step + 1
+            offset = dhistory.index(max(dhistory))
+            drop_step = pole_color_history[offset]["step_id"]
+
+            return drop_step + 1
         
+        else:
+            return -1
+
     @staticmethod
     def _determine_drop_step(pole_centroid_history):
         '''
