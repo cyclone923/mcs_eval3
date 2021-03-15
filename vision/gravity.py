@@ -476,10 +476,11 @@ class ObjectV2:
         Finds average RGB channels pixel values. Doesn't make sense for 
         objects with a texture or wide color gradient
         '''
-        mask_3d = np.squeeze(np.stack([obj_mask] * 3, axis=2))
-        masked_rgb = np.ma.masked_where(mask_3d, rgb_im)
+        cropped_rgb = obj_mask * rgb_im
+        masked_rgb = np.ma.masked_equal(cropped_rgb, 0)
         # Variation for wall & floor objects is a lot. 
         # So color attr doesn't make sense of these roles
+        cv2.imwrite("pole.png", masked_rgb)
         return masked_rgb.mean((0, 1)).astype(np.int).data.tolist()
 
     @staticmethod
