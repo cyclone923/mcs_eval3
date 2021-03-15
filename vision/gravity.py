@@ -565,7 +565,7 @@ class ObjectV2:
 
         dy = min(bbox_corners[:, 1].min(), 0)
         bbox_corners = np.asarray(
-            bbox.translate([0, -dy, 0], relative=True)
+            bbox.translate([0, 3.2317, 0], relative=True)
                 .get_box_points()
             )
         self.dims = [

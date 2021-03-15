@@ -242,9 +242,9 @@ class GravityAgent:
         drop_step = -1
         voe_xy_list = []
         camera = None
+        pb_state = "incomplete"
         for i, x in enumerate(config['goal']['action_list']):
             step_output = self.controller.step(action=x[0])            
-
             if self.level == "oracle":
                 if step_output is None:
                     break
@@ -296,9 +296,10 @@ class GravityAgent:
 
             if len(pole_history) != 0:
                 drop_step = self.determine_drop_step(pole_history)
-                if drop_step == len(pole_history) - 1 or drop_step == i:
+                if drop_step != -1 and pb_state != "complete":
                     # get physics simulator trajectory
                     obj_traj_orn = pybullet_utilities.render_in_pybullet(step_output_dict, target_object, supporting_object, self.level)
+                    pb_state = "complete"
             
             choice = plausible_str(False)
             voe_heatmap = None
@@ -308,7 +309,7 @@ class GravityAgent:
 
             voe_heatmap = np.array([[[255, 255, 255] for i in range(400)] for j in range(600)])
 
-            if len(pole_history) > 1 and drop_step != -1:
+            if len(pole_history) > 1 and drop_step != -1 and pb_state != "complete":
                 # calc confidence:
                 unity_traj = [[x["x"], x["z"], x["y"]] for x in targ_pos]
 
