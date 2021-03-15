@@ -8,7 +8,9 @@ interaction_scenes/transferral/
 interaction_scenes/traversal/
 interaction_scenes/debug/
 interaction_scenes/experiment/
-gravity_scenes/
+gravity_scenes/testing/
+gravity_scenes/training/
+gravity_scenes/other/
 physics_scenes/
 scenes/*
 
