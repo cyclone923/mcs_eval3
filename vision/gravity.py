@@ -542,14 +542,16 @@ class ObjectV2:
         Limitations: Width & height will be slightly off and depth will be guessed
         Assumptions: Depth is assumed to be min{width, height}
         '''
-        obj_depth = np.squeeze(obj.obj_mask) * obj.depth_map
-        obj_points = self.depth_to_local(
-            depth=obj_depth, clip_planes=CAM_CLIP_PLANES, fov_deg=FOV
+        scene_points = self.depth_to_local(
+            depth=obj.depth_map, clip_planes=CAM_CLIP_PLANES, fov_deg=FOV
         )
-        obj_point_cloud = o3d.geometry.PointCloud()
-        obj_point_cloud.points = o3d.utility.Vector3dVector(
-            obj_points.reshape(-1, 3)
-        )
+        scene_points = scene_points.reshape(-1, 3)
+
+        scene_point_cloud = o3d.geometry.PointCloud()
+        scene_point_cloud.points = o3d.utility.Vector3dVector(scene_points)
+        
+        obj_idx = np.nonzero(obj.obj_mask.reshape(-1))[0]
+        obj_point_cloud = scene_point_cloud.select_by_index(obj_idx)
 
         assert obj_point_cloud.dimension() == 3, "RGB-D couldn't return a 3D object!"
         
@@ -569,6 +571,7 @@ class ObjectV2:
             for pt in bbox_corners
         ]
         self.w_h_d = np.abs(bbox.get_extent()).tolist()
+        print(bbox_corners)
 
     def extract_physical_props(self):
         '''
