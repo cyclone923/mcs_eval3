@@ -1,3 +1,4 @@
+from MCS_exploration.navigation import visibility_road_map
 from MCS_exploration.constants import FOV
 import pdb
 import cv2
@@ -551,12 +552,20 @@ class ObjectV2:
 
         assert obj_point_cloud.dimension() == 3, "RGB-D couldn't return a 3D object!"
         
-        o3d.visualization.draw_geometries([obj_point_cloud])
+        if visualize:
+            o3d.visualization.draw_geometries([obj_point_cloud])
 
         bbox = obj_point_cloud.get_axis_aligned_bounding_box()
+        bbox_corners = np.asarray(bbox.get_box_points())
+
+        dy = min(bbox_corners[:, 1].min(), 0)
+        bbox_corners = np.asarray(
+            bbox.translate([0, -dy, 0], relative=True)
+                .get_box_points()
+            )
         self.dims = [
             {"x": pt[0], "y": pt[1], "z": pt[2]}
-            for pt in np.asarray(bbox.get_box_points())
+            for pt in bbox_corners
         ]
         self.w_h_d = np.abs(bbox.get_extent()).tolist()
 
