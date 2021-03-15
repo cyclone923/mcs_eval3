@@ -52,7 +52,7 @@ def render_in_pybullet(step_output, target, supporting, level):
     # p.setRealTimeSimulation()
     for i in range(750):
         p.stepSimulation()
-        time.sleep(1./360.)
+        time.sleep(1./400.)
     
         # confirm there aren't any overlaps on target object
         aabb_min, aabb_max = p.getAABB(obj_dict[target]["boxID"])
@@ -108,6 +108,7 @@ def getDims(obj):
             min_z = dim['z']
         if dim['z'] >= max_z:
             max_z = dim['z']
+    # print([max_x, min_x, max_z, min_z, max_y, min_y])
     return [max_x - min_x, max_z - min_z, max_y - min_y]
 
 def getColor(color_vals):

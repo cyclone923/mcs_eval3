@@ -55,7 +55,10 @@ class GravityAgent:
                 dc = gray_values[i] - gray_values[i - 1]
                 dhistory.append(abs(dc))
 
-            if len(dhistory) != 0:
+            if dhistory:
+                if max(dhistory) < 100:
+                    return -1
+
                 offset = dhistory.index(max(dhistory))
                 drop_step = pole_history[offset]["step_id"]
 
@@ -207,7 +210,8 @@ class GravityAgent:
                         "b": metadata.target.color[2],
                 },
                 "shape": metadata.target.kind,
-                "mass": 4.0
+                "mass": 4.0,
+                "pixel_center": metadata.target.centroid_px
             }
 
         return step_output_dict
@@ -239,21 +243,25 @@ class GravityAgent:
         voe_xy_list = []
         camera = None
         for i, x in enumerate(config['goal']['action_list']):
-            step_output = self.controller.step(action=x[0])
+            step_output = self.controller.step(action=x[0])            
 
             if self.level == "oracle":
                 if step_output is None:
                     break
                 else:
                     step_output_dict = dict(step_output)
-                
+                    step_output = L2DataPacketV2(step_number=i, step_meta=step_output)
                 floor_object = "floor"  # Not a dynamic object ID
                 target_object = self.target_obj_id(step_output_dict)
                 supporting_object, pole_object = self.struc_obj_ids(step_output_dict)
             else:
-                step_output = L2DataPacketV2(step_number=i, step_meta=step_output)
-                # convert L2DataPacketV2 to dictionary
-                step_output_dict = self.convert_l2_to_dict(step_output)
+                if step_output is None:
+                    break
+                else:
+                    step_output = L2DataPacketV2(step_number=i, step_meta=step_output)
+                    # convert L2DataPacketV2 to dictionary
+                    step_output_dict = self.convert_l2_to_dict(step_output)
+                
                 floor_object = "floor"
                 supporting_object = "support"
                 pole_object = "pole"
@@ -262,20 +270,25 @@ class GravityAgent:
             try:
                 # Expected to not dissapear until episode ends
                 support_coords = step_output_dict["structural_object_list"][supporting_object]["dimensions"]
-                
                 floor_coords = step_output_dict["structural_object_list"][floor_object]["dimensions"]
+                
                 # Target / Pole may not appear in view yet, start recording when available
                 target_trajectory.append(step_output_dict["object_list"][target_object]["dimensions"])
+                step_output_dict["object_list"][target_object]["pixel_center"] = step_output.target.centroid_px
+                
                 targ_pos.append(step_output_dict["object_list"][target_object]["position"])
+                
                 if self.level == 'level2':
                     pole_history.append({
                             "color": step_output_dict["structural_object_list"][pole_object]['color'],
                             "step_id": i
                         })
                 elif self.level == "oracle":
-                    pole_history.append(self.getMinMax(step_output_dict["structural_object_list"][pole_object]['dimensions']))
+                    pole_history.append(self.getMinMax(step_output_dict["structural_object_list"][pole_object]))
                     
             except KeyError:  # Object / Pole is not in view yet
+                pass
+            except AttributeError:
                 pass
 
             #define camera based on support object
@@ -283,7 +296,7 @@ class GravityAgent:
 
             if len(pole_history) != 0:
                 drop_step = self.determine_drop_step(pole_history)
-                if drop_step == len(pole_history) - 1:
+                if drop_step == len(pole_history) - 1 or drop_step == i:
                     # get physics simulator trajectory
                     obj_traj_orn = pybullet_utilities.render_in_pybullet(step_output_dict, target_object, supporting_object, self.level)
             
@@ -293,7 +306,7 @@ class GravityAgent:
             # default for now
             pixel_coordinates = [300, 200]
 
-            voe_heatmap = np.array([[1.0 for i in range(400)] for j in range(600)])
+            voe_heatmap = np.array([[[255, 255, 255] for i in range(400)] for j in range(600)])
 
             if len(pole_history) > 1 and drop_step != -1:
                 # calc confidence:
@@ -304,8 +317,8 @@ class GravityAgent:
                 elif obj_traj_orn != None:
                     distance, path = self.calc_simulator_voe(obj_traj_orn[target_object]['pos'], unity_traj)
                     confidence = 100 * np.tanh(1 / distance)
-                    
-                # confidence has to be bounded between 0 and 1 or 
+
+                # confidence has to be bounded between 0 and 1
                 if confidence >= 1:
                     confidence = 1.0
                     # if confidence is 1, throw a no voe signal in the pixels, or the object in unity hasn't stopped moving
@@ -316,13 +329,16 @@ class GravityAgent:
                         }
                     )
                 else:
+                    p_c = step_output_dict["object_list"][target_object]["pixel_center"]
                     voe_xy_list.append(
                         {
-                            "x": round(pixel_coordinates[0]),
-                            "y": round(pixel_coordinates[1]) 
+                            "x": p_c[0],
+                            "y": p_c[1] 
                         }
                     )
-                    voe_heatmap = np.array([[confidence for i in range(400)] for j in range(600)])
+                    voe_heatmap = np.float32(step_output.target.obj_mask)
+                    voe_heatmap[np.all(1.0 == voe_heatmap, axis=-1)] = confidence
+                    voe_heatmap[np.all(0 == voe_heatmap, axis=-1)] = 1.0
 
                 if confidence <= 0.5:
                     choice = plausible_str(True)
@@ -335,7 +351,7 @@ class GravityAgent:
                     choice=choice, confidence=1.0, violations_xy_list=[{"x": -1, "y": -1}],
                     heatmap_img=voe_heatmap)
 
-        drop_step = self.determine_drop_step(pole_history)
+        # drop_step = self.determine_drop_step(pole_history)
 
         physics_voe_flag = None
         final_confidence = 0

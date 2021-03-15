@@ -463,9 +463,11 @@ class ObjectV2:
 
     role: str = "default"
     kind: str = "default"
+
     dims: tuple = None
     w_h_d: tuple = None
     centroid: tuple = None
+    centroid_px: tuple = None
 
     def __post_init__(self):
         self.front_view = self._estimate_obj_mask_front_view()
@@ -476,10 +478,11 @@ class ObjectV2:
         Finds average RGB channels pixel values. Doesn't make sense for 
         objects with a texture or wide color gradient
         '''
-        mask_3d = np.squeeze(np.stack([obj_mask] * 3, axis=2))
-        masked_rgb = np.ma.masked_where(mask_3d, rgb_im)
+        cropped_rgb = obj_mask * rgb_im
+        masked_rgb = np.ma.masked_equal(cropped_rgb, 0)
         # Variation for wall & floor objects is a lot. 
         # So color attr doesn't make sense of these roles
+        cv2.imwrite("pole.png", masked_rgb)
         return masked_rgb.mean((0, 1)).astype(np.int).data.tolist()
 
     @staticmethod
@@ -541,14 +544,16 @@ class ObjectV2:
         Limitations: Width & height will be slightly off and depth will be guessed
         Assumptions: Depth is assumed to be min{width, height}
         '''
-        obj_depth = np.squeeze(obj.obj_mask) * obj.depth_map
-        obj_points = self.depth_to_local(
-            depth=obj_depth, clip_planes=CAM_CLIP_PLANES, fov_deg=FOV
+        scene_points = self.depth_to_local(
+            depth=obj.depth_map, clip_planes=CAM_CLIP_PLANES, fov_deg=FOV
         )
-        obj_point_cloud = o3d.geometry.PointCloud()
-        obj_point_cloud.points = o3d.utility.Vector3dVector(
-            obj_points.reshape(-1, 3)
-        )
+        scene_points = scene_points.reshape(-1, 3)
+
+        scene_point_cloud = o3d.geometry.PointCloud()
+        scene_point_cloud.points = o3d.utility.Vector3dVector(scene_points)
+        
+        obj_idx = np.nonzero(obj.obj_mask.reshape(-1))[0]
+        obj_point_cloud = scene_point_cloud.select_by_index(obj_idx)
 
         assert obj_point_cloud.dimension() == 3, "RGB-D couldn't return a 3D object!"
         
@@ -581,6 +586,8 @@ class ObjectV2:
         y = sum(pt["y"] for pt in self.dims) / 8
         z = sum(pt["z"] for pt in self.dims) / 8
         self.centroid = (x, y, z)
+
+        self.centroid_px = L2DataPacketV2._get_obj_moments(self.obj_mask)
 
     @staticmethod
     def _apply_good_contours(img, min_area=20, min_width=5, min_height=5) -> tuple:
