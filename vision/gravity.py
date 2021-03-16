@@ -1,5 +1,3 @@
-from MCS_exploration.navigation import visibility_road_map
-from MCS_exploration.constants import FOV
 import pdb
 import cv2
 import math
@@ -8,7 +6,7 @@ import numpy as np
 import machine_common_sense as mcs
 from dataclasses import dataclass
 from typing import List
-
+from vision.obj_kind import KindClassifier
 
 OBJ_KINDS = {
     # Flat surfaces
@@ -43,6 +41,7 @@ CAM_ASPECT = [600, 400]
 CAM_FOV = 42.5
 CAM_HEIGHT = 1.5
 FOCAL = 30.85795
+OBJ_KIND_MODEL_NAME = "model.p"
 
 
 @dataclass
@@ -218,6 +217,9 @@ class Object:
         '''
         Takes a binary blob and returns one among OBJ_KINDS: sets `kind`
         '''
+        if self.role != "target":
+            self.kind = "cube"
+            return
 
         obj_fv = (np.squeeze(self.front_view * self.obj_mask) * 255).astype("uint8")
         if obj_fv.sum() == 0:
@@ -545,7 +547,7 @@ class ObjectV2:
         Assumptions: Depth is assumed to be min{width, height}
         '''
         scene_points = self.depth_to_local(
-            depth=obj.depth_map, clip_planes=CAM_CLIP_PLANES, fov_deg=FOV
+            depth=obj.depth_map, clip_planes=CAM_CLIP_PLANES, fov_deg=CAM_FOV
         )
         scene_points = scene_points.reshape(-1, 3)
 
@@ -554,6 +556,7 @@ class ObjectV2:
         
         obj_idx = np.nonzero(obj.obj_mask.reshape(-1))[0]
         obj_point_cloud = scene_point_cloud.select_by_index(obj_idx)
+        self.obj_cloud = obj_point_cloud
 
         assert obj_point_cloud.dimension() == 3, "RGB-D couldn't return a 3D object!"
         
@@ -563,9 +566,9 @@ class ObjectV2:
         bbox = obj_point_cloud.get_axis_aligned_bounding_box()
         bbox_corners = np.asarray(bbox.get_box_points())
 
-        dy = min(bbox_corners[:, 1].min(), 0)
+        dy = 2.25
         bbox_corners = np.asarray(
-            bbox.translate([0, 3.2317, 0], relative=True)
+            bbox.translate([0, dy, 0], relative=True)
                 .get_box_points()
             )
         self.dims = [
@@ -707,6 +710,7 @@ class ObjectV2:
         if self.role in ["pole", "floor", "support", "back-wall"]:
             self.kind = "cube"
         else:
+            pdb.set_trace()
             # TODO: include tolerance
             if self.has_flat_face and self.fill_ratio < 0.5 and n == 6:
                 self.kind = "letter_l_narrow"
@@ -728,6 +732,23 @@ class ObjectV2:
                 self.kind = "circle_frustum"
             else:
                 self.kind = "cube"
+
+    def find_obj_kind_nn(self) -> None:
+        if self.role != "target":
+            self.kind = "cube"
+            return
+
+        all_nonzeros = np.nonzero(np.squeeze(self.obj_mask))
+        x, y = all_nonzeros[0][0], all_nonzeros[1][0]
+        w, h = self._get_obj_dims(self.obj_mask)
+
+        rgb_object = self.rgb_im[y : y + h, x: x + w, :]
+        depth_object = self.depth_map[y : y + h, x: x + w]
+        kind_pred, conf = KindClassifier(model_name=OBJ_KIND_MODEL_NAME).run(
+            rgb_object, depth_object
+        )
+
+        self.kind = kind_pred
         
 @dataclass
 class L2DataPacketV2:
@@ -884,7 +905,7 @@ class L2DataPacketV2:
     def guess_object_kinds(self):
 
         for this_ob in self.objects:
-            this_ob.find_obj_kind()
+            this_ob.find_obj_kind_nn()
 
     def load_roles_as_attr(self):
 
