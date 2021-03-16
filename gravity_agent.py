@@ -307,7 +307,7 @@ class GravityAgent:
             # default for now
             pixel_coordinates = [300, 200]
 
-            voe_heatmap = np.array([[[255, 255, 255] for i in range(400)] for j in range(600)])
+            voe_heatmap = np.ones((600, 400))
 
             if len(pole_history) > 1 and drop_step != -1 and pb_state != "complete":
                 # calc confidence:
@@ -368,8 +368,11 @@ class GravityAgent:
             target_dims = self.getMinMax(step_output_dict["object_list"][target_object])
             unity_support_position = list(step_output_dict["structural_object_list"][supporting_object]['position'].values())
             unity_target_on_support = self.getIntersectionOrContact(step_output_dict["object_list"][target_object], step_output_dict["structural_object_list"][supporting_object])
-            unity_target_on_floor = target_dims[2][0] <= 0.3
-
+            if self.level == "oracle":
+                unity_target_on_floor = target_dims[2][0] <= 0.3
+            else: 
+                unity_target_on_floor = target_dims[2][0] <= 0.8
+                
             # if unity target isn't on the floor or the support, its floating, automatic voe
             unity_target_floating = False
             if not unity_target_on_floor and not unity_target_on_support:
@@ -380,7 +383,7 @@ class GravityAgent:
             pb_support_position = obj_traj_orn[supporting_object]['pos'][-1]
             pb_target_on_support = obj_traj_orn[target_object]["support_contact"][-1] != ()
             pb_target_on_floor = obj_traj_orn[target_object]["floor_contact"][-1] != () 
-
+            
             # this means target is on floor and touching support, not on support
             if pb_target_on_floor and pb_target_on_support:
                 pb_target_on_support = not pb_target_on_support
