@@ -13,7 +13,7 @@ import gravity_agent
 
 class Evaluation3_Agent:
 
-    def __init__(self, unity_path, config_path, prefix, seed=-1):
+    def __init__(self, unity_path, config_path, prefix, scene_type, seed=-1):
 
         try:
             assert "unity_path.yaml" in os.listdir(os.getcwd())
@@ -36,6 +36,7 @@ class Evaluation3_Agent:
         assert self.level in ['oracle', 'level1', 'level2']
 
         self.exploration_agent = SequenceGenerator(None, self.controller, self.level)
+        self.scene_type = scene_type
         # self.agency_voe_agent = AgencyVoeAgent(self.controller, self.level)
         self.gravity_agent = gravity_agent.GravityAgent(self.controller, self.level)
         self.phys_voe = physics_voe_agent.VoeAgent(self.controller, self.level, prefix)
@@ -49,12 +50,12 @@ class Evaluation3_Agent:
             raise ValueError("Scene Config is Empty", one_scene)
         goal_type = scene_config['goal']['category']
         if goal_type == "intuitive physics":
-            if 'gravity' in scene_config['name']:
+            if 'gravity' in scene_config['name'] or self.scene_type == 'gravity':
                 return self.gravity_agent.run_scene(scene_config, one_scene)
             else:
                 return self.phys_voe.run_scene(scene_config, one_scene)
         elif goal_type == "agents":
-            if self.level == "level1" :
+            if self.level == "level1":
                 print("Agency task cannot be run in level1. Exiting")
                 return
             self.agency_voe_agent.run_scene(scene_config)
@@ -71,12 +72,13 @@ def make_parser():
     parser.add_argument('--config', default='mcs_config.ini')
     parser.add_argument('--prefix', default='out')
     parser.add_argument('--scenes', default='different_scenes')
+    parser.add_argument('--scene-type', default='gravity')
     return parser
 
 
 if __name__ == "__main__":
     args = make_parser().parse_args()
-    agent = Evaluation3_Agent(args.unity_path, args.config, args.prefix)
+    agent = Evaluation3_Agent(args.unity_path, args.config, args.prefix, args.scene_type)
     goal_dir = args.scenes
     all_scenes = [os.path.join(goal_dir, one_scene) for one_scene in sorted(os.listdir(goal_dir))]
     random.shuffle(all_scenes)

@@ -20,10 +20,13 @@ The main code to run is “eval.py”
 The code is structured as follows: 
 
 
-It reads all the files in the “gravity_scenes” directory. Based on the “goal_category” in each scene json file, the appropriate agent is called. 
+It reads all the files in the “scenes” directory. Based on the “goal_category” in each scene json file, the appropriate agent is called. 
 
 
 To run on any scene, place that particular json file in the “scenes” directory. If you want to run multiple scenes at once, place all the files in the “scenes” directory.
+
+
+Our training and testing scene configuration files can be found in the "gravity_scenes" directory. If you'd like to run the gravity system on those scenes, run "python eval.py --scenes [relative path to the subdirectory with the scenes you'd like to test]".
 
 
 The configuration file - “mcs_config.ini” file contains the configuration for the level of the system to run in.
