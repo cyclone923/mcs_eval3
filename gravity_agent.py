@@ -250,7 +250,13 @@ class GravityAgent:
                     break
                 else:
                     step_output_dict = dict(step_output)
-                    step_output = L2DataPacketV2(step_number=i, step_meta=step_output)
+                    try:
+                        step_output = L2DataPacketV2(step_number=i, step_meta=step_output)
+                    except Exception as e:
+                        print("Couldn't process step i+{}, skipping ahead".format(i))
+                        print(e)
+                        continue
+
                 floor_object = "floor"  # Not a dynamic object ID
                 target_object = self.target_obj_id(step_output_dict)
                 supporting_object, pole_object = self.struc_obj_ids(step_output_dict)
@@ -258,7 +264,13 @@ class GravityAgent:
                 if step_output is None:
                     break
                 else:
-                    step_output = L2DataPacketV2(step_number=i, step_meta=step_output)
+                    try:
+                        step_output = L2DataPacketV2(step_number=i, step_meta=step_output)
+                    except Exception as e:
+                        print("Couldn't process step i+{}, skipping ahead".format(i))
+                        print(e)
+                        continue
+                    
                     # convert L2DataPacketV2 to dictionary
                     step_output_dict = self.convert_l2_to_dict(step_output)
                 
