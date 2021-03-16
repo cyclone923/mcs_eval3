@@ -738,9 +738,13 @@ class ObjectV2:
             self.kind = "cube"
             return
 
-        all_nonzeros = np.nonzero(np.squeeze(self.obj_mask))
-        x, y = all_nonzeros[0][0], all_nonzeros[1][0]
-        w, h = self._get_obj_dims(self.obj_mask)
+        x, y, w, h = cv2.boundingRect(
+            cv2.findContours(
+                (self.obj_mask * 255).astype("uint8"),
+                cv2.RETR_TREE,
+                cv2.CHAIN_APPROX_SIMPLE
+                )[0].pop()
+            )
 
         rgb_object = self.rgb_im[y : y + h, x: x + w, :]
         depth_object = self.depth_map[y : y + h, x: x + w]

@@ -258,7 +258,12 @@ class GravityAgent:
                 if step_output is None:
                     break
                 else:
-                    step_output = L2DataPacketV2(step_number=i, step_meta=step_output)
+                    try:
+                        step_output = L2DataPacketV2(step_number=i, step_meta=step_output)
+                    except Exception as e:
+                        print(f"[x] Couldn't process step#{i + 1}, skipping ahead...")
+                        print(e)
+                        continue
                     # convert L2DataPacketV2 to dictionary
                     step_output_dict = self.convert_l2_to_dict(step_output)
                 
