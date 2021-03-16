@@ -20,5 +20,7 @@ elif [ "$(expr substr $(uname -s) 1 5)" == "Linux" ]; then
 
 fi
 
-printf "[MCS]\ndebug = false\nmetadata = oracle" > ../mcs_config.ini
+echo [MCS] > ../mcs_config.ini
+echo debug = false >> ../mcs_config.ini
+echo metadata = oracle >> ../mcs_config.ini
 cd ../
