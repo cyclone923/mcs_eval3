@@ -731,6 +731,11 @@ class ObjectV2:
                 self.kind = "cube"
 
     def find_obj_kind_nn(self) -> None:
+
+        if self.role != "target":
+            self.kind = "cube"
+            return
+        
         all_nonzeros = np.nonzero(np.squeeze(self.obj_mask))
         x, y = all_nonzeros[0][0], all_nonzeros[1][0]
         w, h = self._get_obj_dims(self.obj_mask)
