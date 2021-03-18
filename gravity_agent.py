@@ -1,8 +1,10 @@
 from dataclasses import dataclass
-import pdb
+import cv2
 from shapely.geometry import Polygon
 from scipy.spatial import ConvexHull
 from vision.gravity import L2DataPacketV2
+import jsonlines
+import uuid
 
 DEBUG = False
 
@@ -239,7 +241,36 @@ class GravityAgent:
             try:
                 # Map visuals to semantic actors
                 step_output = L2DataPacketV2(step_number=i, step_meta=step_output)
+                
+                try:
+                    if hasattr(step_output, "target") and i % 5 == 0:
+                        for obj in config["objects"]:
+                            if obj["role"] == "target":
+                                obj_type = obj["type"]
+                                obj_rgb = step_output.rgb_im
+                                obj_depth = step_output.depth_map
+                                obj_seg_mask = step_output.obj_mask
+                                
+                                rgb_fn = f"./imgs/{uuid.uuid4()}.png"
+                                cv2.imwrite(rgb_fn, obj_rgb, [cv2.IMWRITE_PNG_COMPRESSION, 0])
+                                depth_fn = f"./imgs/{uuid.uuid4()}.png"
+                                cv2.imwrite(depth_fn, obj_depth, [cv2.IMWRITE_PNG_COMPRESSION, 0])
+                                mask_fn = f"./imgs/{uuid.uuid4()}.png"
+                                cv2.imwrite(mask_fn, obj_seg_mask, [cv2.IMWRITE_PNG_COMPRESSION, 0])
 
+                                out = {
+                                    "type": obj_type,
+                                    "rgb": rgb_fn,
+                                    "depth": depth_fn,
+                                    "mask": mask_fn,
+                                    "step": i
+                                }
+                                
+                                with jsonlines.open("data.jsonl", "a") as out_fp:
+                                    out_fp.write(out)
+
+                except:
+                    continue                                
                 # Collect observations
                 if hasattr(step_output, "pole"):
                     pole_centroid_history.append(step_output.pole.centroid)
@@ -273,11 +304,12 @@ class GravityAgent:
             else:
                 print(f"[x] No violation for {config['name']}")
 
+            self.controller.end_scene(choice=plausible_str(voe_flag), confidence=1.0)
+
         except Exception as e:
             print(e)
             print(f"[x] Rule based agent failed on {config['name']}")
 
-        self.controller.end_scene(choice=plausible_str(voe_flag), confidence=1.0)
         return True
 
     def calc_voe(self, step_output, frame_num, scene_name=None):

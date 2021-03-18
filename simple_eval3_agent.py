@@ -45,7 +45,7 @@ class Evaluation3_Agent:
         scene_config, status = mcs.load_scene_json_file(one_scene)
         goal_type = scene_config['goal']['category']
         if goal_type == "intuitive physics":
-            if 'gravity' in scene_config['name']:
+            if True:
                 return self.gravity_agent.run_scene(scene_config, one_scene)
             else:
                 return self.phys_voe.run_scene(scene_config, one_scene)
