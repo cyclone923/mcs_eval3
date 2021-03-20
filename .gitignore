@@ -19,6 +19,12 @@ scenes/*
 
 #ignore all saved files 
 simple_task_img/
+depth.png
+front_view.jpg
+mask.png
+pole.png
+rgb.png
+test_output.txt
 
 #ignore SCENE History
 SCENE_HISTORY/
