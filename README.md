@@ -83,13 +83,6 @@ Set up object mask and class predictor:
 bash setup_vision.sh
 ```
 
-### Install Open3D
-
-Set up the Open3D system for the gravity agent
-
-```
-pip install --user https://storage.googleapis.com/open3d-releases-master/python-wheels/open3d-0.12.0+059557b-cp36-cp36m-linux_x86_64.whl
-```
 ### To run everything from the project root
 
 Export the project root directory to the $PYTHONPATH:
