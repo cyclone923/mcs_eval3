@@ -55,7 +55,7 @@ python -m pip install git+https://github.com/NextCenturyCorporation/MCS@master#e
 pip install -r requirements.txt
 ```
 
-4. Ensure you've installed `ai2thor` version `2.2.0`:
+4. Ensure you've installed `ai2thor` version `2.5.0`:
 
 ```
 pip show ai2thor
