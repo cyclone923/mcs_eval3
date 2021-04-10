@@ -2,22 +2,13 @@
 unity_app/
 unity*
 
-#ignore the scenes 
-interaction_scenes/retrieval/
-interaction_scenes/transferral/
-interaction_scenes/traversal/
-interaction_scenes/debug/
-interaction_scenes/experiment/
-gravity_scenes/testing/
-gravity_scenes/training/
-gravity_scenes/other/
-physics_scenes/
+# Ignore the scenes 
 scenes/*
 
-#ignore all generated files
+# Ignore all generated files
 **/*.pyc
 
-#ignore all saved files 
+# Ignore all saved files 
 simple_task_img/
 depth.png
 front_view.jpg
@@ -26,47 +17,47 @@ pole.png
 rgb.png
 test_output.txt
 
-#ignore SCENE History
+# Ignore scene output logs
 SCENE_HISTORY/
 
-#Ignore all swap files 
+# Ignore all swap files 
 **/*.swp
 
-#Ignoer all files starting with old
+# Ignore all files starting with old
 **/old*.*
 
-#Ignore the results folder
+# Ignore the results folder
 results/
 
-#ignore any original files from git 
+# Ignore any original files from git 
 **.*.orig
 
-#ignore any json files 
+# Ignore any json files 
 **/*.json
 
-#ignore __pycache__
+# Ignore __pycache__
 **/__pycache__
 
-#ignore all .DS_store
+# Ignore all .DS_store
 **/.DS_Store
 
-#ignore model file 
+# Ignore model file 
 **/*resnet*
 **/*.pth
 
-#ignore all pycharm files
+# Ignore all pycharm files
 .idea/
 
-#ignore the yaml files 
+# Ignore the .yaml/.ini files
 mcs_config.yaml
 mcs_config.ini
 unity_path.yaml
 
-#ignore models not currently being used
+# Don't push big model files; download from Google Drive instead 
 tracker/siftModel_t.p
 tracker/train_object_dataset_f.p
 
-#other
+# Other
 out/
 out.zip
 machine.sh

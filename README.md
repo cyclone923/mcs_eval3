@@ -1,6 +1,6 @@
-# MCS Evaluation3: Usage README
+# MCS OPICS Evaluation Repository: Usage README
 
-Here are the instructions for downloading and setting up the environment for MCS Evaluation 3.
+Here are the instructions for downloading and setting up the environment for MCS evaluations.
 
 ### Note for Developers:
 The master branch contains only the submission-ready code. For the latest in-progress code, check out the develop branch and any component-level branches (e.g. component/physics-voe, component/agency-voe, component/gravity, etc.).

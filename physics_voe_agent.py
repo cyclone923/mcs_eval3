@@ -132,6 +132,10 @@ class VoeAgent:
             # print(o_id)
             self.track_info['objects'][o_id]['occluded'] = obj_occluded[o_id]
             # print(self.track_info['objects'])
+        for o_id, obj in self.track_info['objects'].items():
+            console.log('Object ID:', o_id)
+            console.log('Visible?', obj['visible'])
+            console.log('Occluded?', obj['occluded'])
 
         # Add appearance model's output to the object tracking info.
         self.track_info['objects'] = self.app_model.appearanceMatch(rgb_image, self.track_info['objects'], self.device, self.level)
@@ -157,15 +161,12 @@ class VoeAgent:
             dynamics_viols, all_errs = det_result
         console.print('[yellow]Dynamics violations:[/yellow]', dynamics_viols)
         appearance_viols = []
-        for o_id, obj_info in self.track_info['objects'].items():
-            console.log('Object ID:', o_id)
-            o_visible = obj_info['visible']
-            o_mismatch = not obj_info['appearance']['match']
-            o_occluded = obj_occluded[o_id]
-            console.log('Visible?', o_visible)
+        for o_id, obj in self.track_info['objects'].items():
+            o_visible = obj['visible']
+            o_mismatch = not obj['appearance']['match']
             console.log('Appearance mismatch?', o_mismatch)
-            console.log('Occluded?', o_occluded)
-            o_robust_mismatch = o_mismatch and obj_info['appearance']['mismatch_count'] > 3
+            o_occluded = obj_occluded[o_id]
+            o_robust_mismatch = o_mismatch and obj['appearance']['mismatch_count'] > 3
             console.log('Robust appearance mismatch?', o_robust_mismatch)
             app_viol = o_visible and o_robust_mismatch and not o_occluded
             if app_viol:

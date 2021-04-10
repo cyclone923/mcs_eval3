@@ -158,7 +158,7 @@ class OpenCVModel():
 
 class SIFTModel():
     def __init__(self):
-        self.feature_match_slack = 0.25         # The amount of match rate to allow without declaring a mismatch 
+        self.feature_match_slack = 0.5          # The amount of match rate to allow without declaring a mismatch 
         self.obj_dictionary = dict()            # The learned dictionary of objects and their descriptors
         self.detector = cv2.SIFT_create()       # The SIFT feature detection object
         FLANN_INDEX_KDTREE = 0

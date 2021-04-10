@@ -15,7 +15,8 @@ class AgencyVoeAgent:
         self.controller = controller
         self.level = level
         self.debug = debug
-        self.trial_num = idx
+        # self.trial_num = idx
+        self.trial_num = 0
         self.trial_err = 0
         self.step_num = 0
         self.arena = None

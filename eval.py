@@ -16,7 +16,7 @@ from rich.console import Console
 
 console = Console()
 
-class Evaluation3_Agent:
+class Evaluation_Agent:
 
     def __init__(self, unity_path, config_path, prefix, scene_type, seed=-1):
 
@@ -44,7 +44,7 @@ class Evaluation3_Agent:
         self.scene_type = scene_type
         self.agency_voe_agent = AgencyVoeAgent(self.controller, self.level)
         self.gravity_agent = gravity_agent.GravityAgent(self.controller, self.level)
-        self.phys_voe = physics_voe_agent.VoeAgent(self.controller, self.level, prefix, type='sift')
+        self.phys_voe = physics_voe_agent.VoeAgent(self.controller, self.level, 'sift', prefix)
 
         if seed != -1:
             random.seed(seed)
@@ -55,6 +55,7 @@ class Evaluation3_Agent:
             raise ValueError("Scene Config is Empty", one_scene)
         goal_type = scene_config['goal']['category']
         if goal_type == "intuitive physics":
+            # TODO: Refactor this so we don't have to specify if it's a gravity or physics scene
             if 'gravity' in scene_config['name'] or self.scene_type == 'gravity':
                 return self.gravity_agent.run_scene(scene_config, one_scene)
             else:
@@ -83,7 +84,7 @@ def make_parser():
 
 if __name__ == "__main__":
     args = make_parser().parse_args()
-    agent = Evaluation3_Agent(args.unity_path, args.config, args.prefix, args.scene_type)
+    agent = Evaluation_Agent(args.unity_path, args.config, args.prefix, args.scene_type)
     goal_dir = args.scenes
     all_scenes = [
         os.path.join(goal_dir, one_scene)
