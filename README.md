@@ -10,24 +10,43 @@ git checkout develop (or any component-level branch)
 git pull
 ```
 
-### Python Library
-
-1. For Linux systems, create a Python 3.6.8 environment using conda:
+### Mac Users: Install Homebrew
 
 ```
-conda create -n mcs_eval3 python=3.6.8
-conda activate mcs_eval3
+# NOTE: Skip this if you already have Homebrew installed on your Mac.
+
+/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+```
+
+### Python Library
+
+1. Create Python environment.
+
+For Linux systems, create a Python 3.6.8 environment using conda:
+
+```
+conda create -n mcs_opics python=3.6.8
+conda activate mcs_opics
 pip install --upgrade pip setuptools wheel
 sudo apt-get update
 sudo apt-get install build-essential
 sudo apt-get install python3-dev
 ```
 
-2. For MacOS systems, create a Python 3.7.9 environment using conda:
+For MacOS systems, create a Python 3.7.9 environment using conda:
 
 ```
-conda create -n mcs_eval3 python=3.7.9
-conda activate mcs_eval3
+conda create -n mcs_opics python=3.7.9
+conda activate mcs_opics
+brew install wget
+```
+
+2. Install MCS
+
+NOTE: This may be a while. Please be patient.
+
+```
+python -m pip install git+https://github.com/NextCenturyCorporation/MCS@master#egg=machine_common_sense
 ```
 
 3. Install the required third-party Python libraries:
@@ -36,7 +55,7 @@ conda activate mcs_eval3
 pip install -r requirements.txt
 ```
 
-4. Ensure you've installed `ai2thor` version `2.2.0`:
+4. Ensure you've installed `ai2thor` version `2.5.0`:
 
 ```
 pip show ai2thor
@@ -46,18 +65,6 @@ pip show ai2thor
 
 ```
 bash setup_torch.sh
-```
-
-### Mac Users: Install Homebrew and `wget`
-
-The `wget` command does not come built-in on macOS, and you will need to install `wget` if you do not already have it installed on your machine. The instructions below utilize the Homebrew package manager for installing `wget`.
-
-```
-# Skip the first line if you already have Homebrew installed on your Mac.
-
-/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
-
-brew install wget
 ```
 
 ### Unity Application
@@ -87,7 +94,17 @@ export PYTHONPATH=$PWD
 ## Run dry run submission
 
 ```
-python simple_eval3_agent.py
+python eval.py
 ```
 
-The "MCS EVAL 3 Oregon State University Submission Helper.txt" has more details on how to run specific scenes
+See "MCS Eval 3.5 Oregon State University Submission Helper.txt" for more details on how to run specific scenes
+
+## Run Example Gravity Scenes
+
+```
+./setup_unity.sh
+python get_gravity_scenes.py
+python eval.py --scenes gravity_scenes/[rest of the relative path to the directory with the scenes you want to test]
+```
+
+The gravity scenes require Unity v0.3.7 or newer. Running setup_unity.sh should download it and set it to be used in unity_path.yaml.
