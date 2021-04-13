@@ -170,78 +170,84 @@ class SIFTModel():
         obj_dictionary_pth = 'tracker/siftModel_t.p'
         self.obj_dictionary = pickle.load( open(obj_dictionary_pth, 'rb') )
 
-     # Search the learned object space to identify what the initial object is
-    def identifyInitialObject(self, img_kp, img_des):
-        # NOTE: If object descriptors do not sufficiently match up with any other object, return None
-        # (system will fall back to frame-by-frame matching)
-        match_avgs = dict()
-        for obj_id, obj in self.obj_dictionary.items():
-            o_match_rates = list()
-            for o_img in range(0, len(obj['descriptors'])):
-                o_kp = obj['keypoints'][o_img]
-                o_des = obj['descriptors'][o_img]
-                o_matches = self.matcher(img_des, o_des, k=2)
+    # Search the learned object space to identify what the initial object is
+    # def identifyInitialObject(self, img_kp, img_des):
+    #     # NOTE: If object descriptors do not sufficiently match up with any other object, return None
+    #     # (system will fall back to frame-by-frame matching)
+    #     match_avgs = dict()
+    #     for obj_id, obj in self.obj_dictionary.items():
+    #         o_match_rates = list()
+    #         for o_img in range(0, len(obj['descriptors'])):
+    #             o_kp = obj['keypoints'][o_img]
+    #             o_des = obj['descriptors'][o_img]
+    #             o_matches = self.matcher(img_des, o_des, k=2)
                 
-                o_good = list()
-                for m, n in o_matches:
-                    if m.distance < 0.7 * n.distance:
-                        o_good.append([m])
-                o_match_rates.append(len(o_good) / len(o_matches))
+    #             o_good = list()
+    #             for m, n in o_matches:
+    #                 if m.distance < 0.7 * n.distance:
+    #                     o_good.append([m])
+    #             o_match_rates.append(len(o_good) / len(o_matches))
 
-            o_match_rates = np.array(o_match_rates)
-            o_match_avg = np.mean(o_match_rates)
-            match_avgs[obj_id] = o_match_avg
-        max_o = max(match_avgs, key=lambda o: match_avgs[o])
-        console.log('best matching object:', max_o)
-        console.log('match rate:', match_avgs[max_o])
-        return max_o if match_avgs[max_o] >= 1 - self.feature_match_slack else None
+    #         o_match_rates = np.array(o_match_rates)
+    #         o_match_avg = np.mean(o_match_rates)
+    #         match_avgs[obj_id] = o_match_avg
+    #     max_o = max(match_avgs, key=lambda o: match_avgs[o])
+    #     console.log('best matching object:', max_o)
+    #     console.log('match rate:', match_avgs[max_o])
+    #     return max_o if match_avgs[max_o] >= 1 - self.feature_match_slack else None
 
     # Match feature descriptors
-    def detectFeatureMatch(self, img_kp, img_des, obj):
-        if obj['base_image']['shape_id'] is None:   # modeler was unable to match seen object with any learned object
-            match = self.frameMatch(img_kp, img_des, obj)  # fall back to frame-by-frame feature matching
-        else:
-            shape_id = obj['base_image']['shape_id']
-            # feature match
-            l_match_rates = list()
-            for l_obj_img_des in self.obj_dictionary[shape_id]['descriptors']:
-                l_matches = self.matcher(img_des, l_obj_img_des, k=2)
+    def detectFeatureMatch(self, obj_des, img_des):
+        matches = self.matcher(obj_des, img_des, k=2)
+        good = list()
+        for m, n in matches:
+            if m.distance < 0.7 * n.distance:
+                good.append([m])
+        return len(good) >= 1 - self.feature_match_slack
+        # if obj['base_image']['shape_id'] is None:   # modeler was unable to match seen object with any learned object
+        #     match = self.frameMatch(img_kp, img_des, obj)  # fall back to frame-by-frame feature matching
+        # else:
+        #     shape_id = obj['base_image']['shape_id']
+        #     # feature match
+        #     l_match_rates = list()
+        #     for l_obj_img_des in self.obj_dictionary[shape_id]['descriptors']:
+        #         l_matches = self.matcher(img_des, l_obj_img_des, k=2)
 
-                l_good = list()
-                for m, n in l_matches:
-                    if m.distance < 0.7 * n.distance:
-                        l_good.append([m])
-                l_match_rates.append(len(l_good) / len(l_matches))
+        #         l_good = list()
+        #         for m, n in l_matches:
+        #             if m.distance < 0.7 * n.distance:
+        #                 l_good.append([m])
+        #         l_match_rates.append(len(l_good) / len(l_matches))
             
-            l_match_rates = np.array(l_match_rates)
-            avg_match_rate = np.mean(l_match_rates)
-            console.log('average match rate:', avg_match_rate)
-            if avg_match_rate >= 1 - self.feature_match_slack:
-                match = True
-            else:
-                match = self.frameMatch(img_kp, img_des, obj)  # fall back to frame-by-frame feature matching
+        #     l_match_rates = np.array(l_match_rates)
+        #     avg_match_rate = np.mean(l_match_rates)
+        #     console.log('average match rate:', avg_match_rate)
+        #     if avg_match_rate >= 1 - self.feature_match_slack:
+        #         match = True
+        #     else:
+        #         match = self.frameMatch(img_kp, img_des, obj)  # fall back to frame-by-frame feature matching
             
-        return obj, match
+        # return obj, match
 
     # Determine feature match with the state of the object in the previous frame
-    def frameMatch(self, img_kp, img_des, obj):
-        try:
-            prev_kp = obj['appearance']['feature_history']['keypoints'][-1]
-            prev_des = obj['appearance']['feature_history']['descriptors'][-1]
-        except KeyError:
-            return True
-        except IndexError:
-            return True
-        f_matches = self.matcher(img_des, prev_des, k=2) # k=2 so we can apply the ratio test next
-        f_good = list()
-        for m, n in f_matches:
-            if m.distance < 0.7 * n.distance:
-                f_good.append([m])
+    # def frameMatch(self, img_kp, img_des, obj):
+    #     try:
+    #         prev_kp = obj['appearance']['feature_history']['keypoints'][-1]
+    #         prev_des = obj['appearance']['feature_history']['descriptors'][-1]
+    #     except KeyError:
+    #         return True
+    #     except IndexError:
+    #         return True
+    #     f_matches = self.matcher(img_des, prev_des, k=2) # k=2 so we can apply the ratio test next
+    #     f_good = list()
+    #     for m, n in f_matches:
+    #         if m.distance < 0.7 * n.distance:
+    #             f_good.append([m])
 
-        match_rate = len(f_good) / len(f_matches)
-        console.log('frame-by-frame match rate:', match_rate)
+    #     match_rate = len(f_good) / len(f_matches)
+    #     console.log('frame-by-frame match rate:', match_rate)
         
-        return match_rate >= 1 - self.feature_match_slack
+    #     return match_rate >= 1 - self.feature_match_slack
     
     def match(self, image, objects_info, device='cpu', level='level2'):
         for key, obj in objects_info.items():
@@ -249,19 +255,34 @@ class SIFTModel():
                 continue
             if 'appearance' not in obj.keys():
                 obj['appearance'] = dict()
-                obj['appearance']['feature_history'] = dict()
-                obj['appearance']['feature_history']['keypoints'] = list()
-                obj['appearance']['feature_history']['descriptors'] = list()
+                # obj['appearance']['feature_history'] = dict()
+                # obj['appearance']['feature_history']['keypoints'] = list()
+                # obj['appearance']['feature_history']['descriptors'] = list()
                 obj['appearance']['match'] = True
+                obj['appearance']['mismatch_count'] = 0
+
+                top_x, top_y, bottom_x, bottom_y = obj['bounding_box']
+                obj_current_image = image.crop((top_y, top_x, bottom_y, bottom_x))
+                base_obj_image = np.array(obj_current_image)
+
+                obj_kp, obj_des = self.detector.detectAndCompute(base_obj_image, None)
+
+                obj['appearance']['base_image'] = dict()
+                obj['appearance']['base_image']['keypoints'] = obj_kp
+                obj['appearance']['base_image']['descriptors'] = obj_des
+                
+                continue
+
             if obj['occluded']:
                 continue
-            top_x, top_y, bottom_x, bottom_y = obj['bounding_box']
-            obj_current_image = image.crop((top_y, top_x, bottom_y, bottom_x))
+            
+            # top_x, top_y, bottom_x, bottom_y = obj['bounding_box']
+            # obj_current_image = image.crop((top_y, top_x, bottom_y, bottom_x))
 
-            image_area = np.prod(obj_current_image.size)
+            # image_area = np.prod(obj_current_image.size)
             base_image = np.array(image)
-            mask_image = np.zeros(obj['mask'].shape, dtype=base_image.dtype)
-            mask_image[obj['mask']] = 255
+            # mask_image = np.zeros(obj['mask'].shape, dtype=base_image.dtype)
+            # mask_image[obj['mask']] = 255
 
             console.log('creating base image for object with ID', key, '...')
 
@@ -273,22 +294,19 @@ class SIFTModel():
             # run SIFT on image
             img_kp, img_des = self.detector.detectAndCompute(base_image, None)
 
-            if 'base_image' not in obj.keys():
-                obj['base_image'] = dict()
-                obj['base_image']['shape_id'] = self.identifyInitialObject(img_kp, img_des)
+            # if 'base_image' not in obj.keys():
+            #     obj['base_image'] = dict()
+            #     obj['base_image']['shape_id'] = self.identifyInitialObject(img_kp, img_des)
                 # obj['base_image']['histogram'] = obj_clr_hist
 
             # Run detectFeatureMatch
-            obj, feature_match = self.detectFeatureMatch(img_kp, img_des, obj)
+            feature_match = self.detectFeatureMatch(obj['appearance']['base_image']['descriptors'], img_des)
 
             # Update feature match indicator if the object is not occluded
-            if not obj['occluded']:
-                obj['appearance']['feature_history']['keypoints'].append(img_kp)
-                obj['appearance']['feature_history']['descriptors'].append(img_des)
-                obj['appearance']['match'] = feature_match
-
-            if 'mismatch_count' not in obj['appearance'].keys():
-                obj['appearance']['mismatch_count'] = 0
+            # if not obj['occluded']:
+                # obj['appearance']['feature_history']['keypoints'].append(img_kp)
+                # obj['appearance']['feature_history']['descriptors'].append(img_des)
+            obj['appearance']['match'] = feature_match
 
             if obj['appearance']['match']:
                 obj['appearance']['mismatch_count'] = 0
