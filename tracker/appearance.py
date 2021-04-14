@@ -256,12 +256,8 @@ class SIFTModel():
                 continue
             if 'appearance' not in obj.keys():
                 obj['appearance'] = dict()
-                # obj['appearance']['feature_history'] = dict()
-                # obj['appearance']['feature_history']['keypoints'] = list()
-                # obj['appearance']['feature_history']['descriptors'] = list()
                 obj['appearance']['match'] = True
                 obj['appearance']['mismatch_count'] = 0
-                
                 continue
 
             if obj['occluded']:
@@ -281,37 +277,15 @@ class SIFTModel():
                 obj['appearance']['base_image']['keypoints'] = obj_kp
                 obj['appearance']['base_image']['descriptors'] = obj_des
             
-            # top_x, top_y, bottom_x, bottom_y = obj['bounding_box']
-            # obj_current_image = image.crop((top_y, top_x, bottom_y, bottom_x))
-
-            # image_area = np.prod(obj_current_image.size)
             base_image = np.array(image)
-            # mask_image = np.zeros(obj['mask'].shape, dtype=base_image.dtype)
-            # mask_image[obj['mask']] = 255
 
             console.log('creating base image for object with ID', key, '...')
-
-            # obj_clr_hist_0 = cv2.calcHist([np.array(image)], [0], mask_image, [10], [0, 256])
-            # obj_clr_hist_1 = cv2.calcHist([np.array(image)], [1], mask_image, [10], [0, 256])
-            # obj_clr_hist_2 = cv2.calcHist([np.array(image)], [2], mask_image, [10], [0, 256])
-            # obj_clr_hist = (obj_clr_hist_0 + obj_clr_hist_1 + obj_clr_hist_2) / 3
 
             # run SIFT on image
             img_kp, img_des = self.detector.detectAndCompute(base_image, None)
 
-            # if 'base_image' not in obj.keys():
-            #     obj['base_image'] = dict()
-            #     obj['base_image']['shape_id'] = self.identifyInitialObject(img_kp, img_des)
-                # obj['base_image']['histogram'] = obj_clr_hist
-            
-            # cv2.imshow('Object', obj['appearance']['base_image']['image'])
-            # cv2.imshow('Full Scene', base_image)
-            # key = cv2.waitKey(1) & 0xFF
-            # cv2.waitKey(0)
-            # cv2.destroyAllWindows()
-
             # Run detectFeatureMatch
-            matches = self.matcher(obj['appearance']['base_image']['descriptors'], img_des, k=2)
+            matches = self.matcher(obj['appearance']['base_image']['descriptors'], img_des)
             # matchesMask = [[0,0] for i in range(len(matches))]
             good = list()
             for m, n in matches:
@@ -325,10 +299,7 @@ class SIFTModel():
             cv2.imshow('Match', display)
             cv2.waitKey(0)
             console.log('Match rate for obj', key, ':', len(good) / len(matches) if len(matches) > 0 else 0)
-            # Update feature match indicator if the object is not occluded
-            # if not obj['occluded']:
-                # obj['appearance']['feature_history']['keypoints'].append(img_kp)
-                # obj['appearance']['feature_history']['descriptors'].append(img_des)
+            # Update feature match indicator
             if len(matches) > 0:
                 obj['appearance']['match'] = (len(good) / len(matches)) >= 1 - self.feature_match_slack
             else:
