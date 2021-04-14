@@ -266,6 +266,9 @@ class SIFTModel():
             obj_current_image = image.crop((top_y, top_x, bottom_y, bottom_x))
             base_obj_image = np.array(obj_current_image)
             
+            # If the object is fully visible and unoccluded for the first time,
+            # this is the initial state of the object to reference for appearance
+            # matches.
             if 'base_image' not in obj['appearance'].keys():
                 top_x, top_y, bottom_x, bottom_y = obj['bounding_box']
                 console.log(obj['bounding_box'])
@@ -281,10 +284,10 @@ class SIFTModel():
 
             console.log('creating base image for object with ID', key, '...')
 
-            # run SIFT on image
-            img_kp, img_des = self.detector.detectAndCompute(base_image, None)
+            # run SIFT on current appearance of object
+            img_kp, img_des = self.detector.detectAndCompute(base_obj_image, None)
 
-            # Run detectFeatureMatch
+            # Run feature match (knnMatch)
             matches = self.matcher(obj['appearance']['base_image']['descriptors'], img_des)
             # matchesMask = [[0,0] for i in range(len(matches))]
             good = list()
