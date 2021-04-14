@@ -164,7 +164,8 @@ class SIFTModel():
         FLANN_INDEX_KDTREE = 0
         index_params = dict(algorithm=FLANN_INDEX_KDTREE, trees=5)
         search_params = dict(checks=50)
-        self.matcher = cv2.FlannBasedMatcher(index_params, search_params).knnMatch       # FLANN based matcher
+        # self.matcher = cv2.FlannBasedMatcher(index_params, search_params).knnMatch       # FLANN based matcher
+        self.matcher = cv2.BFMatcher().knnMatch
 
     def eval(self):
         obj_dictionary_pth = 'tracker/siftModel_t.p'
@@ -203,7 +204,7 @@ class SIFTModel():
         for m, n in matches:
             if m.distance < 0.7 * n.distance:
                 good.append([m])
-        return len(good) >= 1 - self.feature_match_slack
+        return good, matches
         # if obj['base_image']['shape_id'] is None:   # modeler was unable to match seen object with any learned object
         #     match = self.frameMatch(img_kp, img_des, obj)  # fall back to frame-by-frame feature matching
         # else:
@@ -260,21 +261,25 @@ class SIFTModel():
                 # obj['appearance']['feature_history']['descriptors'] = list()
                 obj['appearance']['match'] = True
                 obj['appearance']['mismatch_count'] = 0
-
-                top_x, top_y, bottom_x, bottom_y = obj['bounding_box']
-                obj_current_image = image.crop((top_y, top_x, bottom_y, bottom_x))
-                base_obj_image = np.array(obj_current_image)
-
-                obj_kp, obj_des = self.detector.detectAndCompute(base_obj_image, None)
-
-                obj['appearance']['base_image'] = dict()
-                obj['appearance']['base_image']['keypoints'] = obj_kp
-                obj['appearance']['base_image']['descriptors'] = obj_des
                 
                 continue
 
             if obj['occluded']:
                 continue
+
+            obj_current_image = image.crop((top_y, top_x, bottom_y, bottom_x))
+            base_obj_image = np.array(obj_current_image)
+            
+            if 'base_image' not in obj['appearance'].keys():
+                top_x, top_y, bottom_x, bottom_y = obj['bounding_box']
+                console.log(obj['bounding_box'])
+
+                obj_kp, obj_des = self.detector.detectAndCompute(base_obj_image, None)
+
+                obj['appearance']['base_image'] = dict()
+                obj['appearance']['base_image']['image'] = base_obj_image
+                obj['appearance']['base_image']['keypoints'] = obj_kp
+                obj['appearance']['base_image']['descriptors'] = obj_des
             
             # top_x, top_y, bottom_x, bottom_y = obj['bounding_box']
             # obj_current_image = image.crop((top_y, top_x, bottom_y, bottom_x))
@@ -298,15 +303,36 @@ class SIFTModel():
             #     obj['base_image'] = dict()
             #     obj['base_image']['shape_id'] = self.identifyInitialObject(img_kp, img_des)
                 # obj['base_image']['histogram'] = obj_clr_hist
+            
+            # cv2.imshow('Object', obj['appearance']['base_image']['image'])
+            # cv2.imshow('Full Scene', base_image)
+            # key = cv2.waitKey(1) & 0xFF
+            # cv2.waitKey(0)
+            # cv2.destroyAllWindows()
 
             # Run detectFeatureMatch
-            feature_match = self.detectFeatureMatch(obj['appearance']['base_image']['descriptors'], img_des)
-
+            matches = self.matcher(obj['appearance']['base_image']['descriptors'], img_des, k=2)
+            # matchesMask = [[0,0] for i in range(len(matches))]
+            good = list()
+            for m, n in matches:
+                if m.distance < 0.75 * n.distance:
+                    good.append([m])
+            # draw_params = dict(matchColor = (0,255,0),
+            #        singlePointColor = (255,0,0),
+            #        matchesMask = matchesMask,
+            #        flags = 0)
+            display = cv2.drawMatchesKnn(obj['appearance']['base_image']['image'], obj['appearance']['base_image']['keypoints'], base_image, img_kp, good, None, flags=2)
+            cv2.imshow('Match', display)
+            cv2.waitKey(0)
+            console.log('Match rate for obj', key, ':', len(good) / len(matches) if len(matches) > 0 else 0)
             # Update feature match indicator if the object is not occluded
             # if not obj['occluded']:
                 # obj['appearance']['feature_history']['keypoints'].append(img_kp)
                 # obj['appearance']['feature_history']['descriptors'].append(img_des)
-            obj['appearance']['match'] = feature_match
+            if len(matches) > 0:
+                obj['appearance']['match'] = (len(good) / len(matches)) >= 1 - self.feature_match_slack
+            else:
+                obj['appearance']['match'] = False
 
             if obj['appearance']['match']:
                 obj['appearance']['mismatch_count'] = 0
