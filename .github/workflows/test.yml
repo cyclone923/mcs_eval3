@@ -12,14 +12,14 @@ on:
 jobs:
   build:
 
-    runs-on: [self-hosted, linux]
+    runs-on: [self-hosted, linux, x64]
 
     steps:
     - uses: actions/checkout@v2
-    - name: Set up Python 3.6
+    - name: Set up Python 3.6.8
       uses: actions/setup-python@v2
       with:
-        python-version: 3.6
+        python-version: 3.6.8
     - name: Install dependencies
       run: |
         pip install --upgrade pip setuptools wheel
