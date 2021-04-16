@@ -16,7 +16,6 @@ jobs:
 
     steps:
     - uses: actions/checkout@v2
-    - name: source or create miniconda python env
     - uses: conda-incubator/setup-miniconda@v2
       with:
         activate-environment: whatever
