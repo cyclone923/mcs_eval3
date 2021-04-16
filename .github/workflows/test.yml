@@ -20,14 +20,6 @@ jobs:
     - uses: conda-incubator/setup-miniconda@v2
       with:
         activate-environment: whatever
-#     - name: source or create miniconda python env
-#       run: |
-#         wget https://repo.anaconda.com/miniconda/Miniconda3-3.6.0-Linux-x86_64.sh -O ~/install_miniconda.sh
-#         bash ~/install_miniconda.sh -b -p ./miniconda
-#         eval "$(~/miniconda shell.bash hook)"
-#         conda init
-#         echo $PREFIX
-#         python -V
     - name: Install dependencies
       run: |
         pip install --upgrade pip setuptools wheel
