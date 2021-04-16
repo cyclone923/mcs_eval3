@@ -16,14 +16,7 @@ class McsEnv:
     """
     Wrapper base class
     """
-    def __init__(self, task=None, scene_type=None, seed=None, start_scene_number=0, frame_collector=None, set_trophy=False, trophy_prob=1):
-
-        if platform.system() == "Linux":
-            app = "unity_app/MCS-AI2-THOR-Unity-App-v0.4.1.1.x86_64"
-        elif platform.system() == "Darwin":
-            app = "unity_app/MCSai2thor.app/Contents/MacOS/MCSai2thor"
-        else:
-            app = None
+    def __init__(self, task=None, scene_type=None, seed=None, start_scene_number=0, frame_collector=None, set_trophy=False, trophy_prob=1, controller = None):
 
         self.trophy_config = None
         self.trophy_prob = None
@@ -31,7 +24,6 @@ class McsEnv:
             goal_dir = os.path.join(task, "eval3")
             all_scenes = sorted(os.listdir(goal_dir))
             all_scenes = [os.path.join(goal_dir, one_scene) for one_scene in all_scenes]
-            print (len(all_scenes))
             assert len(all_scenes) == 1
             self.trophy_config, _ = mcs.load_scene_json_file(all_scenes[0])
             self.debug_dir = os.path.join(task, "debug")
@@ -44,17 +36,12 @@ class McsEnv:
 
         os.environ['MCS_CONFIG_FILE_PATH'] = os.path.join(os.getcwd(), "mcs_config.yaml")
 
-        self.controller = mcs.create_controller(
-            os.path.join(app)
-        )
+        self.controller = controller
 
         if task and scene_type:
             goal_dir = os.path.join(task, scene_type)
-            print(goal_dir)
             all_scenes = sorted(os.listdir(goal_dir))
-            print("All scenes: ", all_scenes)
             self.all_scenes = [os.path.join(goal_dir, one_scene) for one_scene in all_scenes]
-            print("All SELF: ",self.all_scenes)
         else:
             self.all_scenes = [os.path.join("scenes", "playroom.json")]
 
@@ -74,14 +61,12 @@ class McsEnv:
             self.add_obstacle_func(self.step_output)
         # print(self.step_output.return_status)
         if self.frame_collector:
+            print("we have frame collector")
             self.frame_collector.save_frame(self.step_output)
 
         return self.step_output
 
     def reset(self, random_init=False, repeat_current=False):
-        print("All ", self.all_scenes)
-        print("Curr ", self.current_scene)
-
         if not repeat_current:
             if not random_init:
                 

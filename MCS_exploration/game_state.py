@@ -280,6 +280,7 @@ class GameState(object):
                     do the following
             '''
             if self.level == "level2" or self.level == "oracle":
+                print("MS ! ", self.event.object_mask_list)
                 arr_mask = np.array(self.event.object_mask_list[-1])
                 self.obj_mask = arr_mask.reshape(-1, arr_mask.shape[-1])
                 #print ("shape of obj mask", self.obj_mask.shape)

@@ -1,6 +1,7 @@
 from MCS_exploration.gym_ai2thor.envs.mcs_env import McsEnv
 from MCS_exploration.meta_controller.meta_controller import MetaController
 from MCS_exploration.frame_collector import Frame_collector
+import machine_common_sense as mcs
 import sys
 import yaml
 import os
@@ -14,6 +15,14 @@ if __name__ == "__main__":
     config_ini.read("mcs_config.ini")
     level = config_ini['MCS']['metadata']
 
+    with open("./unity_path.yaml", 'r') as config_file:
+        config = yaml.safe_load(config_file)
+
+    controller = mcs.create_controller(
+        os.path.join(config['unity_path']),
+        config_file_path='mcs_config.ini'
+    )
+
     collector = Frame_collector(scene_dir="simple_task_img", start_scene_number=start_scene_number)
 
     env = McsEnv(
@@ -21,9 +30,10 @@ if __name__ == "__main__":
         scene_type = "debug", # second nested dir
         seed = 50,
         start_scene_number = start_scene_number, 
-        frame_collector = None, 
+        frame_collector = collector, 
         set_trophy = False, #True if not DEBUG else False, 
-        trophy_prob = 1 # trophy_prob=1 mean the trophy is 100% outside the box, trophy_prob=0 mean the trophy is 100% inside the box,
+        trophy_prob = 1, # trophy_prob=1 mean the trophy is 100% outside the box, trophy_prob=0 mean the trophy is 100% inside the box,
+        controller = controller
     )
 
     metaController = MetaController(env, level)
@@ -41,12 +51,9 @@ if __name__ == "__main__":
     print ("Start scene number = ", start_scene_number)
     print ("number of scenes to run = ", number_scenes)
 
-
-
-
     while env.current_scene < start_scene_number + number_scenes:
         env.reset()
-        result = metaController.excecute()
+        result = metaController.execute()
         curr_scene_reward = metaController.sequence_generator_object.agent.game_state.step_output.reward 
         return_status = metaController.sequence_generator_object.agent.game_state.step_output.return_status
         if curr_scene_reward > 0 :
