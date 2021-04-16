@@ -20,7 +20,7 @@ jobs:
       run: |
         wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86.sh -O ~/install_miniconda.sh
         bash ~/install_miniconda.sh -b -p ./miniconda
-        eval "$(./miniconda shell.bash hook)
+        eval "$(~/miniconda shell.bash hook)"
         conda init
     - name: Install dependencies
       run: |
