@@ -156,6 +156,53 @@ class OpenCVModel():
 
         return objects_info
 
+class HOGModel():
+    def __init__(self):
+        pass
+
+    def match(self, image, objects_info, device='cpu', level='level2'):
+        for key, obj in objects_info.items():
+            if not obj['visible']:
+                continue
+
+            if 'appearance' not in obj.keys():
+                obj['appearance'] = dict()
+                obj['appearance']['match'] = True
+                obj['appearance']['mismatch_count'] = 0
+            
+            if obj['occluded']:
+                continue
+
+            top_x, top_y, bottom_x, bottom_y = obj['bounding_box']
+            obj_current_image = image.crop((top_y, top_x, bottom_y, bottom_x))
+            base_obj_image = np.array(obj_current_image)
+            base_image = np.array(image)
+
+            mask_image = np.zeros(obj['mask'].shape, dtype=base_image.dtype)
+            mask_image[obj['mask']] = 255
+
+            obj_clr_hist_0 = cv2.calcHist([np.array(image)], [0], mask_image, [10], [0, 256])
+            obj_clr_hist_1 = cv2.calcHist([np.array(image)], [1], mask_image, [10], [0, 256])
+            obj_clr_hist_2 = cv2.calcHist([np.array(image)], [2], mask_image, [10], [0, 256])
+            hist = (obj_clr_hist_0 + obj_clr_hist_1 + obj_clr_hist_2) / 3
+
+            # hist = cv2.calcHist([base_image], [0, 1, 2], mask_image, [10, 10, 10], [0, 256, 0, 256, 0, 256, 0, 256])
+            if 'base_image' not in obj['appearance'].keys():
+                obj['appearance']['base_image'] = dict()
+                obj['appearance']['base_image']['histogram'] = hist
+
+            distance = cv2.compareHist(obj['appearance']['base_image']['histogram'], hist, cv2.HISTCMP_CORREL)
+            console.log(distance)
+            
+            obj['appearance']['match'] = distance >= 0.5
+            if obj['appearance']['match']:
+                obj['appearance']['mismatch_count'] = 0
+            else:
+                obj['appearance']['mismatch_count'] += 1
+
+        return objects_info
+
+
 class SIFTModel():
     def __init__(self):
         self.feature_match_slack = 0.5          # The amount of match rate to allow without declaring a mismatch 
@@ -164,8 +211,8 @@ class SIFTModel():
         FLANN_INDEX_KDTREE = 0
         index_params = dict(algorithm=FLANN_INDEX_KDTREE, trees=5)
         search_params = dict(checks=50)
-        # self.matcher = cv2.FlannBasedMatcher(index_params, search_params).knnMatch       # FLANN based matcher
-        self.matcher = cv2.BFMatcher().knnMatch
+        self.matcher = cv2.FlannBasedMatcher(index_params, search_params).knnMatch       # FLANN based matcher
+        # self.matcher = cv2.BFMatcher().knnMatch
 
     def eval(self):
         obj_dictionary_pth = 'tracker/siftModel_t.p'
@@ -251,6 +298,7 @@ class SIFTModel():
     #     return match_rate >= 1 - self.feature_match_slack
     
     def match(self, image, objects_info, device='cpu', level='level2'):
+        console.log(level)
         for key, obj in objects_info.items():
             if not obj['visible']:  # if the object is not visible, don't check for an appearance match; just go with the last match decision
                 continue
@@ -262,6 +310,9 @@ class SIFTModel():
 
             if obj['occluded']:
                 continue
+    
+            top_x, top_y, bottom_x, bottom_y = obj['bounding_box']
+            console.log(obj['bounding_box'])
 
             obj_current_image = image.crop((top_y, top_x, bottom_y, bottom_x))
             base_obj_image = np.array(obj_current_image)
@@ -270,8 +321,6 @@ class SIFTModel():
             # this is the initial state of the object to reference for appearance
             # matches.
             if 'base_image' not in obj['appearance'].keys():
-                top_x, top_y, bottom_x, bottom_y = obj['bounding_box']
-                console.log(obj['bounding_box'])
 
                 obj_kp, obj_des = self.detector.detectAndCompute(base_obj_image, None)
 
@@ -288,17 +337,20 @@ class SIFTModel():
             img_kp, img_des = self.detector.detectAndCompute(base_obj_image, None)
 
             # Run feature match (knnMatch)
-            matches = self.matcher(obj['appearance']['base_image']['descriptors'], img_des)
+            matches = self.matcher(obj['appearance']['base_image']['descriptors'], img_des, k=2)
+            console.log(matches)
             # matchesMask = [[0,0] for i in range(len(matches))]
             good = list()
+            
             for m, n in matches:
+                console.log(m.distance)
                 if m.distance < 0.75 * n.distance:
                     good.append([m])
             # draw_params = dict(matchColor = (0,255,0),
             #        singlePointColor = (255,0,0),
             #        matchesMask = matchesMask,
             #        flags = 0)
-            display = cv2.drawMatchesKnn(obj['appearance']['base_image']['image'], obj['appearance']['base_image']['keypoints'], base_image, img_kp, good, None, flags=2)
+            display = cv2.drawMatchesKnn(obj['appearance']['base_image']['image'], obj['appearance']['base_image']['keypoints'], base_obj_image, img_kp, good, None, flags=2)
             cv2.imshow('Match', display)
             cv2.waitKey(0)
             console.log('Match rate for obj', key, ':', len(good) / len(matches) if len(matches) > 0 else 0)
@@ -319,6 +371,8 @@ class AppearanceMatchModel():
     def __init__(self, modeler):
         if modeler == 'sift':
             self.modeler = SIFTModel()
+        elif modeler == 'hog':
+            self.modeler = HOGModel()
         else:
             self.modeler = OpenCVModel()  # TEMP: Replace with KCF/CSRT here when implemented
 

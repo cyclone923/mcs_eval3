@@ -44,7 +44,7 @@ class Evaluation_Agent:
         self.scene_type = scene_type
         self.agency_voe_agent = AgencyVoeAgent(self.controller, self.level)
         self.gravity_agent = gravity_agent.GravityAgent(self.controller, self.level)
-        self.phys_voe = physics_voe_agent.VoeAgent(self.controller, self.level, 'sift', prefix)
+        self.phys_voe = physics_voe_agent.VoeAgent(self.controller, self.level, 'hog', prefix)
 
         if seed != -1:
             random.seed(seed)
