@@ -15,6 +15,9 @@ jobs:
     runs-on: [self-hosted, linux, x64]
     steps:
     - uses: actions/checkout@v2
+    - name: test conda install
+      run: |
+          export CONDA="LOL"
     - name: Setup Miniconda
       uses: conda-incubator/setup-miniconda@v2
       with:
