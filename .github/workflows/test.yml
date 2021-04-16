@@ -33,7 +33,7 @@ jobs:
         run: |
           pip install --upgrade pip setuptools wheel
           pip install --upgrade flake8 pytest
-          python -m pip install git+https://github.com/NextCenturyCorporation/MCS@master#egg=machine_common_sense
+          #python -m pip install git+https://github.com/NextCenturyCorporation/MCS@master#egg=machine_common_sense
           pip install -r requirements.txt
           bash setup_torch.sh
           bash setup_unity.sh
