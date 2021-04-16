@@ -31,17 +31,17 @@ jobs:
       - run: python -V
       - name: Install dependencies
         run: |
+          export OLD_PWD=$PWD
           echo $PWD
           ls -lah
           cd /scratch/mcs/actions-runner/
           pip install --upgrade pip setuptools wheel
           pip install --upgrade flake8 pytest
           # python -m pip install git+https://github.com/NextCenturyCorporation/MCS@master#egg=machine_common_sense
-          cd -
-          pip install -r requirements.txt
-          bash setup_torch.sh
-          bash setup_unity.sh
-          bash setup_vision.sh
+          pip install -r $OLDPWD/requirements.txt
+          bash $OLD_PWD/setup_torch.sh
+          bash $OLD_PWD/setup_unity.sh
+          bash $OLD_PWD/setup_vision.sh
           export PYTHONPATH=$PWD
       - name: Lint with flake8
         run: |
