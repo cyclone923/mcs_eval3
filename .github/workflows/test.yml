@@ -37,6 +37,7 @@ jobs:
           export CONDA=/scratch/mcs/miniconda
           cd /scratch/mcs/actions-runner/
           pip install --upgrade pip setuptools wheel
+          pip show setuptools
           pip install --upgrade flake8 pytest
           # python -m pip install git+https://github.com/NextCenturyCorporation/MCS@master#egg=machine_common_sense
           pip install -r $OLDPWD/requirements.txt
