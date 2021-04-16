@@ -19,7 +19,7 @@ class McsEnv:
     def __init__(self, task=None, scene_type=None, seed=None, start_scene_number=0, frame_collector=None, set_trophy=False, trophy_prob=1):
 
         if platform.system() == "Linux":
-            app = "unity_app/MCS-AI2-THOR-Unity-App-v0.3.5.x86_64"
+            app = "unity_app/MCS-AI2-THOR-Unity-App-v0.4.1.1.x86_64"
         elif platform.system() == "Darwin":
             app = "unity_app/MCSai2thor.app/Contents/MacOS/MCSai2thor"
         else:
@@ -33,7 +33,7 @@ class McsEnv:
             all_scenes = [os.path.join(goal_dir, one_scene) for one_scene in all_scenes]
             print (len(all_scenes))
             assert len(all_scenes) == 1
-            self.trophy_config, _ = mcs.load_config_json_file(all_scenes[0])
+            self.trophy_config, _ = mcs.load_scene_json_file(all_scenes[0])
             self.debug_dir = os.path.join(task, "debug")
             self.trophy_prob = trophy_prob
             try:
@@ -50,8 +50,11 @@ class McsEnv:
 
         if task and scene_type:
             goal_dir = os.path.join(task, scene_type)
+            print(goal_dir)
             all_scenes = sorted(os.listdir(goal_dir))
+            print("All scenes: ", all_scenes)
             self.all_scenes = [os.path.join(goal_dir, one_scene) for one_scene in all_scenes]
+            print("All SELF: ",self.all_scenes)
         else:
             self.all_scenes = [os.path.join("scenes", "playroom.json")]
 
@@ -76,14 +79,18 @@ class McsEnv:
         return self.step_output
 
     def reset(self, random_init=False, repeat_current=False):
+        print("All ", self.all_scenes)
+        print("Curr ", self.current_scene)
+
         if not repeat_current:
             if not random_init:
-                self.current_scene += 1
+                
                 # print(self.all_scenes[self.current_scene])
-                self.scene_config, status = mcs.load_config_json_file(self.all_scenes[self.current_scene])
+                self.scene_config, status = mcs.load_scene_json_file(self.all_scenes[self.current_scene])
+                self.current_scene += 1
             else:
                 self.current_scene = random.randint(0, len(self.all_scenes) - 1)
-                self.scene_config, status = mcs.load_config_json_file(self.all_scenes[self.current_scene])
+                self.scene_config, status = mcs.load_scene_json_file(self.all_scenes[self.current_scene])
 
         # if "goal" in self.scene_config:
         #     print(self.scene_config['goal']["description"])
@@ -96,11 +103,6 @@ class McsEnv:
                 json.dump(self.scene_config, fp, indent=4)
 
         self.step_output = self.controller.start_scene(self.scene_config)
-        # self.step_output = self.controller.step(action="Pass")
-
-
-
-
 
 if __name__ == '__main__':
     McsEnv()
