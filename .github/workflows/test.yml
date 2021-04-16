@@ -33,7 +33,7 @@ jobs:
         run: |
           echo $PWD
           ls -lah
-          cd /scratch/mcs/actions-runner/mcs_eval3
+          cd /scratch/mcs/actions-runner/
           pip install --upgrade pip setuptools wheel
           pip install --upgrade flake8 pytest
           # python -m pip install git+https://github.com/NextCenturyCorporation/MCS@master#egg=machine_common_sense
