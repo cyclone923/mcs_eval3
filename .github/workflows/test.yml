@@ -31,7 +31,7 @@ jobs:
       - run: python -V
       - name: Install dependencies
         run: |
-          cd /scratch/mcs
+          cd /scratch/mcs/mcs_opics
           pip install --upgrade pip setuptools wheel
           pip install --upgrade flake8 pytest
           #python -m pip install git+https://github.com/NextCenturyCorporation/MCS@master#egg=machine_common_sense
