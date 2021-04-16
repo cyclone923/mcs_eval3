@@ -33,7 +33,8 @@ jobs:
         run: |
           export OLD_PWD=$PWD
           echo $PWD
-          ls -lah
+          # ls -lah
+          export CONDA=/scratch/mcs/miniconda
           cd /scratch/mcs/actions-runner/
           pip install --upgrade pip setuptools wheel
           pip install --upgrade flake8 pytest
