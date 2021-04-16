@@ -22,6 +22,7 @@ jobs:
         bash ~/install_miniconda.sh -b -p ./miniconda
         eval "$(~/miniconda shell.bash hook)"
         conda init
+        python -V
     - name: Install dependencies
       run: |
         pip install --upgrade pip setuptools wheel
