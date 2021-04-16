@@ -28,6 +28,7 @@ jobs:
       - run: conda info
       - run: conda list
       - run: conda config --show
+      - run: python -V
       - name: Install dependencies
         run: |
           pip install --upgrade pip setuptools wheel
