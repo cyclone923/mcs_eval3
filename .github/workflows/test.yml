@@ -22,16 +22,16 @@ jobs:
       - name: Install dependencies
         run: |
           cd $GITHUB_WORKSPACE
-          pip install --upgrade pip setuptools wheel
-          pip show setuptools
-          pip install --upgrade flake8 pytest
+          pip install --upgrade pip setuptools wheel &>/dev/null
+          pip show setuptools &>/dev/null
+          pip install --upgrade flake8 pytest &>/dev/null
           python -m pip install git+https://github.com/NextCenturyCorporation/MCS@master#egg=machine_common_sense
-          pip install -r requirements.txt
-          bash setup_open3d.sh
-          bash setup_torch.sh
+          pip install -r requirements.txt &>/dev/null
+          bash setup_torch.sh &>/dev/null
           bash setup_unity.sh
-          bash setup_vision.sh
+          bash setup_vision.sh &>/dev/null
           export PYTHONPATH=$PWD
+          pip show ai2thor
       - name: Lint with flake8
         run: |
           # stop the build if there are Python syntax errors or undefined names
