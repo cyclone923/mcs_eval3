@@ -18,6 +18,8 @@ jobs:
         shell: bash -l {0}
     steps:
       - uses: actions/checkout@v2
+      - run: |
+          . ~/.bashrc
       - run: conda activate mcs_eval3
       - run: python -V
       - name: Install dependencies
