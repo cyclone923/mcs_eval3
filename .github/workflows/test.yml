@@ -10,7 +10,7 @@ on:
 jobs:
   build:
 
-    runs-on: [self-hosted, linux, x64]
+    runs-on: [pelican]
     defaults:
       run:
         shell: bash -l {0}
@@ -22,23 +22,13 @@ jobs:
           cd $GITHUB_WORKSPACE
           pip install --upgrade pip setuptools wheel &>/dev/null
           pip show setuptools &>/dev/null
-          pip install --upgrade flake8 pytest &>/dev/null
-          python -m pip install git+https://github.com/NextCenturyCorporation/MCS@master#egg=machine_common_sense
+          python -m pip install git+https://github.com/NextCenturyCorporation/MCS@0.3.8
           pip install -r requirements.txt &>/dev/null
           bash setup_torch.sh &>/dev/null
           bash setup_unity.sh
           bash setup_vision.sh &>/dev/null
           export PYTHONPATH=$PWD
-          pip show ai2thor
-      - name: Lint with flake8
-        run: |
-          # stop the build if there are Python syntax errors or undefined names
-          flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
-          # exit-zero treats all errors as warnings. The GitHub editor is 127 chars wide
-          flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
       - name: Run evaluation code on scenes
         run: |
-          python eval.py --scenes test-scenes/
-      - name: Test with pytest
-        run: |
-          pytest
+          python get_gravity_scenes.py
+          python eval.py --scenes gravity_scenes
