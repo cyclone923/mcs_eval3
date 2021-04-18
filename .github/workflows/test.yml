@@ -17,4 +17,4 @@ jobs:
     steps:
       - name: launch gpu equipped runner
         run: |
-          echo "cd /scratch/mcs/actions-runner; nohup ./run.sh & sleep 6" > /tmp/ga_run && srun -A eecs -gpu --nodelist=cn-gpu2 --gres=gpu:1 --pty /tmp/ga_run"
+          echo "cd /scratch/mcs/actions-runner; nohup ./run.sh & sleep 6" > /tmp/ga_run && srun -A eecs -gpu --nodelist=cn-gpu2 --gres=gpu:1 --pty /tmp/ga_run
