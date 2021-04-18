@@ -7,8 +7,8 @@ import os
 import json
 
 def render_in_pybullet(step_output, target, supporting, level):
-    # physicsClient = p.connect(p.GUI)#or p.DIRECT for non-graphical version
-    physicsClient = p.connect(p.DIRECT)
+    physicsClient = p.connect(p.GUI)#or p.DIRECT for non-graphical version
+    # physicsClient = p.connect(p.DIRECT)
 
     p.setAdditionalSearchPath(os.getcwd() + "/gravity/pybullet_objects/") #optionally
     p.setGravity(0,0,-10)
@@ -50,9 +50,14 @@ def render_in_pybullet(step_output, target, supporting, level):
         }
 
     # p.setRealTimeSimulation()
+    final_image = []
+    init_image = []
     for i in range(750):
+        
         p.stepSimulation()
         time.sleep(1./400.)
+        if i == 0:
+            init_image = p.getCameraImage(600, 400)
     
         # confirm there aren't any overlaps on target object
         aabb_min, aabb_max = p.getAABB(obj_dict[target]["boxID"])
@@ -76,13 +81,13 @@ def render_in_pybullet(step_output, target, supporting, level):
             cubePos, cubeOrn = p.getBasePositionAndOrientation(obj_dict[obj]["boxID"])
             obj_dict[obj]["pos"].append(cubePos)
             obj_dict[obj]["orn"].append(cubeOrn)
+        
+        if i == 749:
+            final_image = p.getCameraImage(600, 400)
 
     p.disconnect()
 
-    if level == "oracle":
-        return obj_dict
-    else:
-        return obj_dict
+    return obj_dict
 
 def getDims(obj):
     dims = obj["dimensions"]
