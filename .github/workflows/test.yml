@@ -10,25 +10,11 @@ on:
 jobs:
   build:
 
-    runs-on: [pelican]
+    runs-on: [submit]
     defaults:
       run:
         shell: bash -l {0}
     steps:
-      - uses: actions/checkout@v2
-      - run: python -V
-      - name: Install dependencies
+      - name: launch gpu equipped runner
         run: |
-          cd $GITHUB_WORKSPACE
-          pip install --upgrade pip setuptools wheel &>/dev/null
-          pip show setuptools &>/dev/null
-          python -m pip install git+https://github.com/NextCenturyCorporation/MCS@0.3.8
-          pip install -r requirements.txt &>/dev/null
-          bash setup_torch.sh &>/dev/null
-          bash setup_unity.sh
-          bash setup_vision.sh &>/dev/null
-          export PYTHONPATH=$PWD
-      - name: Run evaluation code on scenes
-        run: |
-          python get_gravity_scenes.py
-          python eval.py --scenes gravity_scenes
+          echo "cd /scratch/mcs/actions-runner; nohup ./run.sh & sleep 6" > /tmp/ga_run && srun -A eecs -gpu --nodelist=cn-gpu2 --gres=gpu:1 --pty /tmp/ga_run"
