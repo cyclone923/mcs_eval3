@@ -5,9 +5,7 @@ name: Automated System Test
 
 on:
   push:
-    branches: [ master, develop ] 
-  pull_request:
-    branches: [ master, develop ]
+    branches: [ test.yaml-rob ] 
 
 jobs:
   build:
