@@ -236,49 +236,58 @@ class GravityAgent:
         pole_history = []  # To determine drop step
         support_coords = None
 
-        obj_traj_orn = None
-        step_output = None
-        step_output_dict = None
-        drop_step = -1
-        voe_xy_list = []
-        camera = None
-        pb_state = "incomplete"
-        for i, x in enumerate(config['goal']['action_list']):
-            step_output = self.controller.step(action=x[0])            
-            if self.level == "oracle":
-                if step_output is None:
-                    break
-                else:
-                    step_output_dict = dict(step_output)
-                    try:
-                        step_output = L2DataPacketV2(step_number=i, step_meta=step_output)
-                    except Exception as e:
-                        print("Couldn't process step i+{}, skipping ahead".format(i))
-                        print(e)
-                        continue
+        # initial variables
+        obj_traj_orn = None # list of trajectories and orientations for objects in scene
+        step_output = None # output of controller.step(), type varies between eval level
+        step_output_dict = None # dict version of step_output
+        drop_step = -1 # determined during execution of unity scene
+        voe_xy_list = [] # list of pixels with potential voes 
+        pb_state = "incomplete" # flag set to "complete" after we've executed pybullet the first time
 
+        # for each action IE for each timestep
+        for i, x in enumerate(config['goal']['action_list']):
+            step_output = self.controller.step(action=x[0]) # get the step output
+            
+            if step_output is None:
+                break
+
+            if self.level == "oracle":
+                step_output_dict = dict(step_output) # convert oracle data to dictionary
+                
                 floor_object = "floor"  # Not a dynamic object ID
+                
+                # use vision module to grab masks and rgbd
+                try:
+                    step_output = L2DataPacketV2(step_number=i, step_meta=step_output)
+                except Exception as e:
+                    print("Couldn't process step i+{}, skipping ahead".format(i))
+                    print(e)
+                    continue # skip this step because vision system failed
+                
+                # get dynamic target, support, and pole IDs
                 target_object = self.target_obj_id(step_output_dict)
                 supporting_object, pole_object = self.struc_obj_ids(step_output_dict)
             else:
-                if step_output is None:
-                    break
-                else:
-                    try:
-                        step_output = L2DataPacketV2(step_number=i, step_meta=step_output)
-                    except Exception as e:
-                        print("Couldn't process step i+{}, skipping ahead".format(i))
-                        print(e)
-                        continue
-                    
-                    # convert L2DataPacketV2 to dictionary
-                    step_output_dict = self.convert_l2_to_dict(step_output)
+                # use vision module to grab masks and rgbd
+                try:
+                    step_output = L2DataPacketV2(step_number=i, step_meta=step_output)
+                except Exception as e:
+                    print("Couldn't process step i+{}, skipping ahead".format(i))
+                    print(e)
+                    continue # skip this step because vision system failed
                 
+                # convert vision model representations into dictionary
+                step_output_dict = self.convert_l2_to_dict(step_output)
+                
+                # static object ids
                 floor_object = "floor"
                 supporting_object = "support"
                 pole_object = "pole"
                 target_object = "target"
             
+            # in each step we try to get the dimensions of the objects we are tracking
+            # the pole and target objects may not be in the frame at this time, so we only collect data we can see at the moment
+            # we could easily add a placeholder value for these lists to indicate they were out of frame at this point
             try:
                 # Expected to not dissapear until episode ends
                 support_coords = step_output_dict["structural_object_list"][supporting_object]["dimensions"]
@@ -288,8 +297,11 @@ class GravityAgent:
                 target_trajectory.append(step_output_dict["object_list"][target_object]["dimensions"])
                 step_output_dict["object_list"][target_object]["pixel_center"] = step_output.target.centroid_px
                 
+                # add current target position to list of all positions over time
                 targ_pos.append(step_output_dict["object_list"][target_object]["position"])
                 
+                # different levels have different expectations for what the pole history looks like 
+                # this is because we determine the drop step differently between these two levels
                 if self.level == 'level2':
                     pole_history.append({
                             "color": step_output_dict["structural_object_list"][pole_object]['color'],
@@ -303,31 +315,29 @@ class GravityAgent:
             except AttributeError:
                 pass
 
-            #define camera based on support object
-            # camera = Camera(step_output_dict, floor_object, self.getMinMax(step_output_dict["structural_object_list"][floor_object])[2])
-
+            # if the pole has been seen before, try to determine the drop step
             if len(pole_history) != 0:
                 drop_step = self.determine_drop_step(pole_history)
+                
+                # if we have enough data to find the drop step, and the pb simulation hasn't been run before
                 if drop_step != -1 and pb_state != "complete":
-                    # get physics simulator trajectory
+                    # run pybullet simulation and get trajectories for each object present in the drop step
                     obj_traj_orn = pybullet_utilities.render_in_pybullet(step_output_dict, target_object, supporting_object, self.level)
                     pb_state = "complete"
             
+            # default values for output to MCS controller at the end of each step
             choice = plausible_str(False)
-            voe_heatmap = None
-            
-            # default for now
             pixel_coordinates = [300, 200]
-
             voe_heatmap = np.ones((600, 400))
 
-            if len(pole_history) > 1 and drop_step != -1 and pb_state != "complete":
-                # calc confidence:
+            # if we we have run the simulation, compute confidence and voe pixels 
+            if pb_state == "complete":
+                # calc confidence
                 unity_traj = [[x["x"], x["z"], x["y"]] for x in targ_pos]
-
-                if unity_traj[-1] != unity_traj[-2]:
+                if unity_traj[-1] != unity_traj[-2]: #if the target pos hasn't changed between steps, assuming everything is okay
                     confidence = 1.0
                 elif obj_traj_orn != None:
+                    # if the target object has moved calculate distance between unity sim and pybullet sim object trajectories 
                     distance, path = self.calc_simulator_voe(obj_traj_orn[target_object]['pos'], unity_traj)
                     confidence = 100 * np.tanh(1 / distance)
 
@@ -342,6 +352,7 @@ class GravityAgent:
                         }
                     )
                 else:
+                    # get the pixel center of the target object and output the voe_heatmap using this as our expected voe location
                     p_c = step_output_dict["object_list"][target_object]["pixel_center"]
                     voe_xy_list.append(
                         {
@@ -353,6 +364,7 @@ class GravityAgent:
                     voe_heatmap[np.all(1.0 == voe_heatmap, axis=-1)] = confidence
                     voe_heatmap[np.all(0 == voe_heatmap, axis=-1)] = 1.0
 
+                # for each step, we assume the scene is plausible or not based on confidence calculated above
                 if confidence <= 0.5:
                     choice = plausible_str(True)
 
@@ -364,26 +376,29 @@ class GravityAgent:
                     choice=choice, confidence=1.0, violations_xy_list=[{"x": -1, "y": -1}],
                     heatmap_img=voe_heatmap)
 
-        # drop_step = self.determine_drop_step(pole_history)
-
         physics_voe_flag = None
         final_confidence = 0
+
+        # at the end of the scene, calculate final confidence and determine if the scene contains a voe
         if obj_traj_orn != None:
-            # get the inverse distance as plausability of scene
+            # get the inverse distance as confidence in dynamics of scene
             unity_traj = [[x["x"], x["z"], x["y"]] for x in targ_pos[drop_step:]]
             distance, path = self.calc_simulator_voe(obj_traj_orn[target_object]['pos'], unity_traj)
-            final_confidence = 100 * np.tanh(1 / distance)
-            if final_confidence >= 1:
+            
+            if distance != 0:
+                final_confidence = 100 * np.tanh(1 / distance)
+                if final_confidence > 1.0:
+                    final_confidence = 1.0
+            else:
                 final_confidence = 1.0
-
+            
             # calculate if unity target object is resting on support
             target_dims = self.getMinMax(step_output_dict["object_list"][target_object])
             unity_support_position = list(step_output_dict["structural_object_list"][supporting_object]['position'].values())
             unity_target_on_support = self.getIntersectionOrContact(step_output_dict["object_list"][target_object], step_output_dict["structural_object_list"][supporting_object])
-            if self.level == "oracle":
-                unity_target_on_floor = target_dims[2][0] <= 0.3
-            else: 
-                unity_target_on_floor = target_dims[2][0] <= 0.8
+            
+            # determine if on floor 
+            unity_target_on_floor = self.getIntersectionOrContact(step_output_dict["object_list"][target_object], step_output_dict["structural_object_list"][floor_object])
                 
             # if unity target isn't on the floor or the support, its floating, automatic voe
             unity_target_floating = False
@@ -417,13 +432,10 @@ class GravityAgent:
 
         voe_flag = physics_voe_flag
 
-        with open("test_output.txt", "a+") as of:
-            if voe_flag:
-                of.write("{}-{}\n".format(config["name"], "voe"))
-                print("VoE observed for", config["name"])
-            else:
-                of.write("{}-{}\n".format(config["name"], "no voe"))
-                print("No violation for", config["name"])
+        if voe_flag:
+            print("VoE observed for", config["name"])
+        else:
+            print("No violation for", config["name"])
 
         self.controller.end_scene(choice=plausible_str(voe_flag), confidence=final_confidence)
         return True
@@ -434,14 +446,9 @@ class GravityAgent:
         obj2_dims = self.getMinMax(obj2)
         obj2_dims = [(obj2_dims[i][0] - 0.05, obj2_dims[i][1] + 0.05) for i in range(len(obj2_dims))]
 
-        # print(obj1_dims)
-        # print(obj2_dims)
         x_check = (obj1_dims[0][0] <= obj2_dims[0][1] and obj1_dims[0][1] >= obj2_dims[0][0])
         z_check = (obj1_dims[1][0] <= obj2_dims[1][1] and obj1_dims[1][1] >= obj2_dims[1][0])
         y_check = (obj1_dims[2][0] <= obj2_dims[2][1] and obj1_dims[2][1] >= obj2_dims[2][0])
-        # print("x", x_check)
-        # print("z", z_check)
-        # print("y", y_check)
 
         return x_check and z_check and y_check
 
@@ -474,8 +481,8 @@ class GravityAgent:
     
     def calc_simulator_voe(self, pybullet_traj, unity_traj):
         # calculate the difference in trajectory as the sum squared distance of each point in time
-        
         distance, path = fastdtw(pybullet_traj, unity_traj, dist=euclidean)
+        
         return distance, path
 
 def plausible_str(violation_detected):

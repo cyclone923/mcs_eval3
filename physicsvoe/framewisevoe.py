@@ -67,6 +67,7 @@ class FramewiseVOE:
         return viols
 
     def predict(self, time):
+        # TODO: Update this method to predict position based on expected trajectory
         in_ = self._get_inputs()
         if in_ is None:
             return None
@@ -85,7 +86,7 @@ class FramewiseVOE:
         all_errs = []
         # Use the stored object position history to predict where each object
         # should be at this frame `time`
-        pred_info = self.predict(time)
+        pred_info = self.predict(time)  # TODO: Upgrades here
         if pred_info is None:
             # If we don't have enough data to make any reasonable predictions,
             # predict will return None.
@@ -100,6 +101,11 @@ class FramewiseVOE:
                 # pixel and therefore evaluates to False.
                 continue
             if pred_id in actual_ids:   # Object is a previously identified object
+                # NOTE: Gravity + position VoE modeling should happen here
+                # TODO: Calculate expected position given trajectory
+                # TODO: Calculate actual (x, y, z) position
+
+                # TEMP (from Evalulation 3)
                 _idx = actual_ids.index(pred_id)
                 actual_pos = actual_poss[_idx] # Get actual world position for the object, determined from observed masks
                 err = torch.dist(actual_pos, pred_pos)  # How far the object is from our predicted position

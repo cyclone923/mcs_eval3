@@ -826,7 +826,8 @@ class L2DataPacketV2:
 
     def determine_obj_roles(self):
 
-        assert 3 <= len(self.objects) <= 5, "Support, floor & wall should always be in scene"
+        # assert 3 <= len(self.objects) <= 5, "Support, floor & wall should always be in scene"
+        assert len(self.objects) >= 2, "Floor and wall should always"
 
         # Determining floor & wall
         floor_found, wall_found = False, False
