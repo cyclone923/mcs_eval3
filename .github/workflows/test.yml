@@ -16,7 +16,6 @@ jobs:
     steps:
       - name: make slurm script
         run: |
-          bash
           printf "
             #!/bin/bash
             #SBATCH -J mcs_ga_build  # name of job
