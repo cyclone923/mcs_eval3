@@ -19,10 +19,10 @@ jobs:
           printf "
             #!/bin/bash
             #SBATCH -J mcs_ga_build  # name of job
-            #SBATCH -A eecs          # name of my sponsored account, e.g. class or research group, NOT ONID!
-            #SBATCH -p gpu           # name of partition or queue
-            #SBATCH -o mcs.out       # name of output file for this submission script
-            #SBATCH -e mcs.err       # name of error file for this submission script
+            #SBATCH -A eecs          # sponsored account
+            #SBATCH -p gpu           # partition or queue
+            #SBATCH -o mcs.out       # output file
+            #SBATCH -e mcs.err       # error file
             #SBATCH --nodelist=cn-gpu2
             module load gcc/6.5
             nohup /scratch/MCS/actions-runner/run.sh &
@@ -33,7 +33,7 @@ jobs:
         run: |
           # give slurm script to the submit server
           scp /tmp/mcs.sh $USER@submit-b.hpc.engr.oregonstate.edu:/tmp/mcs.sh
-          ssh $USER@submit-b.hpc.engr.oregonstate.edu "source /etc/profile.d/modules.sh; module avail; module load slurm; sbatch /tmp/mcs.sh"
+          ssh $USER@submit-b.hpc.engr.oregonstate.edu "$MODULESHOME/init/bash; module load slurm; sbatch /tmp/mcs.sh"
   notify:
     needs: build
     runs-on: [cn-gpu2]
