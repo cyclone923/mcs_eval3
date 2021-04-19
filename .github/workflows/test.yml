@@ -17,17 +17,16 @@ jobs:
       - name: make slurm script
         run: |
           printf "#!/bin/bash
-            #SBATCH -J mcs_ga_build  # name of job
-            #SBATCH -A eecs          # sponsored account
-            #SBATCH -p gpu           # partition or queue
-            #SBATCH -o mcs.out       # output file
-            #SBATCH -e mcs.err       # error file
-            #SBATCH --nodelist=cn-gpu2
-            module load gcc/6.5
-            nohup /scratch/MCS/actions-runner/run.sh &
-            export MCS_PID=$$!
-            sleep 1e4 # 3 hrs
-          " > /tmp/mcs.sh
+          #SBATCH -J mcs_ga_build  # name of job
+          #SBATCH -A eecs          # sponsored account
+          #SBATCH -p gpu           # partition or queue
+          #SBATCH -o mcs.out       # output file
+          #SBATCH -e mcs.err       # error file
+          #SBATCH --nodelist=cn-gpu2
+          module load gcc/6.5
+          nohup /scratch/MCS/actions-runner/run.sh &
+          export MCS_PID=$!
+          sleep 1e4 # 3 hrs" > /tmp/mcs.sh
       - name: launch gpu equipped runner
         run: |
           # give slurm script to the submit server
