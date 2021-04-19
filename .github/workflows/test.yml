@@ -39,6 +39,17 @@ jobs:
         shell: bash -l {0}
     steps:
       - uses: actions/checkout@v2
+      - uses: conda-incubator/setup-miniconda@v2
+        with:
+          python-version: 3.6.8
+          channels: conda-forge
+          channel-priority: true
+          auto-activate-base: true
+          use-only-tar-bz2: true
+      - run: conda info
+      - run: conda list
+      - run: conda config --show
+      - run: python -V
       - name: load modules
         run: |
           module load gcc/6.5
@@ -48,10 +59,6 @@ jobs:
         run: |
           cd $GITHUB_WORKSPACE
           export DISPLAY=:0
-          #conda create -n mcs_opics python=3.6.8
-          #conda activate mcs_opics
-          alias python=python3
-          alias pip=pip3
           pip install --upgrade pip
           pip install --upgrade setuptools
           pip install --upgrade wheel
