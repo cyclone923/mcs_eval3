@@ -54,9 +54,9 @@ jobs:
           python -m pip install git+https://github.com/NextCenturyCorporation/MCS@0.3.8
           pip install -r requirements.txt &> /dev/null
           pip show ai2thor
-          . setup_torch.sh #&> /dev/null
-          . setup_unity.sh #&> /dev/null
-          . setup_vision.sh #&> /dev/null
+          . setup_torch.sh &> /dev/null
+          . setup_unity.sh &> /dev/null
+          . setup_vision.sh &> /dev/null
           export PYTHONPATH=$PWD
       - name: test latest code
         run: |
