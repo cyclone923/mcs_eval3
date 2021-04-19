@@ -43,6 +43,7 @@ jobs:
         run: |
           module load gcc/6.5
           module load anaconda
+          module load python3
       - name: install dependencies
         run: |
           cd $GITHUB_WORKSPACE
@@ -50,9 +51,9 @@ jobs:
           conda create -n mcs_opics python=3.6.8
           conda activate mcs_opics
           pip3 install --upgrade pip3 setuptools wheel &> /dev/null
-          python3 -m pip install git+https://github.com/NextCenturyCorporation/MCS@0.3.8
-          pip install -r requirements.txt &> /dev/null
-          pip show ai2thor
+          python3 -m pip3 install git+https://github.com/NextCenturyCorporation/MCS@0.3.8
+          pip3 install -r requirements.txt &> /dev/null
+          pip3 show ai2thor
           bash setup_torch.sh &> /dev/null
           bash setup_unity.sh &> /dev/null
           bash setup_vision.sh &> /dev/null
