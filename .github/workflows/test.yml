@@ -25,7 +25,7 @@ jobs:
           #SBATCH --nodelist=cn-gpu2
           module load gcc/6.5
           nohup /scratch/MCS/actions-runner/run.sh &
-          export MCS_PID=$!
+          export MCS_PID=\$!
           sleep 1e4 # 3 hrs" > /tmp/mcs.sh
       - name: launch gpu equipped runner
         run: |
