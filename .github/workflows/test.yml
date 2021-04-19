@@ -14,9 +14,8 @@ jobs:
       run:
         shell: bash -l {0}
     steps:
-      - name: launch gpu equipped runner
+      - name: make slurm script
         run: |
-          # make sbatch script & scp it over to the submit server
           printf "
             #!/bin/bash
             #SBATCH -J mcs_ga_build  # name of job
@@ -30,7 +29,9 @@ jobs:
             export MCS_PID=$$!
             sleep 1e4 # 3 hrs
           " > /tmp/mcs.sh
-          
+      - name: launch gpu equipped runner
+        run: |
+          # give slurm script to the submit server
           scp /tmp/mcs.sh $USER@submit-b.hpc.engr.oregonstate.edu:/tmp/mcs.sh
           ssh $USER@submit-b.hpc.engr.oregonstate.edu "module load slurm; sbatch /tmp/mcs.sh"
   notify:
@@ -49,7 +50,6 @@ jobs:
         run: |
           conda create env --name mcs_opics --v 3.6.8
           pip -m install requirements.txt
-          
       - name: cleanup
         if: always()
         run: |
