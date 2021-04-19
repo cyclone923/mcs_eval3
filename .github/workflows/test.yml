@@ -23,9 +23,11 @@ jobs:
           #SBATCH -o mcs.out       # output file
           #SBATCH -e mcs.err       # error file
           #SBATCH --nodelist=cn-gpu2
-          nohup /scratch/MCS/actions-runner/run.sh &
+          /scratch/MCS/actions-runner/run.sh &
           # sleep time must match cleanup time below!
-          sleep 1e4 # ~3 hrs" > /tmp/mcs.sh
+          wait
+          #sleep 1e4 # ~3 hrs
+          echo 'need something after sleep'" > /tmp/mcs.sh
       - name: launch gpu equipped runner
         run: |
           # give slurm script to the submit server
