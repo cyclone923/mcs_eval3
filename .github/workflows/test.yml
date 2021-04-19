@@ -48,8 +48,8 @@ jobs:
         run: |
           cd $GITHUB_WORKSPACE
           export DISPLAY=:0
-          conda create -n mcs_opics python=3.6.8
-          conda activate mcs_opics
+          anaconda create -n mcs_opics python=3.6.8
+          anaconda activate mcs_opics
           alias python=python3
           pip install --upgrade pip setuptools wheel &> /dev/null
           python -m pip install git+https://github.com/NextCenturyCorporation/MCS@0.3.8
