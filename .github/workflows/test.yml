@@ -18,17 +18,17 @@ jobs:
         run: |
           # make sbatch script & scp it over to the submit server
           printf "
-            #!/bin/bash
-            #SBATCH -J mcs_ga_build  # name of job
-            #SBATCH -A eecs          # name of my sponsored account, e.g. class or research group, NOT ONID!
-            #SBATCH -p gpu           # name of partition or queue
-            #SBATCH -o mcs.out       # name of output file for this submission script
-            #SBATCH -e mcs.err       # name of error file for this submission script
-            #SBATCH --nodelist=cn-gpu2
-            module load gcc/6.5
-            nohup /scratch/MCS/actions-runner/run.sh &
-            export MCS_PID=$!
-            sleep 3000
+            #!/bin/bash\n
+            #SBATCH -J mcs_ga_build  # name of job\n
+            #SBATCH -A eecs          # name of my sponsored account, e.g. class or research group, NOT ONID!\n
+            #SBATCH -p gpu           # name of partition or queue\n
+            #SBATCH -o mcs.out       # name of output file for this submission script\n
+            #SBATCH -e mcs.err       # name of error file for this submission script\n
+            #SBATCH --nodelist=cn-gpu2\n
+            module load gcc/6.5\n
+            nohup /scratch/MCS/actions-runner/run.sh &\n
+            export MCS_PID=$!\n
+            sleep 1e4 # 3 hrs\n
           " > /tmp/mcs.sh
           
           scp /tmp/mcs.sh $USER@submit-b.hpc.engr.oregonstate.edu:/tmp/mcs.sh
