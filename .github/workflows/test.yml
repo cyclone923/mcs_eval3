@@ -51,6 +51,7 @@ jobs:
           #conda create -n mcs_opics python=3.6.8
           #conda activate mcs_opics
           alias python=python3
+          alias pip=pip3
           pip install --upgrade pip
           pip install --upgrade setuptools
           pip install --upgrade wheel
@@ -68,4 +69,4 @@ jobs:
         if: always()
         run: |
           # if you change the sleep time above, this needs changed too
-          pgrep sleep | xargs ps | grep 1e4 | cut -d ' ' -f 1 | xargs kill
+          pgrep sleep | xargs ps | grep 1e4 | xargs echo | cut -d ' ' -f 1 | xargs kill
