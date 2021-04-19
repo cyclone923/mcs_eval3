@@ -33,7 +33,7 @@ jobs:
         run: |
           # give slurm script to the submit server
           scp /tmp/mcs.sh $USER@submit-b.hpc.engr.oregonstate.edu:/tmp/mcs.sh
-          ssh -tt $USER@submit-b.hpc.engr.oregonstate.edu "source /etc/profile.d/modules.sh; source $MODULESHOME/init/bash; module avail; module load slurm; sbatch /tmp/mcs.sh"
+          ssh -tt $USER@submit-b.hpc.engr.oregonstate.edu "source /tmp/mod; source /etc/profile.d/modules.sh; source $MODULESHOME/init/bash; module avail; module load slurm; sbatch /tmp/mcs.sh"
   notify:
     needs: build
     runs-on: [cn-gpu2]
