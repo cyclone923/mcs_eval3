@@ -49,8 +49,8 @@ jobs:
           export DISPLAY=:0
           conda create -n mcs_opics python=3.6.8
           conda activate mcs_opics
-          pip install --upgrade pip setuptools wheel &> /dev/null
-          python -m pip install git+https://github.com/NextCenturyCorporation/MCS@0.3.8
+          pip3 install --upgrade pip3 setuptools wheel &> /dev/null
+          python3 -m pip install git+https://github.com/NextCenturyCorporation/MCS@0.3.8
           pip install -r requirements.txt &> /dev/null
           pip show ai2thor
           bash setup_torch.sh &> /dev/null
