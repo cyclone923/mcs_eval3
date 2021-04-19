@@ -8,7 +8,7 @@ on:
     branches: [ test.yaml-rob ] 
 
 jobs:
-  build:
+  start-gpu-runner:
     runs-on: [pelican]
     defaults:
       run:
@@ -23,17 +23,17 @@ jobs:
           #SBATCH -o mcs.out       # output file
           #SBATCH -e mcs.err       # error file
           #SBATCH --nodelist=cn-gpu2
-          module load gcc/6.5
           nohup /scratch/MCS/actions-runner/run.sh &
           export MCS_PID=\$!
-          sleep 1e4 # 3 hrs" > /tmp/mcs.sh
+          # sleep time must match cleanup time below!
+          sleep 1e4 # ~3 hrs" > /tmp/mcs.sh
       - name: launch gpu equipped runner
         run: |
           # give slurm script to the submit server
           scp /tmp/mcs.sh $USER@submit-b.hpc.engr.oregonstate.edu:/tmp/mcs.sh
           ssh -tt $USER@submit-b.hpc.engr.oregonstate.edu "source /etc/profile; module load slurm; sbatch /tmp/mcs.sh"
-  notify:
-    needs: build
+  gpu-runner-build:
+    needs: start-gpu-runner
     runs-on: [cn-gpu2]
     defaults:
       run:
@@ -44,12 +44,25 @@ jobs:
         run: |
           module load gcc/6.5
           module load anaconda
-      - name: install python dependencies
+      - name: install dependencies
         run: |
-          conda create env --name mcs_opics --v 3.6.8
-          pip -m install requirements.txt
+          cd $GITHUB_WORKSPACE
+          export DISPLAY=:0
+          conda create -n mcs_opics python=3.6.8
+          conda activate mcs_opics
+          pip install --upgrade pip setuptools wheel
+          python -m pip install git+https://github.com/NextCenturyCorporation/MCS@0.3.8
+          pip install -r requirements.txt
+          pip show ai2thor
+          bash setup_torch.sh
+          bash setup_unity.sh
+          bash setup_vision.sh
+          export PYTHONPATH=$PWD
+      - name: test latest code
+        run: |
+          python eval.py
       - name: cleanup
         if: always()
         run: |
-          echo $MCS_PID
-          kill $MCS_PID
+          # if you change the sleep time above, this needs changed too
+          pgrep sleep | xargs ps | grep 1e4 | cut -d ' ' -f 1 | xargs kill
