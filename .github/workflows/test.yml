@@ -16,7 +16,9 @@ jobs:
     steps:
       - name: launch gpu equipped runner
         run: |
-          echo "cd /scratch/mcs/actions-runner; nohup ./run.sh & sleep 6 && exit" > /tmp/ga_run && srun -A eecs -gpu --nodelist=cn-gpu2 --gres=gpu:1 --pty /tmp/ga_run
+          echo "/scratch/MCS/actions-runner/run.sh & export MCS_PID=$! && sleep 1e4" > /tmp/mcs.sh
+          scp /tmp/mcs.sh $USER@submit-b.hpc.engr.oregonstate.edu:/tmp/mcs.sh
+          ssh $USER@submit-b.hpc.engr.oregonstate.edu "module load slurm; sbatch /tmp/mcs.sh"
   notify:
     needs: build
     runs-on: [cn-gpu2]
@@ -25,5 +27,8 @@ jobs:
         shell: bash -l {0}
     steps:
       - uses: actions/checkout@v2
-      - name: test latest code
-        run: echo toast?
+      - name: cleanup
+        if: always()
+        run: |
+          echo $MCS_PID
+          kill $MCS_PID
