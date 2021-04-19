@@ -16,8 +16,7 @@ jobs:
     steps:
       - name: make slurm script
         run: |
-          printf "
-            #!/bin/bash
+          printf "#!/bin/bash
             #SBATCH -J mcs_ga_build  # name of job
             #SBATCH -A eecs          # sponsored account
             #SBATCH -p gpu           # partition or queue
