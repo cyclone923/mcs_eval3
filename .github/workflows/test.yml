@@ -41,26 +41,19 @@ jobs:
         shell: bash -l {0}
     steps:
       - uses: actions/checkout@v2
-      - uses: conda-incubator/setup-miniconda@v2
+      - name: Set up Python 3.6.8
+        uses: actions/setup-python@v2
         with:
           python-version: 3.6.8
-          channels: conda-forge
-          channel-priority: true
-          auto-activate-base: true
-          use-only-tar-bz2: true
-      - run: conda info
-      - run: conda list
-      - run: conda config --show
-      - run: python -V
       - name: load modules
         run: |
           module load gcc/6.5
-          module load anaconda
-          module load python3
+          # module load anaconda
+          # module load python3
       - name: install dependencies
         run: |
           cd $GITHUB_WORKSPACE
-          export DISPLAY=:0
+          export DISPLAY=:0 # needs to be updated using AWK cmd from Yelle!
           pip install --upgrade pip
           pip install --upgrade setuptools
           pip install --upgrade wheel
@@ -78,4 +71,5 @@ jobs:
         if: always()
         run: |
           # if you change the sleep time above, this needs changed too
-          pgrep sleep | xargs ps | grep 1e4 | xargs echo | cut -d ' ' -f 1 | xargs kill
+          # pgrep sleep | xargs ps | grep 1e4 | xargs echo | cut -d ' ' -f 1 | xargs kill
+          pkill run.sh # need to make more specific!!
