@@ -15,7 +15,7 @@ echo '==== STDOUT ===='
 cat mcs.out
 echo '==== STDERR ===='
 cat mcs.err
-
+ 
 # check if the build failed/passed
 if ! grep 69420 mcs.out; 
   then exit 404; 
