@@ -53,8 +53,11 @@ jobs:
           python -V
           cd $GITHUB_WORKSPACE
           export OUR_XPID=`nvidia-smi | grep Xorg | awk '{print $5}'`
+          echo $OUR_XPID
           export XPIDS=`pgrep Xorg | xargs ps`
+          echo $XPIDS
           export DISPLAY=`echo $XPIDS | grep $OUR_XPID | awk '{print $6}'`
+          echo $DISPLAY
           pip install --upgrade pip
           pip install --upgrade setuptools
           pip install --upgrade wheel
@@ -66,10 +69,8 @@ jobs:
           setup_unity.sh &> /dev/null
           setup_vision.sh &> /dev/null
           export PYTHONPATH=$PWD
+          # needs to be in this run context for unknown reason
           python3 eval.py
-      - name: test latest code
-        run: |
-          python eval.py
       - name: cleanup
         if: always()
         run: |
