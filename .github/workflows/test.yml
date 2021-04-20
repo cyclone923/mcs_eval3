@@ -25,6 +25,8 @@ jobs:
           #SBATCH --gres=gpu:1     # request 1 GPU
           #SBATCH --nodelist=cn-gpu2
           srun -N1 -n1 sleep 840 &
+          module load cuda
+          nvidia-smi
           /scratch/MCS/actions-runner/run.sh" > /tmp/mcs.sh
       - name: launch gpu equipped runner
         run: |
