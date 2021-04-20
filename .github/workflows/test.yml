@@ -39,8 +39,8 @@ jobs:
           cd mcs_opics
           git checkout test.yaml-rob
           git pull
-          export OUR_XPID=`nvidia-smi | grep Xorg | awk '{print $5}'`
-          export DISPLAY=`pgrep Xorg | xargs ps | grep $OUR_XPID | awk '{print $6}'`
+          export OUR_XPID=\\\`nvidia-smi | grep Xorg | awk '{print $5}'\\\`
+          export DISPLAY=\\\`pgrep Xorg | xargs ps | grep $OUR_XPID | awk '{print $6}'\\\`
           echo $DISPLAY
           pip install --upgrade pip
           pip install --upgrade setuptools
