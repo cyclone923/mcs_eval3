@@ -72,7 +72,7 @@ jobs:
             source /etc/profile; module load slurm; RES=$(sbatch /tmp/mcs.sh)
             $SJOBID=${RES##*}
             # wait for gpu job to finish
-            until [sacct -j $SJOBID | grep COMPLETED]
+            until [[sacct -j $SJOBID | grep COMPLETED] || [sacct -h $SJOBID | grep CANCELLED]]
             do
               sleep 5
             done
@@ -83,4 +83,3 @@ jobs:
             # check if the build failed/passed
             if ! cat mcs.out | grep 69420; then exit 404; fi
           "
-
