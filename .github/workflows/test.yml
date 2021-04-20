@@ -66,9 +66,9 @@ jobs:
       - name: make submit script
         run: |
           printf "#!/bin/bash
-          source /etc/profile; # makes 'module load' work
-          module load slurm; 
-          RES=$(sbatch /tmp/mcs.sh)
+          source /etc/profile # makes 'module load' work
+          module load slurm
+          RES=$(sbatch /tmp/mcs_slurm.sh)
           SJOBID=${RES##*}
           # wait for gpu job to finish
           until [[sacct -j $SJOBID | grep COMPLETED] || [sacct -h $SJOBID | grep CANCELLED]]
