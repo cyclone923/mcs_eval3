@@ -78,9 +78,9 @@ jobs:
             do
               sleep 5
             done
-            echo "==== STDOUT ===="
+            echo '==== STDOUT ===='
             cat mcs.out
-            echo "==== STDERR ===="
+            echo '==== STDERR ===='
             cat mcs.err
             # check if the build failed/passed
             if ! cat mcs.out | grep 69420; then exit 404; fi
