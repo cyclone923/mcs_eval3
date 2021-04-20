@@ -1,6 +1,6 @@
 rm -fr mcs_opics &> /dev/null
 git clone https://github.com/MCS-OSU/mcs_opics.git &> /dev/null
-cd mcs_opics &> /dev/null
+cd mcs_opics
 git checkout test.yaml-rob &> /dev/null
 git pull &> /dev/null
 
