@@ -35,7 +35,6 @@ class MCSVIDEODetection(Detection):
         '''
         super(MCSVIDEODetection, self).__init__(image_path,
                                             mask_out_ch,
-                                            option.sem_weights,
                                             transform,
                                             AnnotationTransform(option),
                                             running_mode,
