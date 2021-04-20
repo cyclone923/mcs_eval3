@@ -54,7 +54,9 @@ jobs:
           cd $GITHUB_WORKSPACE          
           # need to get working to make more robust
           export test=`nvidia-smi | grep --line-buffered Xorg | awk '{print $5}'`
-          export DISPLAY=`pgrep Xorg | xargs ps | grep $test --line-buffered | awk '{print $6}'`
+          echo $DISPLAY
+          echo "--------"
+          export DISPLAY=`pgrep Xorg | xargs ps | grep --line-buffered $test | awk '{print $6}'`
           echo $DISPLAY
           export DISPLAY=:0
           pip install --upgrade pip
