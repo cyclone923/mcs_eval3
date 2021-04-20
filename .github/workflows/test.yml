@@ -45,6 +45,8 @@ jobs:
         run: |
           module load gcc/6.5
           module load python3/3.7
+          alias pip=pip3
+          alias python=python3
           python -V
       - name: install dependencies
         run: |
