@@ -24,6 +24,7 @@ jobs:
           #SBATCH -e mcs.err       # error file
           #SBATCH --gres=gpu:1     # request 1 GPU
           #SBATCH --nodelist=cn-gpu2
+          # sleep time must match cleanup time below!
           srun -N1 -n1 sleep 1e4 & # ~3 hrs
           module load gcc/6.5
           nvidia-smi
@@ -55,9 +56,22 @@ jobs:
           cp gravity_scenes/gravity_support_ex_01.json different_scenes
           # agent code in this branch explodes
           rm different_scenes/preference_0001_01.json
-          python eval.py" > /tmp/mcs.sh
+          python eval.py
+          # kill the process keeping the slurm job open
+          # if you change the sleep time above, this needs changed too
+          pgrep sleep | xargs ps | grep 1e4 | xargs echo | cut -d ' ' -f 1 | xargs kill" > /tmp/mcs.sh
       - name: launch gpu equipped runner
         run: |
           # give slurm script to the submit server
           scp /tmp/mcs.sh $USER@submit-b.hpc.engr.oregonstate.edu:/tmp/mcs.sh
-          ssh -tt $USER@submit-b.hpc.engr.oregonstate.edu "source /etc/profile; module load slurm; sbatch /tmp/mcs.sh"
+          ssh -tt $USER@submit-b.hpc.engr.oregonstate.edu 
+          "
+            source /etc/profile; module load slurm; RES=$(sbatch /tmp/mcs.sh)
+            $SJOBID=${RES##*}
+            # wait for gpu job to finish
+            until [sacct -j $SJOBID | grep COMPLETED | wc -l]
+            do
+              sleep 5
+            done
+          "
+
