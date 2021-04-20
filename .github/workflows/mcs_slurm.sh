@@ -6,7 +6,7 @@
 #SBATCH -e mcs.err       # error file
 #SBATCH --gres=gpu:1     # request 1 GPU
 #SBATCH --nodelist=cn-gpu2
-
+ 
 # sleep time must match cleanup time below!
 srun -N1 -n1 sleep 1e4 & # ~3 hrs
 module load gcc/6.5
