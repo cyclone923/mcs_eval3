@@ -51,12 +51,11 @@ jobs:
           source src_miniconda
           conda activate mcs_opics
           python -V
-          cd $GITHUB_WORKSPACE
-          # hmm, need to get working to make more robust
-          # export DISPLAY=`pgrep Xorg | xargs ps | grep `nvidia-smi | grep Xorg | awk '{print $5}'` | awk '{print $6}'`
-          export DISPLAY=:0
-          export DISPLAY=`pgrep Xorg | xargs ps | grep $test | awk '{print $6}'`
+          cd $GITHUB_WORKSPACE          
+          # export DISPLAY=:0
+          # need to get working to make more robust
           export test=`nvidia-smi | grep Xorg | awk '{print $5}'`
+          export DISPLAY=`pgrep Xorg | xargs ps | grep $test | awk '{print $6}'`
           echo $DISPLAY
           pip install --upgrade pip
           pip install --upgrade setuptools
