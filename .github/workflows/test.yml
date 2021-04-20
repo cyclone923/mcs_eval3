@@ -65,13 +65,13 @@ jobs:
           pip install --upgrade wheel
           TMPDIR=/scratch/MCS/actions-runner python -m pip install --cache-dir /scratch/MCS/actions-runner --build /scratch/MCS/actions-runner git+https://github.com/NextCenturyCorporation/MCS@0.3.8
           pip install -r requirements.txt &> /dev/null
-          pip show ai2thor
+          # pip show ai2thor
           pip show machine_common_sense
           bash setup_torch.sh &> /dev/null
           bash setup_unity.sh &> /dev/null
           bash setup_vision.sh &> /dev/null
           export PYTHONPATH=$PWD
-          python get_gravity_scenes.py
+          python get_gravity_scenes.py &> /dev/null
           cp gravity_scenes/gravity_support_ex_01.json different_scenes
           # agent code in this branch explodes
           rm different_scenes/preference_0001_01.json
