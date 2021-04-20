@@ -23,7 +23,7 @@ jobs:
           #SBATCH -o mcs.out       # output file
           #SBATCH -e mcs.err       # error file
           #SBATCH --nodelist=cn-gpu2
-          srun -N1 -n1 sleep 999999 &
+          srun -N1 -n1 sleep 420 &
           /scratch/MCS/actions-runner/run.sh
           wait
           # sleep time must match cleanup time below!
@@ -41,15 +41,11 @@ jobs:
         shell: bash -l {0}
     steps:
       - uses: actions/checkout@v2
-      - name: Set up Python 3.6.8
-        uses: actions/setup-python@v2
-        with:
-          python-version: 3.6.8
       - name: load modules
         run: |
           module load gcc/6.5
-          # module load anaconda
-          # module load python3
+          module load python3/3.7
+          python -V
       - name: install dependencies
         run: |
           cd $GITHUB_WORKSPACE
