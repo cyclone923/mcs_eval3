@@ -1,3 +1,9 @@
+rm -fr mcs_opics
+git clone https://github.com/MCS-OSU/mcs_opics.git
+cd mcs_opics
+git checkout test.yaml-rob
+git pull
+
 # makes 'module load' work
 source /etc/profile
 module load slurm
@@ -12,11 +18,11 @@ done
 
 # copy output to github actions logs
 echo '==== STDOUT ===='
-cat mcs.out
+cat ../mcs.out
 echo '==== STDERR ===='
-cat mcs.err
+cat ../mcs.err
 
 # check if the build failed/passed
-if ! cat mcs.out | grep 69420; 
+if ! grep 69420 ../mcs.out; 
   then exit 404; 
 fi
