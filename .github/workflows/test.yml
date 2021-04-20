@@ -24,48 +24,28 @@ jobs:
           #SBATCH -e mcs.err       # error file
           #SBATCH --gres=gpu:1     # request 1 GPU
           #SBATCH --nodelist=cn-gpu2
-          srun -N1 -n1 sleep 840 &
-          module load cuda
-          nvidia-smi
-          /scratch/MCS/actions-runner/run.sh" > /tmp/mcs.sh
-      - name: launch gpu equipped runner
-        run: |
-          # give slurm script to the submit server
-          scp /tmp/mcs.sh $USER@submit-b.hpc.engr.oregonstate.edu:/tmp/mcs.sh
-          ssh -tt $USER@submit-b.hpc.engr.oregonstate.edu "source /etc/profile; module load slurm; sbatch /tmp/mcs.sh"
-  gpu-runner-build:
-    needs: start-gpu-runner
-    runs-on: [cn-gpu2]
-    defaults:
-      run:
-        shell: bash -l {0}
-    steps:
-      - uses: actions/checkout@v2
-      - name: load modules
-        run: |
+          srun -N1 -n1 sleep 1e4 & # ~3 hrs
           module load gcc/6.5
-          #module load python3/3.7
-          #alias pip=pip3
-          #alias python=python3
-          #python -V
-      - name: install dependencies
-        run: |
-          module load cuda
           nvidia-smi
           cd /scratch/MCS
           source src_miniconda
           conda activate mcs_opics
           python -V
-          cd $GITHUB_WORKSPACE          
+          rm -fr mcs_eval3
+          rm -fr mcs_opics
+          git clone https://github.com/MCS-OSU/mcs_opics.git
+          cd mcs_opics
+          git checkout test.yaml-rob
+          git pull
           export OUR_XPID=`nvidia-smi | grep Xorg | awk '{print $5}'`
           export DISPLAY=`pgrep Xorg | xargs ps | grep $OUR_XPID | awk '{print $6}'`
           echo $DISPLAY
           pip install --upgrade pip
           pip install --upgrade setuptools
           pip install --upgrade wheel
-          TMPDIR=/scratch/MCS/actions-runner python -m pip install --cache-dir /scratch/MCS/actions-runner --build /scratch/MCS/actions-runner git+https://github.com/NextCenturyCorporation/MCS@0.3.8
+          mkdir tmp -p # /tmp was full
+          TMPDIR=/scratch/MCS/tmp python -m pip install --cache-dir /scratch/MCS/tmp --build /scratch/MCS/tmp git+http$
           pip install -r requirements.txt &> /dev/null
-          # pip show ai2thor
           pip show machine_common_sense
           bash setup_torch.sh &> /dev/null
           bash setup_unity.sh &> /dev/null
@@ -75,9 +55,9 @@ jobs:
           cp gravity_scenes/gravity_support_ex_01.json different_scenes
           # agent code in this branch explodes
           rm different_scenes/preference_0001_01.json
-          # needs to be in this run context for unknown reason
-          python eval.py
-      - name: cleanup
-        if: always()
+          python eval.py" > /tmp/mcs.sh
+      - name: launch gpu equipped runner
         run: |
-          pkill run.sh # need to make more specific!!
+          # give slurm script to the submit server
+          scp /tmp/mcs.sh $USER@submit-b.hpc.engr.oregonstate.edu:/tmp/mcs.sh
+          ssh -tt $USER@submit-b.hpc.engr.oregonstate.edu "source /etc/profile; module load slurm; sbatch /tmp/mcs.sh"
