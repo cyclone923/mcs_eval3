@@ -55,6 +55,8 @@ jobs:
           # hmm, need to get working to make more robust
           # export DISPLAY=`pgrep Xorg | xargs ps | grep `nvidia-smi | grep Xorg | awk '{print $5}'` | awk '{print $6}'`
           export DISPLAY=:0
+          export DISPLAY=`pgrep Xorg | xargs ps | grep $test | awk '{print $6}'`
+          export test=`nvidia-smi | grep Xorg | awk '{print $5}'`
           echo $DISPLAY
           pip install --upgrade pip
           pip install --upgrade setuptools
