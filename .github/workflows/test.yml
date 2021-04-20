@@ -27,6 +27,7 @@ jobs:
           # sleep time must match cleanup time below!
           srun -N1 -n1 sleep 1e4 & # ~3 hrs
           module load gcc/6.5
+          module load cuda
           nvidia-smi
           cd /scratch/MCS
           source src_miniconda
