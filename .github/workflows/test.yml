@@ -66,15 +66,6 @@ jobs:
       - name: make submit script
         run: |
           printf "
-            source /etc/profile # makes 'module load' work
-            module load slurm
-            RES=$(sbatch /tmp/mcs_slurm.sh)
-            SJOBID=${RES##*}
-            # wait for gpu job to finish
-            until [[sacct -j $SJOBID | grep COMPLETED] || [sacct -h $SJOBID | grep CANCELLED]]
-            do
-              sleep 5
-            done
             echo '==== STDOUT ===='
             cat mcs.out
             echo '==== STDERR ===='
@@ -87,4 +78,4 @@ jobs:
           # give slurm script to the submit server
           scp /tmp/mcs_slurm.sh $USER@submit-b.hpc.engr.oregonstate.edu:/tmp/mcs_slurm.sh
           scp /tmp/mcs_submit.sh $USER@submit-b.hpc.engr.oregonstate.edu:/tmp/mcs_submit.sh
-          ssh -tt $USER@submit-b.hpc.engr.oregonstate.edu "source /etc/profile; module load slurm; source /tmp/mcs_submit.sh"
+          ssh -tt $USER@submit-b.hpc.engr.oregonstate.edu "source /etc/profile; module load slurm; RES=$(sbatch /tmp/mcs_slurm.sh); SJOBID=${RES##*}; until [[sacct -j $SJOBID | grep COMPLETED] || [sacct -h $SJOBID | grep CANCELLED]]; do; sleep 5; done; source /tmp/mcs_submit.sh"
