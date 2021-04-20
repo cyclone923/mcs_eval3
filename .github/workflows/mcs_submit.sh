@@ -3,6 +3,7 @@ source /etc/profile
 module load slurm
 
 RES=$(sbatch /tmp/mcs_slurm.sh)
+echo $SJOBID;exit 3
 SJOBID=${RES##*}
 echo $SJOBID
 
