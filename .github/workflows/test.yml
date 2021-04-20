@@ -44,28 +44,31 @@ jobs:
       - name: load modules
         run: |
           module load gcc/6.5
-          module load python3/3.7
-          alias pip=pip3
-          alias python=python3
-          python3 -V
+          #module load python3/3.7
+          #alias pip=pip3
+          #alias python=python3
+          #python -V
       - name: install dependencies
         run: |
+          cd /scratch/MCS
+          source src_miniconda
+          conda activate mcs_opics
+          #python -V
           cd $GITHUB_WORKSPACE
           export DISPLAY=:0 # needs to be updated using AWK cmd from Yelle!
-          pip3 install --upgrade pip3
-          pip3 install --upgrade setuptools
-          pip3 install --upgrade wheel
+          pip install --upgrade pip
+          pip install --upgrade setuptools
+          pip install --upgrade wheel
           TMPDIR=/scratch/MCS/actions-runner python3 -m pip3 install --cache-dir /scratch/MCS/actions-runner --build /scratch/MCS/actions-runner git+https://github.com/NextCenturyCorporation/MCS@0.3.8
-          # python -m pip install git+https://github.com/NextCenturyCorporation/MCS@0.3.8
-          pip3 install -r requirements.txt &> /dev/null
-          pip3 show ai2thor
-          . setup_torch.sh &> /dev/null
-          . setup_unity.sh &> /dev/null
-          . setup_vision.sh &> /dev/null
+          pip install -r requirements.txt &> /dev/null
+          pip show ai2thor
+          setup_torch.sh &> /dev/null
+          setup_unity.sh &> /dev/null
+          setup_vision.sh &> /dev/null
           export PYTHONPATH=$PWD
       - name: test latest code
         run: |
-          python3 eval.py
+          python eval.py
       - name: cleanup
         if: always()
         run: |
