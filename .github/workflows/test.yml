@@ -67,4 +67,10 @@ jobs:
           # give slurm script to the submit server
           scp /tmp/mcs_slurm.sh $USER@submit-b.hpc.engr.oregonstate.edu:/tmp/mcs_slurm.sh
           scp /tmp/mcs_submit.sh $USER@submit-b.hpc.engr.oregonstate.edu:/tmp/mcs_submit.sh
-          ssh -tt $USER@submit-b.hpc.engr.oregonstate.edu "source .github/workflows/mcs_submit.sh"
+          ssh -tt $USER@submit-b.hpc.engr.oregonstate.edu "
+            rm -fr mcs_opics &> /dev/null; 
+            git clone https://github.com/MCS-OSU/mcs_opics.git &> /dev/null; 
+            cd mcs_opics; git checkout test.yaml-rob &> /dev/null; 
+            git pull &> /dev/null; 
+            source .github/workflows/mcs_submit.sh
+          "
