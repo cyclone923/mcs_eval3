@@ -12,11 +12,11 @@ done
 
 # copy output to github actions logs
 echo '==== STDOUT ===='
-cat ../mcs.out
+cat mcs.out
 echo '==== STDERR ===='
-cat ../mcs.err
+cat mcs.err
 
 # check if the build failed/passed
-if ! grep 69420 ../mcs.out; 
+if ! grep 69420 mcs.out; 
   then exit 404; 
 fi
