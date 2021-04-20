@@ -1,8 +1,8 @@
-rm -fr mcs_opics
-git clone https://github.com/MCS-OSU/mcs_opics.git
-cd mcs_opics
-git checkout test.yaml-rob
-git pull
+rm -fr mcs_opics &> /dev/null
+git clone https://github.com/MCS-OSU/mcs_opics.git &> /dev/null
+cd mcs_opics &> /dev/null
+git checkout test.yaml-rob &> /dev/null
+git pull &> /dev/null
 
 # makes 'module load' work
 source /etc/profile
