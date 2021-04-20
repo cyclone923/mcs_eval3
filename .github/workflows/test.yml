@@ -52,11 +52,7 @@ jobs:
           conda activate mcs_opics
           python -V
           cd $GITHUB_WORKSPACE
-          export OUR_XPID=`nvidia-smi | grep Xorg | awk '{print $5}'`
-          echo $OUR_XPID
-          export XPIDS=`pgrep Xorg | xargs ps`
-          echo $XPIDS
-          export DISPLAY=`echo $XPIDS | grep $OUR_XPID | awk '{print $6}'`
+          export DISPLAY=`pgrep Xorg | xargs ps | grep `nvidia-smi | grep Xorg | awk '{print $5}'` | awk '{print $6}'`
           echo $DISPLAY
           pip install --upgrade pip
           pip install --upgrade setuptools
