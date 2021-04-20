@@ -52,7 +52,9 @@ jobs:
           conda activate mcs_opics
           python -V
           cd $GITHUB_WORKSPACE
-          export DISPLAY=`pgrep Xorg | xargs ps | grep `nvidia-smi | grep Xorg | awk '{print $5}'` | awk '{print $6}'`
+          # hmm, need to get working to make more robust
+          # export DISPLAY=`pgrep Xorg | xargs ps | grep `nvidia-smi | grep Xorg | awk '{print $5}'` | awk '{print $6}'`
+          export DISPLAY=:0
           echo $DISPLAY
           pip install --upgrade pip
           pip install --upgrade setuptools
@@ -65,8 +67,12 @@ jobs:
           setup_unity.sh &> /dev/null
           setup_vision.sh &> /dev/null
           export PYTHONPATH=$PWD
+          python get_gravity_scenes.py
+          cp gravity_scenes/gravity_support_ex_01.json different_scenes
+          # agent code in this branch explodes
+          rm different_scenes/preference_0001_01.json
           # needs to be in this run context for unknown reason
-          python3 eval.py
+          python eval.py
       - name: cleanup
         if: always()
         run: |
