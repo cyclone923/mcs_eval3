@@ -8,7 +8,7 @@ on:
     branches: [ test.yaml-rob ] 
 
 jobs:
-  start-gpu-runner:
+  build_with_gpu:
     runs-on: [pelican]
     defaults:
       run:
@@ -71,7 +71,7 @@ jobs:
             source /etc/profile; module load slurm; RES=$(sbatch /tmp/mcs.sh)
             $SJOBID=${RES##*}
             # wait for gpu job to finish
-            until [sacct -j $SJOBID | grep COMPLETED | wc -l]
+            until [sacct -j $SJOBID | grep COMPLETED]
             do
               sleep 5
             done
