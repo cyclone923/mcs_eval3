@@ -47,6 +47,7 @@ jobs:
           #python -V
       - name: install dependencies
         run: |
+          nvidia-smi
           cd /scratch/MCS
           source src_miniconda
           conda activate mcs_opics
