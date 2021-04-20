@@ -87,4 +87,4 @@ jobs:
           # give slurm script to the submit server
           scp /tmp/mcs_slurm.sh $USER@submit-b.hpc.engr.oregonstate.edu:/tmp/mcs_slurm.sh
           scp /tmp/mcs_submit.sh $USER@submit-b.hpc.engr.oregonstate.edu:/tmp/mcs_submit.sh
-          ssh -tt $USER@submit-b.hpc.engr.oregonstate.edu "source /tmp/mcs_submit.sh"
+          ssh -tt $USER@submit-b.hpc.engr.oregonstate.edu "source /etc/profile; module load slurm; source /tmp/mcs_submit.sh"
