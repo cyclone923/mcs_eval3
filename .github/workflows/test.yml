@@ -22,6 +22,7 @@ jobs:
           #SBATCH -p gpu           # partition or queue
           #SBATCH -o mcs.out       # output file
           #SBATCH -e mcs.err       # error file
+          #SBATCH --gres=gpu:1     # request 1 GPU
           #SBATCH --nodelist=cn-gpu2
           srun -N1 -n1 sleep 840 &
           /scratch/MCS/actions-runner/run.sh" > /tmp/mcs.sh
@@ -53,13 +54,8 @@ jobs:
           conda activate mcs_opics
           python -V
           cd $GITHUB_WORKSPACE          
-          # need to get working to make more robust
-          export test=`nvidia-smi | grep --line-buffered Xorg | awk '{print $5}'`
-          echo $DISPLAY
-          echo "--------"
-          export DISPLAY=`pgrep Xorg | xargs ps | grep --line-buffered $test | awk '{print $6}'`
-          echo $DISPLAY
-          export DISPLAY=:0
+          export OUR_XPID=`nvidia-smi | grep Xorg | awk '{print $5}'`
+          export DISPLAY=`pgrep Xorg | xargs ps | grep $OUR_XPID | awk '{print $6}'`
           pip install --upgrade pip
           pip install --upgrade setuptools
           pip install --upgrade wheel
