@@ -5,7 +5,7 @@ module load slurm
 RES=$(sbatch /tmp/mcs_slurm.sh)
 SJOBID=${RES##*}
 # wait for gpu job to finish
-until [[sacct -j $SJOBID | grep COMPLETED] || [sacct -h $SJOBID | grep CANCELLED]]
+until [ `sacct -j $SJOBID | grep COMPLETED | wc -l` -gt 0 -o `sacct -h $SJOBID | grep CANCELLED | wc -l` -gt 0 ]
 do
   sleep 5
 done
