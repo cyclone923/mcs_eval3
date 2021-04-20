@@ -24,10 +24,7 @@ jobs:
           #SBATCH -e mcs.err       # error file
           #SBATCH --nodelist=cn-gpu2
           srun -N1 -n1 sleep 840 &
-          /scratch/MCS/actions-runner/run.sh
-          wait
-          # sleep time must match cleanup time below!
-          # sleep 1e4 # ~3 hrs" > /tmp/mcs.sh
+          /scratch/MCS/actions-runner/run.sh" > /tmp/mcs.sh
       - name: launch gpu equipped runner
         run: |
           # give slurm script to the submit server
@@ -64,16 +61,16 @@ jobs:
           TMPDIR=/scratch/MCS/actions-runner python -m pip install --cache-dir /scratch/MCS/actions-runner --build /scratch/MCS/actions-runner git+https://github.com/NextCenturyCorporation/MCS@0.3.8
           pip install -r requirements.txt &> /dev/null
           pip show ai2thor
+          pip show machine_common_sense
           setup_torch.sh &> /dev/null
           setup_unity.sh &> /dev/null
           setup_vision.sh &> /dev/null
           export PYTHONPATH=$PWD
+          python3 eval.py
       - name: test latest code
         run: |
           python eval.py
       - name: cleanup
         if: always()
         run: |
-          # if you change the sleep time above, this needs changed too
-          # pgrep sleep | xargs ps | grep 1e4 | xargs echo | cut -d ' ' -f 1 | xargs kill
           pkill run.sh # need to make more specific!!
