@@ -62,26 +62,28 @@ jobs:
           echo 69420
           # kill the process keeping the slurm job open
           # if you change the sleep time above, this needs changed too
-          pgrep sleep | xargs ps | grep 1e4 | xargs echo | cut -d ' ' -f 1 | xargs kill" > /tmp/mcs.sh
-      - name: launch gpu slurm build job
+          pgrep sleep | xargs ps | grep 1e4 | xargs echo | cut -d ' ' -f 1 | xargs kill" > /tmp/mcs_slurm.sh
+      - name: make submit script
+        run: |
+          printf "#!/bin/bash
+          source /etc/profile; # makes 'module load' work
+          module load slurm; 
+          RES=$(sbatch /tmp/mcs.sh)
+          SJOBID=${RES##*}
+          # wait for gpu job to finish
+          until [[sacct -j $SJOBID | grep COMPLETED] || [sacct -h $SJOBID | grep CANCELLED]]
+          do
+            sleep 5
+          done
+          echo '==== STDOUT ===='
+          cat mcs.out
+          echo '==== STDERR ===='
+          cat mcs.err
+          # check if the build failed/passed
+          if ! cat mcs.out | grep 69420; then exit 404; fi" > /tmp/mcs_submit.sh
+      - name: submit slurm gpu job
         run: |
           # give slurm script to the submit server
-          scp /tmp/mcs.sh $USER@submit-b.hpc.engr.oregonstate.edu:/tmp/mcs.sh
-          ssh -tt $USER@submit-b.hpc.engr.oregonstate.edu 
-          "
-            source /etc/profile; # makes 'module load' work;
-            module load slurm; 
-            RES=$(sbatch /tmp/mcs.sh);
-            SJOBID=${RES##*};
-            # wait for gpu job to finish;
-            until [[sacct -j $SJOBID | grep COMPLETED] || [sacct -h $SJOBID | grep CANCELLED]];
-            do;
-              sleep 5;
-            done;
-            echo '==== STDOUT ====';
-            cat mcs.out;
-            echo '==== STDERR ====';
-            cat mcs.err;
-            # check if the build failed/passed;
-            if ! cat mcs.out | grep 69420; then exit 404; fi;
-          "
+          scp /tmp/mcs_slurm.sh $USER@submit-b.hpc.engr.oregonstate.edu:/tmp/mcs_slurm.sh
+          scp /tmp/mcs_submit.sh $USER@submit-b.hpc.engr.oregonstate.edu:/tmp/mcs_submit.sh
+          ssh -tt $USER@submit-b.hpc.engr.oregonstate.edu "bash /tmp/mcs_submit.sh"
