@@ -59,7 +59,7 @@ jobs:
           pip install --upgrade pip
           pip install --upgrade setuptools
           pip install --upgrade wheel
-          TMPDIR=/scratch/MCS/actions-runner python3 -m pip3 install --cache-dir /scratch/MCS/actions-runner --build /scratch/MCS/actions-runner git+https://github.com/NextCenturyCorporation/MCS@0.3.8
+          TMPDIR=/scratch/MCS/actions-runner python -m pip install --cache-dir /scratch/MCS/actions-runner --build /scratch/MCS/actions-runner git+https://github.com/NextCenturyCorporation/MCS@0.3.8
           pip install -r requirements.txt &> /dev/null
           pip show ai2thor
           setup_torch.sh &> /dev/null
