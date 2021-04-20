@@ -13,13 +13,18 @@ module load gcc/6.5
 module load cuda
 nvidia-smi
 cd /scratch/MCS
-#source src_miniconda
-mkdir -p miniconda3
-wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda3/miniconda.sh
-bash miniconda3/miniconda.sh -b -u -p miniconda3
-miniconda3/bin/conda init bash
+
+# if conda not setup
+if ! [ -d "miniconda3" ]; then
+ mkdir -p miniconda3
+ wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda3/miniconda.sh
+ bash miniconda3/miniconda.sh -b -u -p miniconda3
+ miniconda3/bin/conda init bash
+ conda create -n mcs_opics python=3.6.8  
+fi
 conda activate mcs_opics
-python -V
+python -V;exit
+
 rm -fr mcs_opics
 git clone https://github.com/MCS-OSU/mcs_opics.git
 cd mcs_opics
