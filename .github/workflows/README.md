@@ -27,11 +27,22 @@ Disconnect the current tmux server by pressing Ctrl+b followed by d. Your runner
 
 ## RESTRICTED GUI WITH GPU:
 
--X11 all the way thru version. Can't see unity render but can ease development by opening saving images to the file system & view them with dolphin & eog: 
+You can use the GPUs with many applications that require a monitor/GUI. This method does not currently support visualizing unity while it is rendering. A work around is to save debug images & videos to the file system and view them with dolphin & eog: 
  
 ```
-dolphin & # opens file explorer 
-eog selfie.png # view just 1 image
+# opens file explorer 
+dolphin & 
+# view just 1 image
+eog selfie.png & 
+```
+Logging in to use a GUI with the GPUs is very similar to normal:
+```
+# if -X doesn't work try -Y
+ssh -X $USER@flip.engr.oregonstate.edu
+ssh -X $USER@submit-b.hpc.engr.oregonstate.edu 
+module load slurm 
+# request an interactive bash shell on cn-gpu2 server with gpu(s) 
+srun -A eecs -p gpu --nodelist=cn-gpu2 --pty bash --gres=gpu:1 --x11
 ```
 
 ## MISC RESOURCES:
