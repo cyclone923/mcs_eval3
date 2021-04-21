@@ -7,7 +7,7 @@
 #SBATCH --gres=gpu:1     # request 1 GPU
 #SBATCH --nodelist=cn-gpu2
  
-MAX_TIME = 1e4 # ~ 3hrs
+export MAX_TIME=1e4 # ~ 3hrs
 srun -N1 -n1 sleep $MAX_TIME &
 module load gcc/6.5
 module load cuda
