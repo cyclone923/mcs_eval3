@@ -3,7 +3,7 @@
 #### PERMISSIONS:
 Have your major advisor email Rob Yelle (robert.yelle@oregonstate.edu) asking to give you permission to the High Performance Computing (HPC) cluster. 
 
-### INTERACTIVE SHELL WITH GPU:
+#### INTERACTIVE SHELL WITH GPU:
 ```
 ssh $USER@flip.engr.oregonstate.edu 
 ssh $USER@submit-b.hpc.engr.oregonstate.edu 
