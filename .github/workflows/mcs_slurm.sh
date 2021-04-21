@@ -22,7 +22,7 @@ if ! [ -d "miniconda3" ]; then
  miniconda3/bin/conda init bash &>/dev/null
  conda create -n mcs_opics python=3.6.8 &>/dev/null
 fi
-conda activate mcs_opics &>/dev/null
+conda activate mcs_opics
 python -V
 
 # get git repo, cd to it, select specific branch
@@ -37,6 +37,8 @@ export DISPLAY=`pgrep Xorg | xargs ps | grep $OUR_XPID | awk '{print $6}'`
 echo "GPU's DISPLAY id"; printenv $DISPLAY
 
 # setup all the python env + dependencies
+alias pip=pip3
+alias python=python3
 pip install --upgrade pip
 pip install --upgrade setuptools
 pip install --upgrade wheel
