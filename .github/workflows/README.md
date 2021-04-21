@@ -21,7 +21,7 @@ cat .ssh/id_rsa.pub | ssh $USER@submit-b.hpc.engr.oregonstate.edu 'cat >> .ssh/a
 tmux 
 ```
 Follow the steps of this 2 min [video](https://youtu.be/GHVSRc1BYCc%20Github%20Actions%20Tutorial) to setup a github action runner.
-Disconnect the current tmux server by pressing Ctrl+b followed by d. Your runner will stay open after logging out. Nohup can be used to a similar effect: 
+Disconnect the current tmux server by pressing Ctrl+b followed by d. Your runner will stay open after logging out. Nohup can be used instead to achieve the same effect: 
 
 ```nohup ./run.sh &```
 
