@@ -40,7 +40,7 @@ git pull &>/dev/null
 
 export OUR_XPID=`nvidia-smi | grep Xorg | awk '{print $5}'`
 export DISPLAY=`pgrep Xorg | xargs ps | grep $OUR_XPID | awk '{print $6}'`
-echo "GPU's DISPLAY id"; printenv $DISPLAY
+echo "GPU's DISPLAY id"; printenv DISPLAY
 
 # setup all the python env + dependencies
 alias pip=pip3
