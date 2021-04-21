@@ -14,19 +14,6 @@ srun -A eecs -p gpu --nodelist=cn-gpu2 --pty bash --gres=gpu:1 # can be > 1
 export OUR_XPID=`nvidia-smi | grep Xorg | awk '{print $5}'`
 export DISPLAY=`pgrep Xorg | xargs ps | grep $OUR_XPID | awk '{print $6}'`
 ```  
-#### SETUP GITHUB ACTIONS RUNNER:
-
-```
-ssh $USER@flip.engr.oregonstate.edu 
-ssh $USER@pelican04.eecs.oregonstate.edu 
-ssh-keygen -t rsa -b 4096 -C "$USER@pelican03.eecs.oregonstate.edu" 
-cat .ssh/id_rsa.pub | ssh $USER@submit-b.hpc.engr.oregonstate.edu 'cat >> .ssh/authorized_keys' 
-tmux 
-```
-Follow the steps of this 2 min [video](https://youtu.be/GHVSRc1BYCc%20Github%20Actions%20Tutorial) to setup a github action runner.
-Disconnect the current tmux server by pressing Ctrl+b followed by d. Your runner will stay open after logging out. Nohup can be used instead to achieve the same effect: 
-
-```nohup ./run.sh &```
 
 #### RESTRICTED GUI WITH GPU:
 
@@ -50,6 +37,20 @@ srun -A eecs -p gpu --nodelist=cn-gpu2 --pty bash --gres=gpu:1 --x11
 export OUR_XPID=`nvidia-smi | grep Xorg | awk '{print $5}'`
 export DISPLAY=`pgrep Xorg | xargs ps | grep $OUR_XPID | awk '{print $6}'`
 ```
+
+#### SETUP GITHUB ACTIONS RUNNER:
+
+```
+ssh $USER@flip.engr.oregonstate.edu 
+ssh $USER@pelican04.eecs.oregonstate.edu 
+ssh-keygen -t rsa -b 4096 -C "$USER@pelican03.eecs.oregonstate.edu" 
+cat .ssh/id_rsa.pub | ssh $USER@submit-b.hpc.engr.oregonstate.edu 'cat >> .ssh/authorized_keys' 
+tmux 
+```
+Follow the steps of this 2 min [video](https://youtu.be/GHVSRc1BYCc%20Github%20Actions%20Tutorial) to setup a github action runner.
+Disconnect the current tmux server by pressing Ctrl+b followed by d. Your runner will stay open after logging out. Nohup can be used instead to achieve the same effect: 
+
+```nohup ./run.sh &```
 
 #### MISC:
 You can view runner and action logs on github under a repo's action tab.
