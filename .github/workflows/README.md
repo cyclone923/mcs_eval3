@@ -1,4 +1,4 @@
-![cn-gpu2 chart](http://rkbain.com/github_actions.png)
+![cn-gpu2 chart](chart.png?raw=true "github action runner + gpu dev chart")
 
 ## PERMISSIONS:
 Have your major advisor email Rob Yelle (robert.yelle@oregonstate.edu) asking to give you permission to the High Performance Computing (HPC) cluster. 
