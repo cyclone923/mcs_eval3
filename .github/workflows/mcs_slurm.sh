@@ -50,7 +50,7 @@ pip install --upgrade setuptools
 pip install --upgrade wheel
 mkdir ./tmp -p 
 # /tmp on cn-gpu2 server can be full
-TMPDIR=/scratch/MCS/tmp python -m pip install --cache-dir /scratch/MCS/tmp --build /scratch/MCS/tmp git+https://github.com/NextCenturyCorporation/MCS@0.3.8
+TMPDIR=/scratch/MCS/tmp python -m pip install --cache-dir /scratch/MCS/tmp --build /scratch/MCS/tmp git+https://github.com/NextCenturyCorporation/MCS@0.4.1
 pip install -r requirements.txt &> /dev/null
 pip show machine_common_sense
 bash setup_torch.sh &> /dev/null
