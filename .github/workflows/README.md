@@ -48,7 +48,9 @@ export OUR_XPID=`nvidia-smi | grep Xorg | awk '{print $5}'`
 export DISPLAY=`pgrep Xorg | xargs ps | grep $OUR_XPID | awk '{print $6}'`
 ```
 
-## MISC RESOURCES:
+## MISC:
+You can view runner and action logs on github under a repo's action tab.
+
 Useful slurm (ie sbatch, srun, etc) info: [Link 1](https://it.engineering.oregonstate.edu/hpc/slurm-howto) [Link 2](https://cosine.oregonstate.edu/faqs/unix-hpc-cluster#faq-How-do-I-connect-to-the-cluster)
 
 2 minute github action [tutorial](https://youtu.be/GHVSRc1BYCc%20Github%20Actions%20Tutorial). Useful for setting up your own runner or workflow.
