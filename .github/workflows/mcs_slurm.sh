@@ -27,6 +27,8 @@ if $CREATE_ENV; then
   conda create -n mcs_opics python=3.6.8 &>/dev/null
 fi
 conda activate mcs_opics
+# redundancy because the above can fail
+source miniconda3/bin/activate mcs_opics
 python -V
 
 # get git repo, cd to it, select specific branch
