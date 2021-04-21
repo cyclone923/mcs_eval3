@@ -62,10 +62,13 @@ python get_gravity_scenes.py &> /dev/null
 cp gravity_scenes/gravity_support_ex_01.json different_scenes
 # agent code in this branch explodes
 rm different_scenes/preference_0001_01.json
+# real magic!
 python eval.py
-
-# will check output for this to confirm success!
-echo 69420
+# $? stores the exit code of the most recently finished process
+if [[ $? = 0 ]]; then
+    # will check output for this to confirm success!
+    echo 69420
+fi
 
 # kill the process keeping this slurm job open
 pgrep sleep | xargs ps | grep $MAX_TIME | xargs echo | cut -d ' ' -f 1 | xargs kill
