@@ -43,6 +43,9 @@ ssh -X $USER@submit-b.hpc.engr.oregonstate.edu
 module load slurm 
 # request an interactive bash shell on cn-gpu2 server with gpu(s) 
 srun -A eecs -p gpu --nodelist=cn-gpu2 --pty bash --gres=gpu:1 --x11
+# once inside the new shell, set the DISPLAY environment variable
+export OUR_XPID=`nvidia-smi | grep Xorg | awk '{print $5}'`
+export DISPLAY=`pgrep Xorg | xargs ps | grep $OUR_XPID | awk '{print $6}'`
 ```
 
 ## MISC RESOURCES:
