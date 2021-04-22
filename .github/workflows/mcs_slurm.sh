@@ -6,7 +6,8 @@
 #SBATCH -e mcs.err       # error file
 #SBATCH --gres=gpu:1     # request 1 GPU
 #SBATCH --nodelist=cn-gpu2
- 
+
+date
 export MAX_TIME=1e4 # ~ 3hrs
 srun -N1 -n1 sleep $MAX_TIME &
 module load gcc/6.5
@@ -45,12 +46,12 @@ echo "GPU's DISPLAY id"; printenv DISPLAY
 # setup all the python env + dependencies
 alias pip=pip3
 alias python=python3
-pip install --upgrade pip
-pip install --upgrade setuptools
-pip install --upgrade wheel
+# pip install --upgrade pip &> /dev/null
+# pip install --upgrade setuptools &> /dev/null
+# pip install --upgrade wheel &> /dev/null
 mkdir ./tmp -p 
 # /tmp on cn-gpu2 server can be full
-TMPDIR=/scratch/MCS/tmp python -m pip install --cache-dir /scratch/MCS/tmp --build /scratch/MCS/tmp git+https://github.com/NextCenturyCorporation/MCS@0.4.1
+TMPDIR=/scratch/MCS/tmp python -m pip install --cache-dir /scratch/MCS/tmp --build /scratch/MCS/tmp git+https://github.com/NextCenturyCorporation/MCS@0.4.1 &> /dev/null
 pip install -r requirements.txt &> /dev/null
 pip show machine_common_sense
 bash setup_torch.sh &> /dev/null
@@ -62,6 +63,7 @@ python get_gravity_scenes.py &> /dev/null
 cp gravity_scenes/gravity_support_ex_01.json different_scenes
 # agent code in this branch explodes
 rm different_scenes/preference_0001_01.json
+date
 # real magic!
 python eval.py
 # $? stores the exit code of the most recently finished process
