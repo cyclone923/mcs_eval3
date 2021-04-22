@@ -11,3 +11,4 @@ ray==1.0.1
 rich==9.13.0
 scikit-image==0.17.2
 webcolors==1.11.1
+open3d==0.9

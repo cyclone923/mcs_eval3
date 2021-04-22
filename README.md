@@ -55,7 +55,7 @@ python -m pip install git+https://github.com/NextCenturyCorporation/MCS@master#e
 pip install -r requirements.txt
 ```
 
-4. Ensure you've installed `ai2thor` version `2.2.0`:
+4. Ensure you've installed `ai2thor` version `2.5.0`:
 
 ```
 pip show ai2thor
@@ -83,13 +83,6 @@ Set up object mask and class predictor:
 bash setup_vision.sh
 ```
 
-### Install Open3D
-
-Set up the Open3D system for the gravity agent
-
-```
-pip install --user https://storage.googleapis.com/open3d-releases-master/python-wheels/open3d-0.12.0+059557b-cp36-cp36m-linux_x86_64.whl
-```
 ### To run everything from the project root
 
 Export the project root directory to the $PYTHONPATH:
@@ -114,4 +107,4 @@ python get_gravity_scenes.py
 python eval.py --scenes gravity_scenes/[rest of the relative path to the directory with the scenes you want to test]
 ```
 
-The gravity scenes require Unity v0.3.7 or newer. Running setup_unity.sh should download it and set it to be used in unity_path.yaml.
+Requires Unity v0.4.1 or newer. Running setup_unity.sh should download it and set it to be used in unity_path.yaml.
