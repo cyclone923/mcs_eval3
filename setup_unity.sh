@@ -5,7 +5,7 @@ cd unity_app
 
 export UNITY_VERSION=0.4.1
 # only download if not already installed
-if ! ls | grep $UNITY_VERSION:
+if ! ls | grep $UNITY_VERSION; then
     if [ "$(uname)" == "Darwin" ]; then
         # Do something under Mac OS X platform
         wget https://github.com/NextCenturyCorporation/MCS/releases/download/$UNITY_VERSION/MCS-AI2-THOR-Unity-App-v0.4.1-mac.zip
