@@ -55,8 +55,10 @@ alias python=python3
 mkdir ./tmp -p 
 echo 3
 date
-# /tmp on cn-gpu2 server can be full
-TMPDIR=/scratch/MCS/tmp python -m pip install --cache-dir /scratch/MCS/tmp --build /scratch/MCS/tmp git+https://github.com/NextCenturyCorporation/MCS@0.4.1 &> /dev/null
+if ! pip list | grep machine-common-sense; then
+  # /tmp on cn-gpu2 server can be full
+  TMPDIR=/scratch/MCS/tmp python -m pip install --cache-dir /scratch/MCS/tmp --build /scratch/MCS/tmp git+https://github.com/NextCenturyCorporation/MCS@0.4.1 &> /dev/null
+fi
 echo 4
 date
 pip install -r requirements.txt &> /dev/null
