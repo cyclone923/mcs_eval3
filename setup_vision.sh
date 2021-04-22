@@ -1,5 +1,6 @@
 # if not installed already
-if ! [ pip list | grep DCNv2 ]; then
+pip list > /tmp/python_packages.txt
+if ! grep DCNv2 /tmp/python_packages.txt; then
   cd vision/instSeg/external/DCNv2
   python setup.py build develop
   cd ../../
