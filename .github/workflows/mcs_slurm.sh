@@ -7,6 +7,7 @@
 #SBATCH --gres=gpu:1     # request 1 GPU
 #SBATCH --nodelist=cn-gpu2
 
+echo 1
 date
 export MAX_TIME=1e4 # ~ 3hrs
 srun -N1 -n1 sleep $MAX_TIME &
@@ -31,6 +32,8 @@ conda activate mcs_opics
 # redundancy because the above can fail
 source miniconda3/bin/activate mcs_opics
 python -V
+echo 2
+date
 
 # get git repo, cd to it, select specific branch
 rm -fr mcs_opics
@@ -50,19 +53,32 @@ alias python=python3
 # pip install --upgrade setuptools &> /dev/null
 # pip install --upgrade wheel &> /dev/null
 mkdir ./tmp -p 
+echo 3
+date
 # /tmp on cn-gpu2 server can be full
 TMPDIR=/scratch/MCS/tmp python -m pip install --cache-dir /scratch/MCS/tmp --build /scratch/MCS/tmp git+https://github.com/NextCenturyCorporation/MCS@0.4.1 &> /dev/null
+echo 4
+date
 pip install -r requirements.txt &> /dev/null
+echo 5
+date
 pip show machine_common_sense
 bash setup_torch.sh &> /dev/null
+echo 6
+date
 bash setup_unity.sh &> /dev/null
+echo 7
+date
 bash setup_vision.sh &> /dev/null
+echo 8
+date
 export PYTHONPATH=$PWD
 
 python get_gravity_scenes.py &> /dev/null
 cp gravity_scenes/gravity_support_ex_01.json different_scenes
 # agent code in this branch explodes
 rm different_scenes/preference_0001_01.json
+echo 9
 date
 # real magic!
 python eval.py
