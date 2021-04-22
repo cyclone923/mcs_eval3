@@ -35,10 +35,12 @@ python -V
 echo 2
 date
 
-# get git repo, cd to it, select specific branch
-rm -fr mcs_opics
-git clone https://github.com/MCS-OSU/mcs_opics.git &>/dev/null
-cd mcs_opics 
+if ! [ -d "mcs_opics" ]; then
+  # get git repo, cd to it, select specific branch
+  git clone https://github.com/MCS-OSU/mcs_opics.git &>/dev/null
+fi
+cd mcs_opics
+git stash
 git checkout test.yaml-rob 
 git pull &>/dev/null
 
