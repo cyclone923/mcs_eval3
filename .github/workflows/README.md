@@ -5,11 +5,12 @@ Have your major advisor email Rob Yelle (robert.yelle@oregonstate.edu) asking to
 
 #### INTERACTIVE SHELL WITH GPU:
 ```
-ssh $USER@flip.engr.oregonstate.edu 
+ssh <OSU USER NAME>@flip.engr.oregonstate.edu 
 ssh $USER@submit-b.hpc.engr.oregonstate.edu 
 module load slurm 
 # request an interactive bash shell on cn-gpu2 server with gpu(s) 
-srun -A eecs -p gpu --nodelist=cn-gpu2 --pty bash --gres=gpu:1 # can be > 1 
+# --gres=gpu:N requests N gpus
+srun -A eecs -p gpu --nodelist=cn-gpu2 --gres=gpu:1 --pty bash
 # once inside the new shell, set the DISPLAY environment variable
 export OUR_XPID=`nvidia-smi | grep Xorg | awk '{print $5}'`
 export DISPLAY=`pgrep Xorg | xargs ps | grep $OUR_XPID | awk '{print $6}'`
@@ -28,11 +29,11 @@ eog selfie.png &
 Logging in to use a GUI with the GPUs is very similar to normal:
 ```
 # if -X doesn't work try -Y
-ssh -X $USER@flip.engr.oregonstate.edu
+ssh -X <OSU USER NAME>@flip.engr.oregonstate.edu
 ssh -X $USER@submit-b.hpc.engr.oregonstate.edu 
 module load slurm 
 # request an interactive bash shell on cn-gpu2 server with gpu(s) 
-srun -A eecs -p gpu --nodelist=cn-gpu2 --pty bash --gres=gpu:1 --x11
+srun -A eecs -p gpu --nodelist=cn-gpu2 --gres=gpu:1 --x11 --pty bash
 # once inside the new shell, set the DISPLAY environment variable
 export OUR_XPID=`nvidia-smi | grep Xorg | awk '{print $5}'`
 export DISPLAY=`pgrep Xorg | xargs ps | grep $OUR_XPID | awk '{print $6}'`
@@ -41,7 +42,7 @@ export DISPLAY=`pgrep Xorg | xargs ps | grep $OUR_XPID | awk '{print $6}'`
 #### SETUP GITHUB ACTIONS RUNNER:
 
 ```
-ssh $USER@flip.engr.oregonstate.edu 
+ssh <OSU USER NAME>@flip.engr.oregonstate.edu 
 ssh $USER@pelican04.eecs.oregonstate.edu 
 ssh-keygen -t rsa -b 4096 -C "$USER@pelican03.eecs.oregonstate.edu" 
 cat .ssh/id_rsa.pub | ssh $USER@submit-b.hpc.engr.oregonstate.edu 'cat >> .ssh/authorized_keys' 
