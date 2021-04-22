@@ -34,9 +34,12 @@ class McsEnv:
                 pass
             os.makedirs(self.debug_dir, exist_ok=True)
 
-        os.environ['MCS_CONFIG_FILE_PATH'] = os.path.join(os.getcwd(), "mcs_config.yaml")
+        os.environ['MCS_CONFIG_FILE_PATH'] = os.path.join(os.getcwd(), "mcs_config.ini")
 
-        self.controller = controller
+        self.controller = mcs.create_controller(
+            "unity_app/MCS-AI2-THOR-Unity-App-v0.4.1.1.x86_64",
+            config_file_path = os.environ['MCS_CONFIG_FILE_PATH']
+        )
 
         if task and scene_type:
             goal_dir = os.path.join(task, scene_type)

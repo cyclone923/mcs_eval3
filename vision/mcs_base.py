@@ -19,7 +19,7 @@ class McsEnv:
     def __init__(self, task=None, scene_type=None, seed=None, start_scene_number=0, frame_collector=None, set_trophy=False):
 
         if platform.system() == "Linux":
-            app = "unity_app/MCS-AI2-THOR-Unity-App-v0.3.3.x86_64"
+            app = "unity_app/MCS-AI2-THOR-Unity-App-v0.4.1.1.x86_64"
         elif platform.system() == "Darwin":
             app = "unity_app/MCSai2thor.app/Contents/MacOS/MCSai2thor"
         else:
@@ -39,10 +39,11 @@ class McsEnv:
                 pass
             os.makedirs(self.debug_dir, exist_ok=True)
 
-        os.environ['MCS_CONFIG_FILE_PATH'] = os.path.join(os.getcwd(), "mcs_config.yaml")
+        os.environ['MCS_CONFIG_FILE_PATH'] = os.path.join(os.getcwd(), "mcs_config.ini")
 
         self.controller = mcs.create_controller(
-            os.path.join(app)
+            os.path.join(app),
+            config_file_path = os.environ['MCS_CONFIG_FILE_PATH']
         )
 
         if task and scene_type:

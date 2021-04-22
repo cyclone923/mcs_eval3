@@ -39,7 +39,7 @@ def wrap_step( **kwargs):
 
 RUN_MCS = 1
 
-unity_app_file_path_linux = "/home/rajesh/rajesh/mcs_data/MCS-AI2-THOR-Unity-App-v0.0.10.x86_64"
+unity_app_file_path_linux = "unity_app/MCS-AI2-THOR-Unity-App-v0.4.1.1.x86_64"
 config_file_folder_linux = "/home/rajesh/rajesh/mcs_data/interaction_scenes/"
 unity_app_file_path_mac = "/Users/rajesh/Rajesh/Subjects/Research/aiThor/mcs_playroom_old/algorithms/a3c/gym_ai2thor/MCSai2thor.app/Contents/MacOS/MCSai2thor"
 config_file_folder_mac = "/Users/rajesh/Rajesh/Subjects/Research/aiThor/interaction_scenes/"
@@ -88,7 +88,16 @@ def create_env(x_display=constants.X_DISPLAY,
             )
         '''
         #env = machine_common_sense.MCS_Controller_AI2THOR(
-        env = mcs.MCS_Controller_AI2THOR(unity_app_file_path)
+        # env = mcs.MCS_Controller_AI2THOR(unity_app_file_path)
+
+        os.environ['MCS_CONFIG_FILE_PATH'] = os.path.join(os.getcwd(), "mcs_config.ini")
+        
+        env = mcs.create_controller(
+            "unity_app/MCS-AI2-THOR-Unity-App-v0.4.1.1.x86_64",
+            config_file_path = os.environ['MCS_CONFIG_FILE_PATH']
+        )
+
+        
         
         #                 "/Users/rajesh/Rajesh/Subjects/Research/aiThor/mcs_playroom_old/algorithms/a3c/gym_ai2thor/MCSai2thor.app/Contents/MacOS/MCSai2thor")
     #env.start(x_display=x_display)
