@@ -18,6 +18,6 @@ os.chdir(grav_dir)
 for i in range(1, 13):
     url = "https://raw.githubusercontent.com/NextCenturyCorporation/MCS/master/machine_common_sense/scenes/gravity_support_ex_"
     url += f"{i:02d}" + ".json"
-    subprocess.run(["wget", "-N", url])
+    subprocess.run(["wget", "-N", "-nc", url])
 
 os.chdir(dir_path)
