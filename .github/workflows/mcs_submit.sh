@@ -1,3 +1,4 @@
+#!/bin/bash
 # makes 'module load' work
 #source /etc/profile
 #module load slurm
