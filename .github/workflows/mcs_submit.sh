@@ -1,5 +1,5 @@
 # makes 'module load' work
-source /etc/profile
+#source /etc/profile
 module load slurm
 
 SJOBID=$(sbatch --parsable /tmp/mcs_slurm.sh)
