@@ -250,11 +250,11 @@ class GameState(object):
                 #rotation = self.event.rotation
                 tilt = self.event.head_tilt
                 self.pose_estimate =np.array([float(position['x']),float(position['z']),rotation]).reshape(3, 1)
-
+               
                 for elem in self.event.object_list:
                     if self.event.goal.metadata['target']['id'] == elem.uuid :
                         self.goal_object = elem
-            
+
                 dimensions = self.goal_object.dimensions
                 bd_point = set()
                 for i in range(0, 8):

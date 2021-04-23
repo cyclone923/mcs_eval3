@@ -55,7 +55,6 @@ class McsEnv:
 
         self.add_obstacle_func = None
         self.frame_collector = frame_collector
-        print("Frame collector: {}".format(self.frame_collector))
 
     def step(self, **kwargs):
         self.step_output = self.controller.step(**kwargs)

@@ -155,7 +155,7 @@ def reset_ai2thor_env(env , config_filename):
     #config_json_file_path = "/Users/rajesh/Rajesh/Subjects/Research/aiThor/interaction_scenes/" + config_filename
     config_json_file_path = config_file_folder + config_filename
     #traversal_goal-0004.json"
-    config_data , status = MCS.load_config_json_file(config_json_file_path)
+    config_data , status = MCS.load_scene_json_file(config_json_file_path)
 
     event =env.step(wrap_step(action="Initialize", sceneConfig=config_data))
     #event = env.start_scene(config_data)
@@ -189,7 +189,7 @@ def reset(env, scene_name_or_num, config_filename="",
         #config_json_file_path = "/Users/rajesh/Rajesh/Subjects/Research/aiThor/interaction_scenes/" + config_filename
         config_json_file_path = config_file_folder + config_filename
         print (config_json_file_path)
-        config_data , status = MCS.load_config_json_file(config_json_file_path)
+        config_data , status = MCS.load_scene_json_file(config_json_file_path)
 
         #event =env.step(wrap_step(action="Initialize", sceneConfig=config_data))
         event = env.start_scene(config_data)

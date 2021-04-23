@@ -31,7 +31,7 @@ class McsEnv:
             all_scenes = sorted(os.listdir(goal_dir))
             all_scenes = [os.path.join(goal_dir, one_scene) for one_scene in all_scenes]
             assert len(all_scenes) == 1
-            self.trophy_config, _ = mcs.load_config_json_file(all_scenes[0])
+            self.trophy_config, _ = mcs.load_scene_json_file(all_scenes[0])
             self.debug_dir = os.path.join(task, "debug")
             try:
                 shutil.rmtree(self.debug_dir)
@@ -71,13 +71,13 @@ class McsEnv:
     def reset(self, random_init=False, scene_number=None):
         if scene_number:
             print(self.all_scenes[scene_number])
-            self.scene_config, status = mcs.load_config_json_file(self.all_scenes[scene_number])
+            self.scene_config, status = mcs.load_scene_json_file(self.all_scenes[scene_number])
         else:
             if not random_init:
                 self.current_scene += 1
             else:
                 self.current_scene = random.randint(0, len(self.all_scenes) - 1)
-            self.scene_config, status = mcs.load_config_json_file(self.all_scenes[self.current_scene])
+            self.scene_config, status = mcs.load_scene_json_file(self.all_scenes[self.current_scene])
             print(self.all_scenes[self.current_scene])
 
         if self.trophy_config:

@@ -36,7 +36,7 @@ class ExploreAgent:
         os.makedirs(self.debug_dir, exist_ok=True)
 
     def run_scene(self, config):
-        trophy_config, _ = mcs.load_config_json_file("interaction_scenes/eval3/hinged_container_example.json")
+        trophy_config, _ = mcs.load_scene_json_file("interaction_scenes/eval3/hinged_container_example.json")
         new_config = set_goal_with_trophy(config, trophy_config, only_trophy=False)
 
         self.agent.env.set_scene(new_config)
