@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 import torch
-from vision.instSeg.utils import timer
+from utils import timer
 
 @torch.jit.script
 def point_form(boxes):
