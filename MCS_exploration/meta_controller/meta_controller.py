@@ -11,7 +11,7 @@ def get_goal(goal_string):
     return (goal_x, goal_y, goal_z)
 
 class MetaController:
-    def __init__(self, env, level, collector):
+    def __init__(self, env, level, collector=None):
         self.env = env
         self.obstacles = {}
         self.collector = collector

@@ -57,6 +57,7 @@ class McsEnv:
         self.frame_collector = frame_collector
 
     def step(self, **kwargs):
+        print("MS CUSTOM STEP #######")
         self.step_output = self.controller.step(**kwargs)
 
         if self.add_obstacle_func:
