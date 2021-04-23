@@ -8,9 +8,9 @@ from math import sqrt
 from typing import List
 from collections import defaultdict
 
-from vision.instSeg.backbone import construct_backbone
-from vision.instSeg.utils import timer
-from vision.instSeg.utils.functions import MovingAverage, make_net
+from backbone import construct_backbone
+from utils import timer
+from utils.functions import MovingAverage, make_net
 
 import torch.backends.cudnn as cudnn
 from matplotlib import pyplot as plt
@@ -200,6 +200,11 @@ class DVIS(nn.Module):
                                     nn.LeakyReLU(0.1),
                                     nn.Linear(1024, (cfg.num_fg_classes+1)*cfg.mask_out_ch)
                             )
+            self.iou_linear = nn.Sequential(
+                                    nn.Linear(cls_size*cls_size*1024, 1024),
+                                    nn.LeakyReLU(0.1),
+                                    nn.Linear(1024, cfg.mask_out_ch)
+                            )
 
     def save_weights(self, path):
         """ Saves the model's weights using compression because the file sizes were getting too big. """
@@ -315,7 +320,7 @@ class DVIS(nn.Module):
             # proto_out = proto_out.permute(0, 2, 3, 1).contiguous()
 
         if self.cfg.mask_out_ch > 1 and self.cfg.classify_en:
-            cls_logits = []
+            cls_out = []
             cls_size = self.cfg.classify_linear_size
             with timer.env('classify'):
                 for i, k in enumerate(self.cfg.mask_out_levels):
@@ -326,12 +331,15 @@ class DVIS(nn.Module):
                     cls_fea = torch.cat((backbone_fea, proto_fea), dim=1)
                     layer = self.cls_convs(cls_fea)
                     layer = F.interpolate(layer, size=(cls_size, cls_size), \
-                                          mode='bilinear', align_corners=True)
-                    cls_logits.append(self.cls_linear(layer.view(bs, -1)))
-        else:
-            cls_logits = None
+                                          mode='bilinear', align_corners=True).view(bs, -1)
 
-        return {'proto': proto_out, 'fea':outs, 'cls_logits': cls_logits}
+                    cls_logits = self.cls_linear(layer).view(bs, self.cfg.mask_out_ch, -1)
+                    iou_logits = self.iou_linear(layer).view(bs, self.cfg.mask_out_ch, 1)
+                    cls_out.append({'cls_logits': cls_logits, 'iou_scores': iou_logits})
+        else:
+            cls_out = None
+
+        return {'proto': proto_out, 'fea':outs, 'cls': cls_out}
 
 
 # Some testing code

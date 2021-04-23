@@ -14,10 +14,10 @@ module load cuda
 nvidia-smi
 cd /scratch/MCS
 
-export CREATE_ENV = false
+export CREATE_ENV=false
 # if conda not setup
 if ! [ -d "miniconda3" ]; then
-  export CREATE_ENV = true
+  export CREATE_ENV=true
   mkdir -p miniconda3 &>/dev/null
   wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda3/miniconda.sh &>/dev/null
 fi
