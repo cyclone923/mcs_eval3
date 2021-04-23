@@ -108,3 +108,5 @@ python eval.py --scenes gravity_scenes/[rest of the relative path to the directo
 ```
 
 Requires Unity v0.4.1 or newer. Running setup_unity.sh should download it and set it to be used in unity_path.yaml.
+
+## [Run Example Gravity Scenes](.github/workflows/README.md)
