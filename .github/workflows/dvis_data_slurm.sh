@@ -68,13 +68,13 @@ bash setup_vision.sh &> /dev/null
 bash get_dataset.sh &> /dev/null
 export PYTHONPATH=$PWD
 
-python vision/generateData/simple_task_multi.py 1 124 &
+python vision/generateData/simple_task_multi.py 1 2
 #python vision/generateData/simple_task_multi.py 125 249 &
 #python vision/generateData/simple_task_multi.py 250 374 &
 #python vision/generateData/simple_task_multi.py 375 499 &
 #python vision/generateData/simple_task_multi.py 500 624 &
 #python vision/generateData/simple_task_multi.py 625 749 &
-python vision/generateData/simple_task_multi.py 669 874 &
+#python vision/generateData/simple_task_multi.py 669 874 &
 #sleep 30
 #nvidia-smi # let's see how the GPU is doing!
 #python vision/generateData/simple_task_multi.py 875 1000
