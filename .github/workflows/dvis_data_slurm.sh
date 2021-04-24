@@ -32,7 +32,7 @@ fi
 conda activate mcs_opics
 # redundancy because the above can fail
 source miniconda3/bin/activate mcs_opics
-python -V
+python -V 
 
 if ! [ -d "mcs_opics" ]; then
   # get git repo, cd to it, select specific branch
