@@ -1,10 +1,11 @@
 #!/bin/bash
-#SBATCH -J mcs_ga_build  # name of job
-#SBATCH -A eecs          # sponsored account
-#SBATCH -p gpu           # partition or queue
-#SBATCH -o dvis_data.out # output file
-#SBATCH -e dvis_data.err # error file
-#SBATCH --gres=gpu:1     # request 1 GPU
+#SBATCH -J mcs_ga_build     # name of job
+#SBATCH -A eecs             # sponsored account
+#SBATCH -p gpu              # partition or queue
+#SBATCH -o dvis_data.out    # output file
+#SBATCH -e dvis_data.err    # error file
+#SBATCH --ntasks-per-node=8 # num CPUs
+#SBATCH --gres=gpu:1        # request 1 GPU
 #SBATCH --nodelist=cn-gpu2
 
 export MAX_TIME=1e4 # ~ 3hrs
@@ -74,6 +75,8 @@ python vision/generateData/simple_task_multi.py 375 499 &
 python vision/generateData/simple_task_multi.py 500 624 &
 python vision/generateData/simple_task_multi.py 625 749 &
 python vision/generateData/simple_task_multi.py 750 874 &
+sleep 30
+nvidia-smi # let's see how the GPU is doing!
 python vision/generateData/simple_task_multi.py 875 1000
 
 # $? stores the exit code of the most recently finished process
