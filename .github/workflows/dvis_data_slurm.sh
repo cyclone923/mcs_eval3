@@ -67,13 +67,23 @@ bash setup_vision.sh &> /dev/null
 bash get_dataset.sh &> /dev/null
 export PYTHONPATH=$PWD
 
-python vision/generateData/simple_task.py
+python vision/generateData/simple_task_multi.py 0 124 &
+python vision/generateData/simple_task_multi.py 125 249 &
+python vision/generateData/simple_task_multi.py 250 374 &
+python vision/generateData/simple_task_multi.py 375 499 &
+python vision/generateData/simple_task_multi.py 500 624 &
+python vision/generateData/simple_task_multi.py 625 749 &
+python vision/generateData/simple_task_multi.py 750 874 &
+python vision/generateData/simple_task_multi.py 875 1000
 
 # $? stores the exit code of the most recently finished process
 if [[ $? = 0 ]]; then
     # will check output for this to confirm success!
     echo 69420
 fi
+
+# ensure everything is easily shared
+chmod -R 775 /nfs/hpc/share/$USER/mcs_opics
 
 # kill the process keeping this slurm job open
 pgrep sleep | xargs ps | grep $MAX_TIME | xargs echo | cut -d ' ' -f 1 | xargs kill
