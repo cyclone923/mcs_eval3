@@ -11,7 +11,8 @@ DEBUG = False
 
 
 if __name__ == "__main__":
-    start_scene_number = 0
+    start_scene_number = sys.argv[1] or 0
+    number_scenes = sys.argv[2] or 1
 
     config_ini = configparser.ConfigParser()
     config_ini.read("mcs_config.ini")
@@ -35,7 +36,7 @@ if __name__ == "__main__":
 
     metaController = MetaController(env, level)
 
-    while env.current_scene < len(env.all_scenes) - 1:
+    while env.current_scene < start_scene_number + number_scenes:
         env.reset()
         result = metaController.execute()
 
