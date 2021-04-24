@@ -1,7 +1,7 @@
 #!/bin/bash
 
-source /etc/profile
-module load slurm
+#source /etc/profile
+#module load slurm
 
 SJOBID=$(sbatch --parsable /tmp/dvis_data_slurm.sh)
 
