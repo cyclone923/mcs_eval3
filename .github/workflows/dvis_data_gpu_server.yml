@@ -5,7 +5,7 @@ name: Automated System Test
 
 on:
   push: 
-    branches: [ develop ] 
+    branches: [ test.yaml-rob ] 
 
 jobs:
   build_with_gpu:
@@ -20,4 +20,4 @@ jobs:
           # copy scripts over to the submit server
           scp $GITHUB_WORKSPACE/.github/workflows/mcs_slurm.sh $USER@submit-b.hpc.engr.oregonstate.edu:/tmp/mcs_slurm.sh
           scp $GITHUB_WORKSPACE/.github/workflows/mcs_submit.sh $USER@submit-b.hpc.engr.oregonstate.edu:/tmp/mcs_submit.sh
-          ssh -tt $USER@submit-b.hpc.engr.oregonstate.edu "/bin/chmod +x /tmp/mcs_submit.sh; /tmp/mcs_submit.sh"
+          ssh -tt $USER@submit-b.hpc.engr.oregonstate.edu "/bin/chmod +x /tmp/mcs_submit.sh; /tmp/dvis_data_submit.sh"
