@@ -1,5 +1,8 @@
 #!/bin/bash
 
+source /etc/profile
+module load slurm
+
 SJOBID=$(sbatch --parsable /tmp/dvis_data_slurm.sh)
 
 # wait for gpu job to finish
