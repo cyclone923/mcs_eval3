@@ -64,10 +64,11 @@ pip show machine_common_sense
 bash setup_torch.sh &> /dev/null
 bash setup_unity.sh &> /dev/null
 bash setup_vision.sh &> /dev/null
+bash get_dataset.sh &> /dev/null
 export PYTHONPATH=$PWD
 
-# real magic!
-# python eval.py
+python vision/generateData/simple_task.py
+
 # $? stores the exit code of the most recently finished process
 if [[ $? = 0 ]]; then
     # will check output for this to confirm success!
