@@ -2,8 +2,8 @@
 #SBATCH -J mcs_ga_build  # name of job
 #SBATCH -A eecs          # sponsored account
 #SBATCH -p gpu           # partition or queue
-#SBATCH -o mcs.out       # output file
-#SBATCH -e mcs.err       # error file
+#SBATCH -o dvis_data.out # output file
+#SBATCH -e dvis_data.err # error file
 #SBATCH --gres=gpu:1     # request 1 GPU
 #SBATCH --nodelist=cn-gpu2
 
@@ -12,7 +12,9 @@ srun -N1 -n1 sleep $MAX_TIME &
 module load gcc/6.5
 module load cuda
 nvidia-smi
-cd /scratch/MCS
+# had to run this to set permissions for sharing:
+# chmod -R 775 /nfs/hpc/share/$USER
+cd /nfs/hpc/share/$USER
 
 export CREATE_ENV=false
 # if conda not setup
@@ -37,7 +39,7 @@ if ! [ -d "mcs_opics" ]; then
 fi
 cd mcs_opics
 git stash
-git checkout test.yaml-rob 
+git checkout component/interactive-env.diego # test.yaml-rob 
 git pull &>/dev/null
 
 export OUR_XPID=`nvidia-smi | grep Xorg | awk '{print $5}'`
@@ -64,13 +66,8 @@ bash setup_unity.sh &> /dev/null
 bash setup_vision.sh &> /dev/null
 export PYTHONPATH=$PWD
 
-python get_gravity_scenes.py &> /dev/null
-cp gravity_scenes/gravity_support_ex_01.json different_scenes
-# agent code in this branch explodes
-rm different_scenes/preference_0001_01.json
-
 # real magic!
-python eval.py
+# python eval.py
 # $? stores the exit code of the most recently finished process
 if [[ $? = 0 ]]; then
     # will check output for this to confirm success!
