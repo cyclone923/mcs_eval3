@@ -6,7 +6,7 @@ from vision.generateData.instSeg_parse_mask import setup_configuration
 class Frame_collector:
 
     def __init__(self, scene_dir, start_scene_number,
-                       scene_type='voe', fg_class_en=False):
+                       scene_type='interact', fg_class_en=False):
         """
         @Param: scene_dir -- directory to saveout data
                 start_scene_number -- INT
