@@ -11,13 +11,13 @@ def get_goal(goal_string):
     return (goal_x, goal_y, goal_z)
 
 class MetaController:
-    def __init__(self, env,level):
+    def __init__(self, env, level, collector=None):
         self.env = env
         self.obstacles = {}
-        self.sequence_generator_object = sequence_generator.SequenceGenerator(None, self.env.controller,level)
+        self.collector = collector
+        self.sequence_generator_object = sequence_generator.SequenceGenerator(None, self.env.controller, level)
 
-
-    def excecute(self):
-        scene_config = main.explore_scene(self.sequence_generator_object, self.env.step_output)#'retrieval-', '0001'
+    def execute(self):
+        scene_config = main.explore_scene(self.sequence_generator_object, self.env.step_output, frame_collector=self.collector)#'retrieval-', '0001'
 
         return True
