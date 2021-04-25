@@ -65,6 +65,7 @@ class McsEnv:
         self.step_output = self.controller.step(**kwargs)
 
         if self.frame_collector:
+            print("calling save_frame from mcs_base!")
             self.frame_collector.save_frame(self.step_output)
 
         return self.step_output
