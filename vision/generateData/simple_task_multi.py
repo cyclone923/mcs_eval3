@@ -44,3 +44,4 @@ if __name__ == "__main__":
 
         sys.stdout.flush()
         collector.reset()
+        import time; time.sleep(30)
