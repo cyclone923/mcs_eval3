@@ -71,6 +71,7 @@ class Frame_collector:
         self.step = 0
         self.result_dir = os.path.join(self.scene_dir, 'scene_'+str(self.scene_number))
         os.makedirs(self.result_dir, exist_ok=True)
+        print("self.result_dir: ", self.result_dir)
         print("Reset, Current Scene: {}".format(self.scene_number))
         #print("un-set uuid key including: ", self.stru_new_keys)
         #print("un-set shape key including: ", self.shap_new_keys)
