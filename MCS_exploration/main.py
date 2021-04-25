@@ -45,6 +45,7 @@ def explore_scene(sequence_generator,event, scene_type=None, scene_number=None, 
         print("MS 2222 ")
         sequence_generator.explore_scene_view(event, frame_collector=frame_collector)
 
+    print("MS 3333")
     config_data = {}
     
     config_data['performerStart'] = {}
