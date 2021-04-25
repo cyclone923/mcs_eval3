@@ -44,6 +44,10 @@ class Frame_collector:
 
                 save_depth_image(np.asarray(step_output.depth_map_list[j]),
                                             result_dir = self.result_dir, sname=f'-{self.step}-{j}')
+                if self.scene_number > 1:
+                    print("..")
+                else:
+                    print(self.scene_number, np.sum(np.asarray(step_output.depth_map_list[j])))
             self.step += 1
         else:
             pass
