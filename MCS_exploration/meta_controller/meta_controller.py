@@ -18,6 +18,6 @@ class MetaController:
         self.sequence_generator_object = sequence_generator.SequenceGenerator(None, self.env.controller, level)
 
     def execute(self):
-        scene_config = main.explore_scene(self.sequence_generator_object, self.env.step_output, frame_collector=self.collector, scene_type='retrieval-', self.env.collector.scene_number)
+        scene_config = main.explore_scene(self.sequence_generator_object, self.env.step_output, frame_collector=self.collector, scene_type='retrieval-')#, self.env.collector.scene_number)
 
         return True
