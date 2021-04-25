@@ -67,6 +67,7 @@ class Frame_collector:
     def reset(self):
         print("AAAAAAAAAAAAAAAAAAHHHHHHHHHHHHHHHHHHHHHH!!!!!!!!!!!!!!! (: ")
         self.scene_number += 1
+        print("self.step", self.step)
         self.step = 0
         self.result_dir = os.path.join(self.scene_dir, 'scene_'+str(self.scene_number))
         os.makedirs(self.result_dir, exist_ok=True)
