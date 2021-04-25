@@ -66,6 +66,7 @@ class Frame_collector:
                 #print(i.uuid, i.color) # uuid need to be finely categorized
 
     def reset(self):
+        print("AAAAAAAAAAAAAAAAAAHHHHHHHHHHHHHHHHHHHHHH!!!!!!!!!!!!!!! (: ")
         self.scene_number += 1
         self.step = 0
         self.result_dir = os.path.join(self.scene_dir, 'scene_'+str(self.scene_number))
