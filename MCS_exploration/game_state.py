@@ -397,6 +397,7 @@ class GameState(object):
         start_2 = time.time()
         self.event = self.env.step(action=action)
         try:
+            print("calling save_frame() in game_state.py!")
             self.collector.save_frame(self.event)
         except:
             print("MS step skip ", action)
