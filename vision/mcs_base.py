@@ -70,6 +70,9 @@ class McsEnv:
         return self.step_output
 
     def reset(self, random_init=False, scene_number=None):
+        if self.frame_collector:
+            self.frame_collector.reset()
+        
         if scene_number:
             print(self.all_scenes[scene_number])
             self.scene_config, status = mcs.load_scene_json_file(self.all_scenes[scene_number])
