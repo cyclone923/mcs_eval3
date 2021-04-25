@@ -33,6 +33,7 @@ class Frame_collector:
     def save_frame(self, step_output, saveImage=True):
         # print("Save Image!")
         if saveImage:
+            print("len(step_output.image_list): ", len(step_output.image_list))
             for j in range(len(step_output.image_list)):
                 step_output.image_list[j].save(f'{self.result_dir}/original-{self.step}-{j}.jpg')
                 maskI = np.asarray(step_output.object_mask_list[j]) # [ht, wd, 3] in RGB
