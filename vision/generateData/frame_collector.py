@@ -44,9 +44,10 @@ class Frame_collector:
 
                 save_depth_image(np.asarray(step_output.depth_map_list[j]),
                                             result_dir = self.result_dir, sname=f'-{self.step}-{j}')
-                print(self.scene_number, np.sum(np.asarray(step_output.depth_map_list[j])))
+                print(self.result_dir, np.sum(np.asarray(step_output.depth_map_list[j])))
             self.step += 1
         else:
+            print("hmm...")
             pass
 
         # for checking the FG objects and BG objects
