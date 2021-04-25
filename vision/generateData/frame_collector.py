@@ -33,6 +33,7 @@ class Frame_collector:
     def save_frame(self, step_output, saveImage=True):
         # print("Save Image!")
         if saveImage:
+            print("start save_frame() scene_#: ", self.scene_number)
             print("len(step_output.image_list): ", len(step_output.image_list))
             print("start save_frame(): ", self.result_dir)
             for j in range(len(step_output.image_list)):
