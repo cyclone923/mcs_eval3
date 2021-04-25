@@ -34,6 +34,7 @@ class Frame_collector:
         # print("Save Image!")
         if saveImage:
             print("len(step_output.image_list): ", len(step_output.image_list))
+            print("start save_frame(): ", self.result_dir)
             for j in range(len(step_output.image_list)):
                 step_output.image_list[j].save(f'{self.result_dir}/original-{self.step}-{j}.jpg')
                 maskI = np.asarray(step_output.object_mask_list[j]) # [ht, wd, 3] in RGB
@@ -47,6 +48,7 @@ class Frame_collector:
                                             result_dir = self.result_dir, sname=f'-{self.step}-{j}')
                 print(self.result_dir, np.sum(np.asarray(step_output.depth_map_list[j])))
             self.step += 1
+            print("post save_frame(): ", self.result_dir)
         else:
             print("hmm...")
             pass
