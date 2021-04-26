@@ -9,12 +9,12 @@ import constants
 
 
 class GraphAgent(object):
-    def __init__(self, env,level, reuse=True, num_unrolls=1, game_state=None, net_scope=None):
+    def __init__(self, env,level, reuse=True, num_unrolls=1, game_state=None, net_scope=None, frame_collector=None):
         self.nav_radius = AGENT_RADIUS
         self.nav = bounding_box_navigator.BoundingBoxNavigator(self.nav_radius, maxStep=0.1)
         if game_state is None:
             print("Gamee State NONEEE MS")
-            self.game_state = GameState(env=env,level=level)
+            self.game_state = GameState(env=env, level=level, frame_collector=frame_collector)
             self.game_state.add_obstacle_func = self.nav.add_obstacle_from_bounding_boxes
             #self.game_state.add_obstacle_func = self.nav.add_obstacle_from_global_obstacles
             self.game_state.get_obstacles = self.nav.get_obstacles
