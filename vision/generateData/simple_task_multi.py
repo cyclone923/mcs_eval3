@@ -34,7 +34,7 @@ if __name__ == "__main__":
                  trophy_prob=0 # probability for trophy outside the box, that 1-outside the box, 0-inside the box.
     )
 
-    metaController = MetaController(env, level, frame_collector=collector)
+    metaController = MetaController(env, level, collector)
 
     while env.current_scene < start_scene_number + number_scenes:
         env.reset()
