@@ -15,7 +15,7 @@ class MetaController:
         self.env = env
         self.obstacles = {}
         self.collector = collector
-        self.sequence_generator_object = sequence_generator.SequenceGenerator(None, self.env.controller, level)
+        self.sequence_generator_object = sequence_generator.SequenceGenerator(None, self.env.controller, level, frame_collector=collector)
 
     def execute(self):
         scene_config = main.explore_scene(self.sequence_generator_object, self.env.step_output, frame_collector=self.collector, scene_type='retrieval-')#, self.env.collector.scene_number)
