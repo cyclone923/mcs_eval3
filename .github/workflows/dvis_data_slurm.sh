@@ -1,11 +1,11 @@
 #!/bin/bash
-#SBATCH -J mcs_ga_build     # name of job
-#SBATCH -A eecs             # sponsored account
-#SBATCH -p gpu              # partition or queue
-#SBATCH -o dvis_data.out    # output file
-#SBATCH -e dvis_data.err    # error file
-#SBATCH --ntasks-per-node=8 # num CPUs
-#SBATCH --gres=gpu:1        # request 1 GPU
+#SBATCH -J mcs_ga_build      # name of job
+#SBATCH -A eecs              # sponsored account
+#SBATCH -p gpu               # partition or queue
+#SBATCH -o dvis_data.out     # output file
+#SBATCH -e dvis_data.err     # error file
+#SBATCH --ntasks-per-node=16 # num CPUs
+#SBATCH --gres=gpu:1         # request 1 GPU
 #SBATCH --nodelist=cn-gpu2
 
 export MAX_TIME=1e4 # ~ 3hrs
@@ -68,16 +68,24 @@ bash setup_vision.sh &> /dev/null
 bash get_dataset.sh &> /dev/null
 export PYTHONPATH=$PWD
 
-python vision/generateData/simple_task_multi.py 0 2 &
-#python vision/generateData/simple_task_multi.py 5 5 
-#python vision/generateData/simple_task_multi.py 250 374 &
-#python vision/generateData/simple_task_multi.py 375 499 &
-#python vision/generateData/simple_task_multi.py 500 624 &
-#python vision/generateData/simple_task_multi.py 625 749 &
-#python vision/generateData/simple_task_multi.py 669 874 &
-sleep 30
+# 66, 132, 198, 264, 330, 396, 462, 528, 594 and 660
+python vision/generateData/simple_task_multi.py 0 66 &
+python vision/generateData/simple_task_multi.py 132 66 & 
+python vision/generateData/simple_task_multi.py 198 66 &
+python vision/generateData/simple_task_multi.py 264 66 &
+python vision/generateData/simple_task_multi.py 330 66 &
+python vision/generateData/simple_task_multi.py 396 66 &
+python vision/generateData/simple_task_multi.py 462 66 &
+python vision/generateData/simple_task_multi.py 528 66 &
+python vision/generateData/simple_task_multi.py 660 66 &
+python vision/generateData/simple_task_multi.py 726 66 &
+python vision/generateData/simple_task_multi.py 792 66 &
+python vision/generateData/simple_task_multi.py 858 66 &
+python vision/generateData/simple_task_multi.py 924 66 &
+sleep 20
 nvidia-smi # let's see how the GPU is doing!
-python vision/generateData/simple_task_multi.py 2 4
+# increase prob that this next 1 finishes last
+python vision/generateData/simple_task_multi.py 990 86
 
 # $? stores the exit code of the most recently finished process
 if [[ $? = 0 ]]; then
