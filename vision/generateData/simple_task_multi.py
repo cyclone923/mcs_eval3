@@ -36,7 +36,8 @@ if __name__ == "__main__":
 
     metaController = MetaController(env, level, collector)
 
-    while env.current_scene < start_scene_number + number_scenes:
+    #while env.current_scene < start_scene_number + number_scenes:
+    for _ in range(number_scenes):
         env.reset()
         result = metaController.execute()
 
