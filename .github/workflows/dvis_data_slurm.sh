@@ -68,7 +68,7 @@ bash setup_vision.sh &> /dev/null
 bash get_dataset.sh &> /dev/null
 export PYTHONPATH=$PWD
 
-python vision/generateData/simple_task_multi.py 0 5 &
+python vision/generateData/simple_task_multi.py 0 2 &
 #python vision/generateData/simple_task_multi.py 5 5 
 #python vision/generateData/simple_task_multi.py 250 374 &
 #python vision/generateData/simple_task_multi.py 375 499 &
@@ -77,7 +77,7 @@ python vision/generateData/simple_task_multi.py 0 5 &
 #python vision/generateData/simple_task_multi.py 669 874 &
 sleep 30
 nvidia-smi # let's see how the GPU is doing!
-python vision/generateData/simple_task_multi.py 5 5
+python vision/generateData/simple_task_multi.py 2 4
 
 # $? stores the exit code of the most recently finished process
 if [[ $? = 0 ]]; then
