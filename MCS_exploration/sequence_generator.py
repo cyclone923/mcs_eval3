@@ -22,7 +22,7 @@ class SequenceGenerator(object):
     def __init__(self,sess, env, level, frame_collector=None):
         #print ("seq generator init")
         self.controller = env
-        self.agent = graph_agent.GraphAgent(env ,level, frame_collect=frame_collector, reuse=True)
+        self.agent = graph_agent.GraphAgent(env ,level, frame_collector=frame_collector, reuse=True)
         self.game_state = self.agent.game_state
         #self.action_util = self.game_state.action_util
         self.planner_prob = 0.5
