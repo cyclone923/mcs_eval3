@@ -159,8 +159,8 @@ class GameState(object):
         return
 
     def reset(self, scene_name=None, use_gt=True, seed=None, config_filename= "",event=None):
-        if self.frame_collector:
-            self.frame_collector.reset()
+        if self.collector:
+            self.collector.reset()
                 
         if scene_name is None:
             # Do half reset
