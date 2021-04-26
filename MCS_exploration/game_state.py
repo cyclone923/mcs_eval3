@@ -75,7 +75,7 @@ def retrieve_position(scene_event):
 
 
 class GameState(object):
-    def __init__(self, env=None,level="level1", depth_scope=None):
+    def __init__(self, env=None,level="level1", depth_scope=None, frame_collector=None):
         if env == None:
             print("MS Creating ENV !!!!")
             self.env = game_util.create_env()
@@ -137,10 +137,11 @@ class GameState(object):
                                                    config='plus_resnet50_config_depth_MC',
                                                    weights='./vision/instSeg/dvis_resnet50_mc.pth')
 
-        self.collector = Frame_collector(scene_dir="simple_task_img",
-                                        start_scene_number=0,
-                                        scene_type='interact',
-                                        fg_class_en=False)
+#         self.collector = Frame_collector(scene_dir="simple_task_img",
+#                                         start_scene_number=0,
+#                                         scene_type='interact',
+#                                         fg_class_en=False)
+        self.collector = frame_collector
 
     def occupancy_map_init(self):
         #rows = int(self.map_width//self.grid_size)
