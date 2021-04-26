@@ -403,7 +403,8 @@ class GameState(object):
         try:
             print("calling save_frame() in game_state.py!")
             self.collector.save_frame(self.event)
-        except:
+        exception Exception as e:
+            print("exception during save_frame(): ", e)
             print("MS step skip ", action)
             pass
         end_2 = time.time()
