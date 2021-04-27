@@ -4,7 +4,7 @@ from physicsvoe.timer import Timer
 from physicsvoe.data.types import make_camera
 
 from gravity import pybullet_utilities
-from vision.gravity import L2DataPacketV2
+from vision.physics import L2DataPacketV2
 from gravity.gravity_utilities import convert_l2_to_dict
 
 from tracker import track, appearence, filter_masks
