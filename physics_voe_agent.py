@@ -3,6 +3,10 @@ from physicsvoe import framewisevoe, occlude
 from physicsvoe.timer import Timer
 from physicsvoe.data.types import make_camera
 
+from gravity import pybullet_utilities
+from vision.gravity import L2DataPacketV2
+from gravity.gravity_utilities import convert_l2_to_dict
+
 from tracker import track, appearence, filter_masks
 import visionmodule.inference as vision
 
@@ -51,6 +55,7 @@ class VoeAgent:
         for i, x in enumerate(config['goal']['action_list']):
             step_output = self.controller.step(action=x[0])
             voe_detected, voe_heatmap, voe_xy_list, viols, frame_errs = self.calc_voe(step_output, i, folder_name)
+
             all_viols.append(viols)
             all_errs += frame_errs
             scene_voe_detected = scene_voe_detected or voe_detected
@@ -81,6 +86,16 @@ class VoeAgent:
             masks = self.level1_masks(depth_map, rgb_image)
         else:
             raise ValueError(f'Unknown level `{self.level}`')
+        
+        # get object data for pybullet
+        step_output_dict = {}
+        try:
+            step_output = L2DataPacketV2(step_number=frame_num, step_meta=step_output, scene=scene_name)
+            step_output_dict = convert_l2_to_dict(step_output)
+        except Exception as e:
+            print("Couldn't process step i={}".format(frame_num))
+            print(e)
+
         # Calculate tracking info
         self.track_info = track.track_objects(masks, self.track_info)
         self.track_info['objects'] = \

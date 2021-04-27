@@ -732,7 +732,10 @@ class ObjectV2:
 
     def find_obj_kind_nn(self) -> None:
 
-        if self.role != "target":
+        if self.role == "pole":
+            self.kind = "cylinder"
+            return
+        else:
             self.kind = "cube"
             return
         
@@ -757,6 +760,7 @@ class L2DataPacketV2:
 
     step_number: int
     step_meta: mcs.StepMetadata
+    scene: str
 
     def __post_init__(self):
 
@@ -825,9 +829,7 @@ class L2DataPacketV2:
         return objects
 
     def determine_obj_roles(self):
-
-        assert 3 <= len(self.objects) <= 5, "Support, floor & wall should always be in scene"
-
+        # assert 3 <= len(self.objects) <= 5, "Support, floor & wall should always be in scene"
         # Determining floor & wall
         floor_found, wall_found = False, False
         for this_ob in self.objects:
@@ -845,59 +847,34 @@ class L2DataPacketV2:
 
         assert floor_found and wall_found, "Floor & wall should have been found by now"
 
-        # Determining support
-        support_found = False
-        if len(self.objects) == 3:
-            for this_ob in self.objects:
-                if this_ob.role not in ["floor", "back-wall"]:
-                    this_ob.role = "support"
-                    support_found = True
+        # Determine pole(s) by finding closest objects to ceiling
+        smallest_cY = float("inf")
+        mid_cY = self.rgb_im.shape[0] / 2
+        pole_idx = None
+        for idx, this_ob in enumerate(self.objects):
+            if this_ob.role not in ["floor", "back-wall"]:
+                _, cY = self._get_obj_moments(this_ob.obj_mask)
+                if cY <= smallest_cY and cY < mid_cY/2:
+                    pole_idx = idx
+                    smallest_cY = cY
+            if pole_idx is not None:
+                self.objects[pole_idx].role = "pole"
+                pole_idx = None
 
-        else:
-            # Find closest object to floor
-            biggest_cY = -float("inf")
-            support_idx = None
-            for idx, this_ob in enumerate(self.objects):
-                if this_ob.role not in ["floor", "back-wall"]:
-                    _, cY = self._get_obj_moments(this_ob.obj_mask)
-                    if cY > biggest_cY:
-                        support_idx = idx
-                        biggest_cY = cY
-            self.objects[support_idx].role = "support"
-            support_found = True
+        # Determine occluder(s) by finding large objects with centroids near the horizontal axis
+        occluder_idx = None
+        nearest_cY = float("inf")
+        for idx, this_ob in enumerate(self.objects):
+            if this_ob.role not in ["floor", "back-wall", "pole"]:
+                _, cY = self._get_obj_moments(this_ob.obj_mask)
+                if np.abs(mid_cY - cY) < nearest_cY and np.abs(mid_cY - cY) < 50:
+                    occluder_idx = idx
+                    smallest_cY = cY
+            if occluder_idx is not None:
+                self.objects[occluder_idx].role = "occluder"
+                occluder_idx = None
 
-        assert support_found, "Support should have been found by now"
-
-        # Determining target
-        target_found = False
-        if len(self.objects) == 4:
-            for this_ob in self.objects:
-                if this_ob.role not in ["floor", "back-wall", "support"]:
-                    this_ob.role = "target"
-                    target_found = True
-        else:
-            # Find closest object to floor
-            biggest_cY = -float("inf")
-            target_idx = None
-            for idx, this_ob in enumerate(self.objects):
-                if this_ob.role not in ["floor", "back-wall", "support"]:
-                    _, cY = self._get_obj_moments(this_ob.obj_mask)
-                    if cY > biggest_cY:
-                        target_idx = idx
-                        biggest_cY = cY
-            if target_idx is not None:
-                self.objects[target_idx].role = "target"
-                target_found = True
-
-        # Determine pole
-        pole_found = False
-        if len(self.objects) == 5:
-            for this_ob in self.objects:
-                if this_ob.role == "default":
-                    this_ob.role = "pole"
-                    pole_found = True
-                    break
-        # TODO: write assertion to check consistency
+        # keep everything else labeled as default
 
 
     def calculate_physical_props(self):
@@ -910,18 +887,27 @@ class L2DataPacketV2:
             this_ob.find_obj_kind_nn()
 
     def load_roles_as_attr(self):
-
+        self.poles = []
+        self.occluders = []
+        self.targets = []
+        
         for this_ob in self.objects:
             
             # In their order of appearance
             if this_ob.role == "floor":
                 self.floor = this_ob
 
-            elif this_ob.role == "support":
-                self.support = this_ob
+            # elif this_ob.role == "support":
+            #     self.support = this_ob
 
-            elif this_ob.role == "target":
-                self.target = this_ob
+            # elif this_ob.role == "target":
+            #     self.target = this_ob
 
             elif this_ob.role == "pole":
-                self.pole = this_ob
+                self.poles.append(this_ob)
+
+            elif this_ob.role == "occluder":
+                self.poles.append(this_ob)
+
+            elif this_ob.role == "default":
+                self.targets.append(this_ob)
