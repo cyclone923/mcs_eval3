@@ -82,7 +82,7 @@ python vision/generateData/simple_task_multi.py 726 66 &
 python vision/generateData/simple_task_multi.py 792 66 &
 python vision/generateData/simple_task_multi.py 858 66 &
 python vision/generateData/simple_task_multi.py 924 66 &
-sleep 20
+sleep 66
 nvidia-smi # let's see how the GPU is doing!
 # increase prob that this next 1 finishes last
 python vision/generateData/simple_task_multi.py 990 86
