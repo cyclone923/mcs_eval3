@@ -159,6 +159,7 @@ class GameState(object):
         return
 
     def reset(self, scene_name=None, use_gt=True, seed=None, config_filename= "",event=None):
+        self.collector.reset()
         if scene_name is None:
             # Do half reset
             action_ind = self.local_random.randint(0, constants.STEPS_AHEAD ** 2 - 1)
@@ -181,7 +182,7 @@ class GameState(object):
             action_x = self.pose[0] + x_shift
             action_z = self.pose[1] + z_shift
             self.end_point = (action_x, action_z, self.pose[2])
-            #print ("in the game state reset end point is : ", self.end_point)
+            #print ("in the game state reset end point is : ", self.end_point
 
         else:
             # Do full reset

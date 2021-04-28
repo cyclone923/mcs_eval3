@@ -11,7 +11,7 @@ DEBUG = False
 
 
 if __name__ == "__main__":
-    start_scene_number = 0
+    start_scene_number = 1
 
     config_ini = configparser.ConfigParser()
     config_ini.read("mcs_config.ini")
