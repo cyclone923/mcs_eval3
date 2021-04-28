@@ -1,7 +1,7 @@
 import torch
 import torch.nn.functional as F
 from ..box_utils import decode, jaccard, index2d
-from vision.instSeg.utils import timer
+from utils import timer
 
 import numpy as np
 
