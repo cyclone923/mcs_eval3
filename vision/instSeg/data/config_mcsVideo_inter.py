@@ -50,10 +50,10 @@ mcsvideo_dataset_base = Config({
 mcsvideo_interact_dataset = mcsvideo_dataset_base.copy({
     'name': 'mcs interaction',
 
-    'train_images': '../dataset/mcsvideo/',
+    'train_images': 'visionmodule/data/dataset/mcsvideo/interaction_scenes/',
     'train_info': '../dataset/mcsvideo/interaction_scenes/train.txt',
 
-    'valid_images': '../dataset/mcsvideo/',
+    'valid_images': 'visionmodule/data/dataset/mcsvideo/interaction_scenes/',
     'valid_info': '../dataset/mcsvideo/interaction_scenes/val.txt',
 
     'class_names': MCSVIDEO_INTER_CLASSES,
@@ -69,11 +69,11 @@ mcsvideo_interact_dataset = mcsvideo_dataset_base.copy({
 mcsvideo_interact_depth_dataset = mcsvideo_dataset_base.copy({
     'name': 'mcs interaction',
 
-    'train_images': '../dataset/mcsvideo/',
-    'train_info': '../dataset/mcsvideo/interaction_scenes/train.txt',
+    'train_images': 'visionmodule/data/dataset/mcsvideo/interaction_scenes/',
+    'train_info': 'visionmodule/data/dataset/mcsvideo/interaction_scenes/train.txt',
 
-    'valid_images': '../dataset/mcsvideo/',
-    'valid_info': '../dataset/mcsvideo/interaction_scenes/val.txt',
+    'valid_images': 'visionmodule/data/dataset/mcsvideo/interaction_scenes/',
+    'valid_info': 'visionmodule/data/dataset/mcsvideo/interaction_scenes//val.txt',
 
     'class_names': MCSVIDEO_INTER_CLASSES,
     'label_map': MCSVIDEO_INTER_LABEL_MAP,

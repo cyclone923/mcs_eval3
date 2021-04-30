@@ -206,7 +206,9 @@ def train(args, cfg, option, DataSet):
     if not os.path.exists(args.log_folder):
         os.makedirs(args.log_folder, exist_ok=True)
 
+    # import pdb; pdb.set_trace()
     if True:
+        
         dataset = DataSet(image_path=cfg.dataset.train_images,
                                 mask_out_ch=cfg.gt_inst_ch,
                                 info_file=cfg.dataset.train_info,
