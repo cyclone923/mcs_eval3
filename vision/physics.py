@@ -30,7 +30,8 @@ OBJ_ROLES = {
     "target",
     "support",
     "floor",
-    "back-wall"
+    "back-wall",
+    "occluder"
 }
 
 TUBE_WIDTH2HEIGHT_RATIO = 2.5
@@ -56,6 +57,7 @@ class ObjectV2:
     w_h_d: tuple = None
     centroid: tuple = None
     centroid_px: tuple = None
+    bbox_corners: np.ndarray = None
 
     def __post_init__(self):
         self.front_view = self._estimate_obj_mask_front_view()
@@ -150,16 +152,16 @@ class ObjectV2:
             o3d.visualization.draw_geometries([obj_point_cloud])
 
         bbox = obj_point_cloud.get_axis_aligned_bounding_box()
-        bbox_corners = np.asarray(bbox.get_box_points())
+        self.bbox_corners = np.asarray(bbox.get_box_points())
 
         dy = 1.75
-        bbox_corners = np.asarray(
+        self.bbox_corners = np.asarray(
             bbox.translate([0, dy, 0], relative=True)
                 .get_box_points()
             )
         self.dims = [
             {"x": pt[0], "y": pt[1], "z": pt[2]}
-            for pt in bbox_corners
+            for pt in self.bbox_corners
         ]
         self.w_h_d = np.abs(bbox.get_extent()).tolist()
 
@@ -293,7 +295,7 @@ class ObjectV2:
         self.has_flat_face = face_type == "flat"
         self.has_curved_face = face_type == "curved"
 
-        if self.role in ["pole", "floor", "support", "back-wall"]:
+        if self.role in ["pole", "floor", "support", "back-wall", "occluder"]:
             self.kind = "cube"
         else:
             pdb.set_trace()
@@ -499,7 +501,7 @@ class L2DataPacketV2:
                 self.poles.append(this_ob)
 
             elif this_ob.role == "occluder":
-                self.poles.append(this_ob)
+                self.occluders.append(this_ob)
 
             elif this_ob.role == "default":
                 self.targets.append(this_ob)
