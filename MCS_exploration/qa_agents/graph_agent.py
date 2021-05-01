@@ -9,11 +9,12 @@ import constants
 
 
 class GraphAgent(object):
-    def __init__(self, env,level, reuse=True, num_unrolls=1, game_state=None, net_scope=None):
+    def __init__(self, env,level, reuse=True, num_unrolls=1, game_state=None, net_scope=None, frame_collector=None):
         self.nav_radius = AGENT_RADIUS
         self.nav = bounding_box_navigator.BoundingBoxNavigator(self.nav_radius, maxStep=0.1)
         if game_state is None:
-            self.game_state = GameState(env=env,level=level)
+            print("Gamee State NONEEE MS")
+            self.game_state = GameState(env=env, level=level, frame_collector=frame_collector)
             self.game_state.add_obstacle_func = self.nav.add_obstacle_from_bounding_boxes
             #self.game_state.add_obstacle_func = self.nav.add_obstacle_from_global_obstacles
             self.game_state.get_obstacles = self.nav.get_obstacles
@@ -50,6 +51,7 @@ class GraphAgent(object):
 
 
     def step(self, action):
+        print("MS other step used! ", action)
         t_start = time.time()
         self.game_state.step(action)
         self.times[1] += time.time() - t_start
@@ -68,4 +70,3 @@ class GraphAgent(object):
         patch[patch < 2] = 0
         patch[patch > 1] = 1
         return patch
-

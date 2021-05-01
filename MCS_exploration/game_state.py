@@ -19,6 +19,7 @@ from MCS_exploration.obstacle import Obstacle
 import copy
 from vision.instSeg.inference import MaskAndClassPredictor
 from vision.instSeg.data.config_mcsVideo3_inter import MCSVIDEO_INTER_CLASSES_BG, MCSVIDEO_INTER_CLASSES_FG
+from vision.generateData.frame_collector import Frame_collector
 
 TROPHY_INDEX = MCSVIDEO_INTER_CLASSES_FG.index('trophy') + 1
 BOX_INDEX = MCSVIDEO_INTER_CLASSES_FG.index('box') + 1
@@ -74,8 +75,9 @@ def retrieve_position(scene_event):
 
 
 class GameState(object):
-    def __init__(self, env=None,level="level1", depth_scope=None):
+    def __init__(self, env=None,level="level1", depth_scope=None, frame_collector=None):
         if env == None:
+            print("MS Creating ENV !!!!")
             self.env = game_util.create_env()
         else :
             self.env = env
@@ -135,6 +137,12 @@ class GameState(object):
                                                    config='plus_resnet50_config_depth_MC',
                                                    weights='./vision/instSeg/dvis_resnet50_mc.pth')
 
+#         self.collector = Frame_collector(scene_dir="simple_task_img",
+#                                         start_scene_number=0,
+#                                         scene_type='interact',
+#                                         fg_class_en=False)
+        self.collector = frame_collector
+
     def occupancy_map_init(self):
         #rows = int(self.map_width//self.grid_size)
         #cols = int(self.map_length//self.grid_size)
@@ -152,6 +160,9 @@ class GameState(object):
         return
 
     def reset(self, scene_name=None, use_gt=True, seed=None, config_filename= "",event=None):
+#         if self.collector:
+#             self.collector.reset()
+                
         if scene_name is None:
             # Do half reset
             action_ind = self.local_random.randint(0, constants.STEPS_AHEAD ** 2 - 1)
@@ -250,11 +261,11 @@ class GameState(object):
                 #rotation = self.event.rotation
                 tilt = self.event.head_tilt
                 self.pose_estimate =np.array([float(position['x']),float(position['z']),rotation]).reshape(3, 1)
-
+               
                 for elem in self.event.object_list:
                     if self.event.goal.metadata['target']['id'] == elem.uuid :
                         self.goal_object = elem
-            
+
                 dimensions = self.goal_object.dimensions
                 bd_point = set()
                 for i in range(0, 8):
@@ -327,6 +338,7 @@ class GameState(object):
         #print ("end of reset in game state function")
 
     def step(self, action_or_ind):
+        # print("MS 3 step ", action_or_ind)
         #print ("game state head tilt",self.head_tilt)
         #print ("event head tilt", self.event.head_tilt)
         self.new_found_objects = []
@@ -388,8 +400,16 @@ class GameState(object):
 
         start_2 = time.time()
         self.event = self.env.step(action=action)
+        try:
+            print("calling save_frame() in game_state.py!")
+            self.collector.save_frame(self.event)
+        except Exception as e:
+            print("exception during save_frame(): ", e)
+            print("MS step skip ", action)
+            pass
         end_2 = time.time()
         action_time = end_2-start_2
+        # print(f"MS action time {action_time}")
 
         if self.level == "oracle" :#or self.level == "level1" or self.level == "level2":
             for elem in self.event.object_list:

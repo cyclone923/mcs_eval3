@@ -11,7 +11,8 @@ DEBUG = False
 
 
 if __name__ == "__main__":
-    start_scene_number = 0
+    start_scene_number = int(sys.argv[1]) or 0
+    number_scenes = int(sys.argv[2]) or 1
 
     config_ini = configparser.ConfigParser()
     config_ini.read("mcs_config.ini")
@@ -33,9 +34,10 @@ if __name__ == "__main__":
                  trophy_prob=0 # probability for trophy outside the box, that 1-outside the box, 0-inside the box.
     )
 
-    metaController = MetaController(env, level)
+    metaController = MetaController(env, level, collector)
 
-    while env.current_scene < len(env.all_scenes) - 1:
+    #while env.current_scene < start_scene_number + number_scenes:
+    for _ in range(number_scenes):
         env.reset()
         result = metaController.execute()
 
@@ -43,3 +45,4 @@ if __name__ == "__main__":
 
         sys.stdout.flush()
         collector.reset()
+        #exit();import time; time.sleep(30)

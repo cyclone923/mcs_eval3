@@ -42,12 +42,13 @@ def set_goal_with_trophy(scene_config, box_config, trophy_prob=1):
             remove_walls.append(obj)
     scene_config['objects'] = remove_walls
 
+
     for obj in scene_config['objects']:
         x_list = []
         y_list = []
         for i in range(4):
-            x_list.append(obj['shows'][0]['bounding_box'][i]['x'])
-            y_list.append(obj['shows'][0]['bounding_box'][i]['z'])
+            x_list.append(obj['shows'][0]['boundingBox'][i]['x'])
+            y_list.append(obj['shows'][0]['boundingBox'][i]['z'])
         obstacles.append(ObstaclePolygon(x_list, y_list))
 
     x_list = np.array([5.5, 5.5, -5.5, -5.5])

@@ -1,5 +1,10 @@
 #!/bin/bash -x
 
+# skip if already downloaded
+if [ -d "interaction_scenes/retrieval" ]; then
+  exit 0
+fi
+
 wget https://evaluation2-training-scenes.s3.amazonaws.com/interaction-scenes.zip
 
 unzip interaction-scenes.zip
