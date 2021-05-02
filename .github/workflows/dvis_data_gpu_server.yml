@@ -5,7 +5,7 @@ name: Automated System Test
 
 on:
   push: 
-    branches: [ test.yaml-rob ] 
+    branches: [ component/interactive-env ] 
 
 jobs:
   dvis_data_gpu_server:
