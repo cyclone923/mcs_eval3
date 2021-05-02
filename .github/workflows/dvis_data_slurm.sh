@@ -113,7 +113,11 @@ cp -r /nfs/hpc/share/$USER/diego_bkup_2 data/dataset/mcsvideo/interaction_scenes
 cp /nfs/hpc/share/$USER/diego_bkup_2/train.txt data/dataset/mcsvideo/interaction_scenes/
 cp /nfs/hpc/share/$USER/diego_bkup_2/eval.txt data/dataset/mcsvideo/interaction_scenes/
 
-python train.py --scripts=mcsvideo3_inter_unary_pw.json
+chmod -R 775 /nfs/hpc/share/$USER/mcs_opics
+
+python train.py --scripts=mcsvideo3_inter_unary_pw.json &
+sleep 66
+nvidia-smi 
 ########################################################################################
 
 # kill the process keeping this slurm job open
