@@ -77,7 +77,6 @@ def retrieve_position(scene_event):
 class GameState(object):
     def __init__(self, env=None,level="level1", depth_scope=None, frame_collector=None):
         if env == None:
-            print("MS Creating ENV !!!!")
             self.env = game_util.create_env()
         else :
             self.env = env
@@ -137,11 +136,8 @@ class GameState(object):
                                                    config='plus_resnet50_config_depth_MC',
                                                    weights='./vision/instSeg/dvis_resnet50_mc.pth')
 
-#         self.collector = Frame_collector(scene_dir="simple_task_img",
-#                                         start_scene_number=0,
-#                                         scene_type='interact',
-#                                         fg_class_en=False)
         self.collector = frame_collector
+
 
     def occupancy_map_init(self):
         #rows = int(self.map_width//self.grid_size)
@@ -160,9 +156,13 @@ class GameState(object):
         return
 
     def reset(self, scene_name=None, use_gt=True, seed=None, config_filename= "",event=None):
+<<<<<<< HEAD
 #         if self.collector:
 #             self.collector.reset()
                 
+=======
+        self.collector.reset()
+>>>>>>> 229a786788b2ecdef7c6bd58f79fbacd5e1be88f
         if scene_name is None:
             # Do half reset
             action_ind = self.local_random.randint(0, constants.STEPS_AHEAD ** 2 - 1)
@@ -185,7 +185,7 @@ class GameState(object):
             action_x = self.pose[0] + x_shift
             action_z = self.pose[1] + z_shift
             self.end_point = (action_x, action_z, self.pose[2])
-            #print ("in the game state reset end point is : ", self.end_point)
+            #print ("in the game state reset end point is : ", self.end_point
 
         else:
             # Do full reset
@@ -405,7 +405,6 @@ class GameState(object):
             self.collector.save_frame(self.event)
         except Exception as e:
             print("exception during save_frame(): ", e)
-            print("MS step skip ", action)
             pass
         end_2 = time.time()
         action_time = end_2-start_2

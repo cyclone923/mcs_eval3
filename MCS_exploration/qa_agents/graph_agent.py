@@ -13,7 +13,6 @@ class GraphAgent(object):
         self.nav_radius = AGENT_RADIUS
         self.nav = bounding_box_navigator.BoundingBoxNavigator(self.nav_radius, maxStep=0.1)
         if game_state is None:
-            print("Gamee State NONEEE MS")
             self.game_state = GameState(env=env, level=level, frame_collector=frame_collector)
             self.game_state.add_obstacle_func = self.nav.add_obstacle_from_bounding_boxes
             #self.game_state.add_obstacle_func = self.nav.add_obstacle_from_global_obstacles

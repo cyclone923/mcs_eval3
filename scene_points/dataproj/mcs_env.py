@@ -28,7 +28,7 @@ class McsEnv:
             self.all_scenes = [s for s in _scenegen if filter in s.name]
 
     def run_scene(self, scene_path):
-        scene_config, _ = mcs.load_config_json_file(scene_path)
+        scene_config, _ = mcs.load_scene_json_file(scene_path)
         step_output = self.controller.start_scene(scene_config)
         for action in scene_config['goal']['action_list']:
             step_output = self.controller.step(action=action[0])

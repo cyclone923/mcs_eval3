@@ -48,6 +48,7 @@ class McsEnv:
         else:
             self.all_scenes = [os.path.join("scenes", "playroom.json")]
 
+        print(self.all_scenes)
         self.current_scene = start_scene_number - 1
 
         if seed:
@@ -72,7 +73,6 @@ class McsEnv:
     def reset(self, random_init=False, repeat_current=False):
         if not repeat_current:
             if not random_init:
-                
                 # print(self.all_scenes[self.current_scene])
                 self.scene_config, status = mcs.load_scene_json_file(self.all_scenes[self.current_scene])
                 self.current_scene += 1
@@ -90,6 +90,7 @@ class McsEnv:
             with open(os.path.join(self.debug_dir, 'box_trophy_{0:0=4d}.json'.format(self.current_scene)), 'w') as fp:
                 json.dump(self.scene_config, fp, indent=4)
 
+        print(self.scene_config)
         self.step_output = self.controller.start_scene(self.scene_config)
 
 if __name__ == '__main__':

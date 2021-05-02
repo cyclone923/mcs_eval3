@@ -8,8 +8,6 @@ import configparser
 
 DEBUG = False
 
-
-
 if __name__ == "__main__":
     start_scene_number = 0
 
