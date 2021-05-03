@@ -111,14 +111,21 @@ class MCSVIDEODetection(Detection):
 
         if self.read_depth:
             depth_file = osp.join(self.root, sub_folder, fname.replace('original', 'depth') + '.png')
-            if os.path.exists(depth_file):
-                depthI = smisc.imread(depth_file, mode='P')
-                depthI = depthI[:, :, None]
-            else:
-                sys.exit("can not find the depth file", depth_file)
+            if not os.path.exists(depth_file):
+                #sys.exit("can not find the depth file", depth_file)
+                return self.pull_item(index+1)
+
+            depthI = smisc.imread(depth_file, mode='P')
+            depthI = depthI[:, :, None]
 
         num_crowds = 0
         if self.has_gt:
+            sem_file  = osp.join(self.root, sub_folder, fname.replace('original', 'cls')+'.png')
+            inst_file  = osp.join(self.root, sub_folder, fname.replace('original', 'inst')+'.png')
+            if (not os.path.exists(sem_file)) or (not os.path.exists(inst_file)):
+                #sys.exit("can not find the sem file or inst file", sem_file, inst_file)
+                return self.pull_item(index+1)
+
             anns = self.pull_anno(index)
             semI, masks, target = anns['sem'], anns['inst_mask'], anns['bbox']
             if self.select_semids is not None and \
