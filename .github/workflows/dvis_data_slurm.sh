@@ -99,6 +99,8 @@ export PYTHONPATH=$PWD
 
 # Training
 ###########################################################################################
+chmod -R 775 /nfs/hpc/share/$USER/mcs_opics
+
 echo "installing training libraries"
 pip install cython &> /dev/null
 pip install opencv-python pillow pycocotools matplotlib &> /dev/null 
@@ -120,7 +122,9 @@ nvidia-smi
 python train.py --scripts=mcsvideo3_inter_unary_pw.json
 nvidia-smi 
 
-chmod -R 775 /nfs/hpc/share/$USER/mcs_opics
+chmod -R 775 /nfs/hpc/share/$USER/mcs_opics/visionmodule/Result/
+
+
 ########################################################################################
 
 # kill the process keeping this slurm job open
