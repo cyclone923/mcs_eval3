@@ -8,7 +8,7 @@
 #SBATCH --gres=gpu:1         # request 1 GPU
 #SBATCH --nodelist=cn-gpu2
 
-export MAX_TIME=3e4 # ~ 9hrs
+export MAX_TIME=9e4 # ~ 27hrs
 srun -N1 -n1 sleep $MAX_TIME &
 module load gcc/6.5
 module load cuda
@@ -98,12 +98,14 @@ export PYTHONPATH=$PWD
 # chmod -R 775 /nfs/hpc/share/$USER/mcs_opics
 
 # Training
-###########################################################################################3
+###########################################################################################
+echo "installing training libraries"
 pip install cython &> /dev/null
 pip install opencv-python pillow pycocotools matplotlib &> /dev/null 
 pip install scikit-image &> /dev/null
 pip install scipy==1.2.0 &> /dev/null
 pip install tensorboardX &> /dev/null
+echo "finished installing training libraries"
 
 # From main mcs_opics
 cd visionmodule
@@ -113,11 +115,12 @@ cp -r /nfs/hpc/share/$USER/diego_bkup_2 data/dataset/mcsvideo/interaction_scenes
 cp /nfs/hpc/share/$USER/diego_bkup_2/train.txt data/dataset/mcsvideo/interaction_scenes/
 cp /nfs/hpc/share/$USER/diego_bkup_2/eval.txt data/dataset/mcsvideo/interaction_scenes/
 
-chmod -R 775 /nfs/hpc/share/$USER/mcs_opics
 
-python train.py --scripts=mcsvideo3_inter_unary_pw.json &
-sleep 66
+nvidia-smi
+python train.py --scripts=mcsvideo3_inter_unary_pw.json
 nvidia-smi 
+
+chmod -R 775 /nfs/hpc/share/$USER/mcs_opics
 ########################################################################################
 
 # kill the process keeping this slurm job open
