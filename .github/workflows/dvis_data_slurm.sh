@@ -7,7 +7,7 @@
 #SBATCH --ntasks-per-node=16 # num CPUs
 #SBATCH --gres=gpu:1         # request 1 GPU
 #SBATCH --nodelist=cn-gpu2
-#SBATCH --time 2-12:00:00    # 2.5 days
+#SBATCH --time 3-12:00:00    # 2.5 days
 
 export MAX_TIME=18e4 # ~ 54hrs
 srun -N1 -n1 sleep $MAX_TIME &
