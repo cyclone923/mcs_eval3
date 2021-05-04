@@ -10,12 +10,14 @@ on:
 jobs:
   dvis_data_gpu_server:
     runs-on: [pelican]
+    timeout-minutes: 2880
     defaults:
       run:
         shell: bash -l {0}
     steps:
       - uses: actions/checkout@v2
       - name: submit slurm gpu job
+        timeout-minutes: 2880
         run: |
           # copy scripts over to the submit server
           scp $GITHUB_WORKSPACE/.github/workflows/dvis_data_slurm.sh $USER@submit-b.hpc.engr.oregonstate.edu:/tmp/dvis_data_slurm.sh
