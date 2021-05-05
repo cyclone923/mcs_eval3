@@ -4,7 +4,7 @@
 #SBATCH -p dgx2              # partition or queue
 #SBATCH -o dvis_data.out     # output file
 #SBATCH -e dvis_data.err     # error file
-#SBATCH --ntasks-per-node=16 # num CPUs
+#SBATCH --ntasks-per-node=8 # num CPUs
 #SBATCH --gres=gpu:1         # request 1 GPU
 #SBATCH --time 3-12:00:00    # 3.5 days
 
