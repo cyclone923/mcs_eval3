@@ -1,15 +1,14 @@
 #!/bin/bash
 #SBATCH -J mcs_ga_build      # name of job
 #SBATCH -A eecs              # sponsored account
-#SBATCH -p gpu               # partition or queue
+#SBATCH -p dgx2              # partition or queue
 #SBATCH -o dvis_data.out     # output file
 #SBATCH -e dvis_data.err     # error file
 #SBATCH --ntasks-per-node=16 # num CPUs
 #SBATCH --gres=gpu:1         # request 1 GPU
-#SBATCH --nodelist=cn-gpu2
-#SBATCH --time 3-12:00:00    # 2.5 days
+#SBATCH --time 3-12:00:00    # 3.5 days
 
-export MAX_TIME=18e4 # ~ 54hrs
+export MAX_TIME=36e4
 srun -N1 -n1 sleep $MAX_TIME &
 module load gcc/6.5
 module load cuda
@@ -120,7 +119,8 @@ cp /nfs/hpc/share/$USER/diego_bkup_2/eval.txt data/dataset/mcsvideo/interaction_
 
 
 nvidia-smi
-python train.py --scripts=mcsvideo3_inter_unary_pw.json
+touch logs_ms.txt
+python train.py --scripts=mcsvideo3_inter_unary_pw.json >> logs_ms.txt
 nvidia-smi 
 
 chmod -R 775 /nfs/hpc/share/$USER/mcs_opics/visionmodule/Result/

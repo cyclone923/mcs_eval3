@@ -9,7 +9,7 @@
         "log_folder": "./Result/mcsvideo3-inter/logs/",
         "exp_name": "test_first_v1",
         "lr": 1e-5,
-        "save_interval": 1000
+        "save_interval": 200
     },
     "option":{
         "pi_alpha": 0.3,
