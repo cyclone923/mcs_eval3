@@ -1,12 +1,14 @@
 #!/bin/bash
 #SBATCH -J mcs_ga_build      # name of job
 #SBATCH -A eecs              # sponsored account
-#SBATCH -p dgx2              # partition or queue
+#SBATCH -p gpu              # partition or queue
 #SBATCH -o dvis_data.out     # output file
 #SBATCH -e dvis_data.err     # error file
 #SBATCH --ntasks-per-node=8 # num CPUs
+#SBATCH --nodelist=cn-gpu5
 #SBATCH --gres=gpu:1         # request 1 GPU
 #SBATCH --time 3-12:00:00    # 3.5 days
+
 
 export MAX_TIME=36e4
 srun -N1 -n1 sleep $MAX_TIME &
@@ -118,10 +120,10 @@ cp /nfs/hpc/share/$USER/diego_bkup_2/train.txt data/dataset/mcsvideo/interaction
 cp /nfs/hpc/share/$USER/diego_bkup_2/eval.txt data/dataset/mcsvideo/interaction_scenes/
 
 
-nvidia-smi
+nvidia-smi >> test.txt
 touch logs_ms.txt
 python train.py --scripts=mcsvideo3_inter_unary_pw.json >> logs_ms.txt
-nvidia-smi 
+nvidia-smi >> test.txt
 
 chmod -R 775 /nfs/hpc/share/$USER/mcs_opics/visionmodule/Result/
 
