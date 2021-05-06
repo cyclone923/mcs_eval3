@@ -1,10 +1,10 @@
 #!/bin/bash
 #SBATCH -J mcs_ga_build      # name of job
 #SBATCH -A eecs              # sponsored account
-#SBATCH -p gpu              # partition or queue
+#SBATCH -p gpu               # partition or queue
 #SBATCH -o dvis_data.out     # output file
 #SBATCH -e dvis_data.err     # error file
-#SBATCH --ntasks-per-node=8 # num CPUs
+#SBATCH --ntasks-per-node=8  # num CPUs
 #SBATCH --nodelist=cn-gpu5
 #SBATCH --gres=gpu:1         # request 1 GPU
 #SBATCH --time 3-12:00:00    # 3.5 days
@@ -15,6 +15,9 @@ srun -N1 -n1 sleep $MAX_TIME &
 module load gcc/6.5
 module load cuda
 nvidia-smi
+
+nvidia-smi 2>&1 | tee gpu_status.log &
+
 # had to run this to set permissions for sharing:
 # chmod -R 775 /nfs/hpc/share/$USER
 cd /nfs/hpc/share/$USER
@@ -120,15 +123,17 @@ cp /nfs/hpc/share/$USER/diego_bkup_2/train.txt data/dataset/mcsvideo/interaction
 cp /nfs/hpc/share/$USER/diego_bkup_2/eval.txt data/dataset/mcsvideo/interaction_scenes/
 
 
-nvidia-smi >> test.txt
+
 touch logs_ms.txt
 python train.py --scripts=mcsvideo3_inter_unary_pw.json >> logs_ms.txt
-nvidia-smi >> test.txt
+
 
 chmod -R 775 /nfs/hpc/share/$USER/mcs_opics/visionmodule/Result/
 
 
 ########################################################################################
 
+ps -ef | grep nvidia-smi | grep -v grep | awk '{print $2}' | xargs kill
 # kill the process keeping this slurm job open
 pgrep sleep | xargs ps | grep $MAX_TIME | xargs echo | cut -d ' ' -f 1 | xargs kill
+
