@@ -2,7 +2,7 @@
     "args":{
         "dataset": "mcsvideo3_interact_depth_dataset",
         "batch_size": 15,
-        "num_workers": 7,
+        "num_workers": 4,
         "start_iter": 0,
         "config": "plus_resnet50_config_depth_MC",
         "resume": "../vision/instSeg/dvis_resnet50_mc.pth",

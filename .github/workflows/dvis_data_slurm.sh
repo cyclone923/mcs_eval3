@@ -4,7 +4,7 @@
 #SBATCH -p gpu               # partition or queue
 #SBATCH -o dvis_data.out     # output file
 #SBATCH -e dvis_data.err     # error file
-#SBATCH --ntasks-per-node=8  # num CPUs
+#SBATCH --ntasks-per-node=5  # num CPUs
 #SBATCH --nodelist=cn-gpu5
 #SBATCH --gres=gpu:1         # request 1 GPU
 #SBATCH --time 3-12:00:00    # 3.5 days
@@ -13,7 +13,7 @@
 export MAX_TIME=36e4
 srun -N1 -n1 sleep $MAX_TIME &
 module load gcc/6.5
-module load cuda
+module load cuda/10.1
 nvidia-smi
 
 nvidia-smi 2>&1 | tee gpu_status.log &
@@ -45,7 +45,7 @@ if ! [ -d "mcs_opics" ]; then
 fi
 cd mcs_opics
 git stash
-git checkout component/interactive-env
+git checkout component/interactive-env.diego
 git pull &>/dev/null
 
 export OUR_XPID=`nvidia-smi | grep Xorg | awk '{print $5}'`
@@ -122,14 +122,10 @@ cp -r /nfs/hpc/share/$USER/diego_bkup_2 data/dataset/mcsvideo/interaction_scenes
 cp /nfs/hpc/share/$USER/diego_bkup_2/train.txt data/dataset/mcsvideo/interaction_scenes/
 cp /nfs/hpc/share/$USER/diego_bkup_2/eval.txt data/dataset/mcsvideo/interaction_scenes/
 
-
-
 touch logs_ms.txt
 python train.py --scripts=mcsvideo3_inter_unary_pw.json >> logs_ms.txt
 
-
 chmod -R 775 /nfs/hpc/share/$USER/mcs_opics/visionmodule/Result/
-
 
 ########################################################################################
 
