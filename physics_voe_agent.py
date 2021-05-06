@@ -3,7 +3,8 @@ from physicsvoe.data.data_gen import convert_output
 from physicsvoe import framewisevoe, occlude
 from physicsvoe.timer import Timer
 from physicsvoe.data.types import make_camera
-
+from fastdtw import fastdtw
+from scipy.spatial.distance import euclidean
 from gravity import pybullet_utilities
 from vision.physics import L2DataPacketV2
 # from gravity.gravity_utilities import convert_l2_to_dict
@@ -219,6 +220,12 @@ class PhysicsVoeAgent:
 
         return step_output_dict
     
+    def calc_simulator_voe(self, pybullet_traj, unity_traj):
+        # calculate the difference in trajectory as the sum squared distance of each point in time
+        
+        distance, path = fastdtw(pybullet_traj, unity_traj, dist=euclidean)
+        return distance, path
+    
     def run_scene(self, config, desc_name):
         if DEBUG:
             folder_name = Path(self.prefix)/Path(Path(desc_name).stem)
@@ -238,9 +245,15 @@ class PhysicsVoeAgent:
         scene_voe_detected = False
         all_viols = []
         all_errs = []
+        voe_xy_list = list()
 
+        obj_traj_orn = None
+
+        gravity_pb_state = 'incomplete'
         for i, x in enumerate(config['goal']['action_list']):
-            step_output = self.controller.step(action=x[0])
+            step_output = self.controller.step(action=x[0]) # Get the step output
+
+            # Get details of the objects in the scene
             if self.level == "oracle":
                 if step_output is None:
                     break
@@ -274,6 +287,7 @@ class PhysicsVoeAgent:
                 target_objects = self.target_obj_ids(step_output_dict)
                 supporting_object, pole_object, occluder_objects = self.struc_obj_ids(step_output_dict)
             
+            # Track each object's trajectory and position through the scene
             try:
                 # Expected to not dissapear until episode ends
                 support_coords = step_output_dict["structural_object_list"][supporting_object]["dimensions"]
@@ -308,6 +322,77 @@ class PhysicsVoeAgent:
             # TODO: CHECK FOR ENTRANCE VOE
 
             # TODO: RUN PYBULLET
+            pb_run = False
+            if 'pole' in step_output_dict['structural_object_list'].keys():
+                drop_step = self.determine_drop_step(pole_history)
+                if drop_step != -1 and gravity_pb_state != 'complete' and len(step_output_dict['structural_object_list']['occluders']) == 0:
+                    # TEMP; NEED TO HANDLE PB OUTPUT
+                    obj_traj_orn = pybullet_utilities.render_in_pybullet(step_output_dict, 'default', supporting_object, self.level)
+                    gravity_pb_state = ' complete'
+                    pb_run = True
+            else:
+                new_obj_in_scene = False
+                for obj in self.track_info.values():
+                    if len(obj['position']) == 3 and len(obj['trajectory'] == 3):
+                        new_obj_in_scene = True
+                        break
+                if new_obj_in_scene:
+                    # TEMP; NEED TO HANDLE PB OUTPUT
+                    obj_traj_orn = pybullet_utilities.render_in_pybullet(step_output_dict, 'default', supporting_object, self.level)
+                    pb_run = True
+            
+            choice = plausible_str(False)
+            voe_heatmap = np.ones((600, 400))
+            
+            # if pb_run:
+            # TODO: Calculate distance between actual position (Unity) and expected position (PB)
+            if 'pole' not in step_output_dict['structural_object_list'].keys() or (len(pole_history) > 1 and drop_step != -1 and gravity_pb_state != 'complete'):
+                # Calculate confidence
+                for obj_id, obj in self.track_info.items():
+                    unity_traj = [[x['x'], x['y'], x['z']] for x in obj['trajectory']]
+
+                    if unity_traj[-1] != unity_traj[-2]:
+                        confidence = 1.0
+                    elif obj_traj_orn != None:
+                        distance, _ = self.calc_simulator_voe(obj_traj_orn['default'][obj_id]['position'], unity_traj)
+                        confidence = 100 * np.tanh(1 / distance)
+            
+            # TODO: If distance is sufficiently lage, raise Position VoE
+            # confidence has to be bounded between 0 and 1
+            if confidence >= 1:
+                confidence = 1.0
+                # if confidence is 1, throw a no voe signal in the pixels, or the object in unity hasn't stopped moving
+                voe_xy_list.append(
+                    {
+                        "x": -1, # no voe 
+                        "y": -1  # noe voe
+                    }
+                )
+            else:
+                p_c = step_output_dict["object_list"]['default'][obj_id]["pixel_center"]
+                voe_xy_list.append(
+                    {
+                        "x": p_c[0],
+                        "y": p_c[1] 
+                    }
+                )
+                voe_heatmap = np.float32(step_output.target.obj_mask)
+                voe_heatmap[np.all(1.0 == voe_heatmap, axis=-1)] = confidence
+                voe_heatmap[np.all(0 == voe_heatmap, axis=-1)] = 1.0
+
+            if confidence <= 0.5:
+                choice = plausible_str(True)
+
+            # TODO: If object not found in Unity but is expected in PB: raise Presence VoE
+            
+            # TODO: Make step prediction
+            self.controller.make_step_prediction(
+                choice=choice, confidence=confidence, violations_xy_list=voe_xy_list[-1],
+                heatmap_img=voe_heatmap)
+
+
+        # TODO: Make final scene-wide prediction
+
 
 class VoeAgent:
     def __init__(self, controller, level, out_prefix=None):
