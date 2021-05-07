@@ -36,6 +36,7 @@ class AgencyVoeAgent:
         self.M_wall, self.M_gnd = get_homographies()
         self.choice = None
         self.confidence = 1
+        self.cam_im = "lol"
         self.pref_confidence = 1
         self.pref_dict = {
             "obj_1_color": [],
