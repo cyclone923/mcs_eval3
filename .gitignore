@@ -72,6 +72,5 @@ out.zip
 machine.sh
 Open3D/
 
-# Interactive training
-visionmodule/Result/
-visionmodule/data/dataset/
+visionmodule/Result/*
+visionmodule/data/dataset/*

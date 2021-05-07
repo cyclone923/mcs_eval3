@@ -37,7 +37,7 @@ class McsEnv:
         os.environ['MCS_CONFIG_FILE_PATH'] = os.path.join(os.getcwd(), "mcs_config.ini")
 
         self.controller = mcs.create_controller(
-            "unity_app/MCS-AI2-THOR-Unity-App-v0.4.1.1.x86_64",
+            "unity_app/MCS-AI2-THOR-Unity-App-v0.4.2.x86_64",
             config_file_path = os.environ['MCS_CONFIG_FILE_PATH']
         )
 

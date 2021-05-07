@@ -4,10 +4,10 @@
 #SBATCH -p gpu               # partition or queue
 #SBATCH -o dvis_data.out     # output file
 #SBATCH -e dvis_data.err     # error file
-#SBATCH --ntasks-per-node=12 # num CPUs
+#SBATCH --ntasks-per-node=7 # num CPUs
 #SBATCH --nodelist=cn-gpu2
 #SBATCH --gres=gpu:1         # request 1 GPU
-#SBATCH --time 3-12:00:00    # 3.5 days
+#SBATCH --time 1-06:00:00    # 1.25 days
 
 
 export MAX_TIME=36e4
