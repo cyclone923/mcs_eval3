@@ -3,20 +3,21 @@ import time
 import pybullet_data
 import sys
 import numpy as np
+from numpy import allclose 
 import os
 import json
+from math import isclose
 
 def render_in_pybullet(step_output, target, supporting, level):
-    physicsClient = p.connect(p.GUI)#or p.DIRECT for non-graphical version
+    physicsClient = p.connect(p.GUI) # or p.DIRECT for non-graphical version
     # physicsClient = p.connect(p.DIRECT)
 
     p.setAdditionalSearchPath(os.getcwd() + "/gravity/pybullet_objects/") #optionally
     p.setGravity(0,0,-10)
     planeId = p.loadURDF("plane100.urdf")
-    print(planeId)
     
     p.resetDebugVisualizerCamera(3, 0, -42.5, [0,0,0])
-    
+
     # get objects from output
     obj_dict = {}
     boxId = createObjectShape(step_output["structural_object_list"][supporting])
