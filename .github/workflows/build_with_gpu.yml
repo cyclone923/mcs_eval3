@@ -18,7 +18,6 @@ jobs:
       - name: submit slurm gpu job
         run: |
           # copy scripts over to the submit server
-          ssh -tt $USER@submit-b.hpc.engr.oregonstate.edu "rm /tmp/mcs_submit.sh"
           scp $GITHUB_WORKSPACE/.github/workflows/mcs_slurm.sh $USER@submit-b.hpc.engr.oregonstate.edu:/tmp/mcs_slurm.sh
           scp $GITHUB_WORKSPACE/.github/workflows/mcs_submit.sh $USER@submit-b.hpc.engr.oregonstate.edu:/tmp/mcs_submit.sh
           ssh -tt $USER@submit-b.hpc.engr.oregonstate.edu "/bin/chmod +x /tmp/mcs_submit.sh; /tmp/mcs_submit.sh"
