@@ -17,7 +17,11 @@ def setup_configuration(task='voe', fg_class_en=True):
     config.ignore_fg       = ['shelf']
 
     # task specification setting
-    if task == 'voe':
+    if task == 'agents':
+        config.bg_classes = []
+        config.object_classes  = ['circle_frustrum', 'tube_wide', 'cube', 'cube_hollow_narrow', 'cylinder', 'square_frustrum', 'hash', 'semi-sphere', 
+                                  'sphere', 'letter_x', 'cube_hollow_wide', 'pyramid', 'tube_narrow', 'triangle', 'lock_wall', 'cone']
+    elif task == 'voe':
         config.bg_classes      = []
         if not fg_class_en:
             config.object_classes = ['occluder_pole', 'occluder_wall']
