@@ -7,14 +7,13 @@
 #SBATCH --gres=gpu:1     # request 1 GPU
 #SBATCH --nodelist=cn-gpu2
 
-export MAX_TIME=1e4 # ~ 3hrs
-srun -N1 -n1 sleep $MAX_TIME &
-echo "test"
-
 module load anaconda
 module load gcc/6.5
 module load cuda
 nvidia-smi
+
+export MAX_TIME=1e4 # ~ 3hrs
+srun -N1 -n1 sleep $MAX_TIME &
 
 cd /scratch/MCS
 
