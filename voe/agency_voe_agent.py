@@ -81,7 +81,7 @@ class AgencyVoeAgent:
                     self.mask_im = np.array(self.mask_im)[:,:,::-1]
                     self.trial_num = idx
 
-                    step()
+                    self.step()
 
                 # if multiple object trial
                 if type(self.obj_2_dict["c"]) != type(None):
@@ -163,7 +163,7 @@ class AgencyVoeAgent:
             except Exception as e:
                 pass
 
-    def step():
+    def step(self):
         self.gnd_mask = gnd_trans(self.mask_im, self.M_gnd)
         self.gnd_rgb = gnd_trans(self.cam_im, self.M_gnd)
         
