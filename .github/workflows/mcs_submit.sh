@@ -1,5 +1,6 @@
 #!/bin/bash
 
+chmod +x /tmp/mcs_slurm.sh
 SJOBID=$(sbatch --parsable /tmp/mcs_slurm.sh)
 
 echo $SJOBID
