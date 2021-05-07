@@ -10,8 +10,8 @@ if ! ls | grep $UNITY_VERSION; then
         # Do something under Mac OS X platform
         wget https://github.com/NextCenturyCorporation/MCS/releases/download/0.4.2/MCS-AI2-THOR-Unity-App-v0.4.2-mac.zip
         wget https://github.com/NextCenturyCorporation/MCS/releases/download/0.4.2/UnityPlayer.so
-        unzip MCS-AI2-THOR-Unity-App-v0.4.1-mac.zip
-        rm MCS-AI2-THOR-Unity-App-v0.4.1-mac.zip
+        unzip MCS-AI2-THOR-Unity-App-v0.4.2-mac.zip
+        rm MCS-AI2-THOR-Unity-App-v0.4.2-mac.zip
         echo unity_path: \'unity_app/MCSai2thor.app/Contents/MacOS/MCSai2thor\' > ../unity_path.yaml
     elif [ "$(expr substr $(uname -s) 1 5)" == "Linux" ]; then
         # Do something under GNU/Linux platform
