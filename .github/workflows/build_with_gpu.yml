@@ -5,7 +5,7 @@ name: Automated System Test
 
 on:
   push: 
-    branches: [ __test.yaml-rob ] 
+    branches: [ test.yaml-rob ] 
 
 jobs:
   build_with_gpu:
