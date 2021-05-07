@@ -4,8 +4,8 @@
 #SBATCH -p gpu               # partition or queue
 #SBATCH -o dvis_data.out     # output file
 #SBATCH -e dvis_data.err     # error file
-#SBATCH --ntasks-per-node=5  # num CPUs
-#SBATCH --nodelist=cn-gpu5
+#SBATCH --ntasks-per-node=12 # num CPUs
+#SBATCH --nodelist=cn-gpu2
 #SBATCH --gres=gpu:1         # request 1 GPU
 #SBATCH --time 3-12:00:00    # 3.5 days
 
@@ -73,12 +73,14 @@ bash setup_vision.sh &> /dev/null
 bash get_dataset.sh &> /dev/null
 export PYTHONPATH=$PWD
 
+cp -r /nfs/hpc/share/$USER/diego_bkup_2/retrieval_scenes_e4/ interaction_scenes/
+
 # Data Collecting
 # 66, 132, 198, 264, 330, 396, 462, 528, 594 and 660
-# python vision/generateData/simple_task_multi.py 0 66 &
-# python vision/generateData/simple_task_multi.py 132 66 & 
-# python vision/generateData/simple_task_multi.py 198 66 &
-# python vision/generateData/simple_task_multi.py 264 66 &
+python vision/generateData/simple_task_multi.py 0 66 &
+python vision/generateData/simple_task_multi.py 132 66 & 
+python vision/generateData/simple_task_multi.py 198 66 &
+python vision/generateData/simple_task_multi.py 264 66 &
 # python vision/generateData/simple_task_multi.py 330 66 &
 # python vision/generateData/simple_task_multi.py 396 66 &
 # python vision/generateData/simple_task_multi.py 462 66 &
@@ -88,44 +90,44 @@ export PYTHONPATH=$PWD
 # python vision/generateData/simple_task_multi.py 792 66 &
 # python vision/generateData/simple_task_multi.py 858 66 &
 # python vision/generateData/simple_task_multi.py 924 66 &
-# sleep 66
-# nvidia-smi # let's see how the GPU is doing!
+sleep 66
+nvidia-smi # let's see how the GPU is doing!
 # increase prob that this next 1 finishes last
 # python vision/generateData/simple_task_multi.py 990 86
 
-# $? stores the exit code of the most recently finished process
-# if [[ $? = 0 ]]; then
-    # will check output for this to confirm success!
-    # echo 69420
-# fi
+$? stores the exit code of the most recently finished process
+if [[ $? = 0 ]]; then
+    will check output for this to confirm success!
+    echo 69420
+fi
 
 # ensure everything is easily shared
-# chmod -R 775 /nfs/hpc/share/$USER/mcs_opics
+chmod -R 775 /nfs/hpc/share/$USER/mcs_opics
 
 # Training
 ###########################################################################################
-chmod -R 775 /nfs/hpc/share/$USER/mcs_opics
+# chmod -R 775 /nfs/hpc/share/$USER/mcs_opics
 
-echo "installing training libraries"
-pip install cython &> /dev/null
-pip install opencv-python pillow pycocotools matplotlib &> /dev/null 
-pip install scikit-image &> /dev/null
-pip install scipy==1.2.0 &> /dev/null
-pip install tensorboardX &> /dev/null
-echo "finished installing training libraries"
+# echo "installing training libraries"
+# pip install cython &> /dev/null
+# pip install opencv-python pillow pycocotools matplotlib &> /dev/null 
+# pip install scikit-image &> /dev/null
+# pip install scipy==1.2.0 &> /dev/null
+# pip install tensorboardX &> /dev/null
+# echo "finished installing training libraries"
 
-# From main mcs_opics
-cd visionmodule
-mkdir -p cd data/dataset/mcsvideo/interaction_scenes/
+# # From main mcs_opics
+# cd visionmodule
+# mkdir -p cd data/dataset/mcsvideo/interaction_scenes/
 
-cp -r /nfs/hpc/share/$USER/diego_bkup_2 data/dataset/mcsvideo/interaction_scenes/
-cp /nfs/hpc/share/$USER/diego_bkup_2/train.txt data/dataset/mcsvideo/interaction_scenes/
-cp /nfs/hpc/share/$USER/diego_bkup_2/eval.txt data/dataset/mcsvideo/interaction_scenes/
+# cp -r /nfs/hpc/share/$USER/diego_bkup_2 data/dataset/mcsvideo/interaction_scenes/
+# cp /nfs/hpc/share/$USER/diego_bkup_2/train.txt data/dataset/mcsvideo/interaction_scenes/
+# cp /nfs/hpc/share/$USER/diego_bkup_2/eval.txt data/dataset/mcsvideo/interaction_scenes/
 
-touch logs_ms.txt
-python train.py --scripts=mcsvideo3_inter_unary_pw.json >> logs_ms.txt
+# touch logs_ms.txt
+# python train.py --scripts=mcsvideo3_inter_unary_pw.json >> logs_ms.txt
 
-chmod -R 775 /nfs/hpc/share/$USER/mcs_opics/visionmodule/Result/
+# chmod -R 775 /nfs/hpc/share/$USER/mcs_opics/visionmodule/Result/
 
 ########################################################################################
 
