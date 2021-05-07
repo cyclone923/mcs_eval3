@@ -64,9 +64,6 @@ bash setup_unity.sh &> /dev/null
 bash setup_vision.sh &> /dev/null
 export PYTHONPATH=$PWD
 
-export MAX_TIME=1e4 # ~ 3hrs
-srun -N1 -n1 sleep $MAX_TIME &
-
 python get_gravity_scenes.py &> /dev/null
 cp gravity_scenes/gravity_support_ex_01.json different_scenes
 # agent code in this branch explodes
