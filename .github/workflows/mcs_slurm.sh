@@ -10,7 +10,7 @@
 export MAX_TIME=1e4 # ~ 3hrs
 srun -N1 -n1 sleep $MAX_TIME &
 
-$module load anaconda
+module load anaconda
 module load gcc/6.5
 module load cuda
 nvidia-smi
