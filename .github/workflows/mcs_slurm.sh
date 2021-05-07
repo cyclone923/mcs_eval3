@@ -9,12 +9,15 @@
 
 export MAX_TIME=1e4 # ~ 3hrs
 srun -N1 -n1 sleep $MAX_TIME &
+echo "test"
+
+module load anaconda
 module load gcc/6.5
 module load cuda
 nvidia-smi
+
 cd /scratch/MCS
 
-module load anaconda
 conda activate mcs_opics
 if [ $? -eq 0 ]; then
   :
