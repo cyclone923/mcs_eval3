@@ -12,12 +12,12 @@ export MAX_TIME=3e4 # ~ 9hrs
 srun -N1 -n1 sleep $MAX_TIME &
 module load gcc/6.5
 module load cuda
+module load anaconda
 nvidia-smi
 # had to run this to set permissions for sharing:
 # chmod -R 775 /nfs/hpc/share/$USER
 cd /nfs/hpc/share/$USER
 
-module load anaconda
 conda activate mcs_opics
 if [ $? -eq 0 ]; then
   :
