@@ -6,7 +6,9 @@
 #SBATCH -e mcs.err       # error file
 #SBATCH --gres=gpu:1     # request 1 GPU
 #SBATCH --nodelist=cn-gpu2
-#SBATCH --time 3-12:00:00    # 3.5 days
+
+export MAX_TIME=1e4 # ~ 3hrs
+srun -N1 -n1 sleep $MAX_TIME &
 
 echo "test"
 
@@ -16,10 +18,6 @@ module load cuda
 nvidia-smi
 
 echo "test2"
-exit 0
-
-# export MAX_TIME=1e4 # ~ 3hrs
-# srun -N1 -n1 sleep $MAX_TIME &
 
 cd /scratch/MCS
 
