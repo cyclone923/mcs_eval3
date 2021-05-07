@@ -14,6 +14,7 @@ srun -A eecs -p gpu --nodelist=cn-gpu2 --gres=gpu:1 --pty bash
 # once inside the new shell, set the DISPLAY environment variable
 export OUR_XPID=`nvidia-smi | grep Xorg | awk '{print $5}'`
 export DISPLAY=`pgrep Xorg | xargs ps | grep $OUR_XPID | awk '{print $6}'`
+module load anaconda
 ```  
 
 #### RESTRICTED GUI WITH GPU:
@@ -37,6 +38,7 @@ srun -A eecs -p gpu --nodelist=cn-gpu2 --gres=gpu:1 --x11 --pty bash
 # once inside the new shell, set the DISPLAY environment variable
 export OUR_XPID=`nvidia-smi | grep Xorg | awk '{print $5}'`
 export DISPLAY=`pgrep Xorg | xargs ps | grep $OUR_XPID | awk '{print $6}'`
+module load anaconda
 ```
 
 #### SETUP GITHUB ACTIONS RUNNER:
