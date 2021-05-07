@@ -27,7 +27,7 @@ def setup_configuration(task='voe', fg_class_en=True):
     elif task == 'interact':
         config.bg_classes      = ['floor', 'ceiling', 'wall']
         if not fg_class_en:
-            config.object_classes  = ['trophy', 'box']
+            config.object_classes  = ['ball', 'chest']
         else:
             config.object_classes = ['trophy', 'box', 'changing table', 'drawer', 'shelf',
                                   'blank block cube', 'plate', 'duck', 'sofa chair', 'bowl',
@@ -37,7 +37,7 @@ def setup_configuration(task='voe', fg_class_en=True):
     else:
         config.bg_classes      = ['floor', 'ceiling', 'wall']
         if not fg_class_en:
-            config.object_classes  = ['trophy', 'box', 'occluder_pole', 'occluder_wall']
+            config.object_classes  = ['ball', 'chest', 'occluder_pole', 'occluder_wall']
         else:
             config.object_classes = ['trophy', 'box', 'changing table', 'drawer', 'shelf',
                                   'blank block cube', 'plate', 'duck', 'sofa chair', 'bowl',
@@ -70,6 +70,7 @@ def parse_label_info(cfg, mask_clrI, uuid_list, shape_list, result_dir='', sname
     # go through uuid list to find fg and bg. default to be BG
     inst_id = 1
     rpl_inst_dict, rpl_sem_dict = dict(), dict()
+
     for i in uuid_list:
         clr = i.color['r']*1e6 + i.color['g']*1e3 + i.color['b']
         if clr not in clr_vals:

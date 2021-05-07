@@ -48,7 +48,7 @@ class McsEnv:
         else:
             self.all_scenes = [os.path.join("scenes", "playroom.json")]
 
-        print(self.all_scenes)
+        # print(self.all_scenes)
         self.current_scene = start_scene_number - 1
 
         if seed:
@@ -58,14 +58,12 @@ class McsEnv:
         self.frame_collector = frame_collector
 
     def step(self, **kwargs):
-        print("MS CUSTOM STEP #######")
         self.step_output = self.controller.step(**kwargs)
 
         if self.add_obstacle_func:
             self.add_obstacle_func(self.step_output)
         # print(self.step_output.return_status)
         if self.frame_collector:
-            print("we have frame collector")
             self.frame_collector.save_frame(self.step_output)
 
         return self.step_output
@@ -90,7 +88,7 @@ class McsEnv:
             with open(os.path.join(self.debug_dir, 'box_trophy_{0:0=4d}.json'.format(self.current_scene)), 'w') as fp:
                 json.dump(self.scene_config, fp, indent=4)
 
-        print(self.scene_config)
+        # print(self.scene_config)
         self.step_output = self.controller.start_scene(self.scene_config)
 
 if __name__ == '__main__':

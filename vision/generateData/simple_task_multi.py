@@ -26,7 +26,7 @@ if __name__ == "__main__":
                                 fg_class_en=False)
 
     env = McsEnv(task="interaction_scenes",
-                 scene_type="retrieval",
+                 scene_type="e4_container",
                  seed=50,
                  start_scene_number=start_scene_number,
                  frame_collector=collector,

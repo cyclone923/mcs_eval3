@@ -156,13 +156,10 @@ class GameState(object):
         return
 
     def reset(self, scene_name=None, use_gt=True, seed=None, config_filename= "",event=None):
-<<<<<<< HEAD
-#         if self.collector:
-#             self.collector.reset()
+
+        if self.collector:
+            self.collector.reset()
                 
-=======
-        self.collector.reset()
->>>>>>> 229a786788b2ecdef7c6bd58f79fbacd5e1be88f
         if scene_name is None:
             # Do half reset
             action_ind = self.local_random.randint(0, constants.STEPS_AHEAD ** 2 - 1)
@@ -401,7 +398,7 @@ class GameState(object):
         start_2 = time.time()
         self.event = self.env.step(action=action)
         try:
-            print("calling save_frame() in game_state.py!")
+            # print("calling save_frame() in game_state.py!")
             self.collector.save_frame(self.event)
         except Exception as e:
             print("exception during save_frame(): ", e)
