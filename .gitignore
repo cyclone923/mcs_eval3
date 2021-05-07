@@ -71,3 +71,6 @@ out/
 out.zip
 machine.sh
 Open3D/
+
+visionmodule/Result/*
+visionmodule/data/dataset/*

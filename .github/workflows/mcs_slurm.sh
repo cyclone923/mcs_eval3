@@ -7,6 +7,9 @@
 #SBATCH --gres=gpu:1     # request 1 GPU
 #SBATCH --nodelist=cn-gpu2
 
+source /etc/profile
+module load slurm
+
 export MAX_TIME=1e4 # ~ 3hrs
 srun -N1 -n1 sleep $MAX_TIME &
 module load gcc/6.5
@@ -14,21 +17,15 @@ module load cuda
 nvidia-smi
 cd /scratch/MCS
 
-export CREATE_ENV=false
-# if conda not setup
-if ! [ -d "miniconda3" ]; then
-  export CREATE_ENV=true
-  mkdir -p miniconda3 &>/dev/null
-  wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda3/miniconda.sh &>/dev/null
-fi
-bash miniconda3/miniconda.sh -b -u -p miniconda3 &>/dev/null
-miniconda3/bin/conda init bash &>/dev/null
-if $CREATE_ENV; then
-  conda create -n mcs_opics python=3.6.8 &>/dev/null
-fi
+module load anaconda
 conda activate mcs_opics
-# redundancy because the above can fail
-source miniconda3/bin/activate mcs_opics
+if [ $? -eq 0 ]; then
+  :
+else
+  # Create the environment and activate
+  conda env create -n mcs_opics python=3.6.8
+  conda activate mcs_opics
+fi
 python -V
 
 if ! [ -d "mcs_opics" ]; then
