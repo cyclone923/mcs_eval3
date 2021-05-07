@@ -1,5 +1,8 @@
 #!/bin/bash
 
+source /etc/profile
+module load slurm
+
 SJOBID=$(sbatch --parsable /tmp/mcs_slurm.sh)
 
 # wait for gpu job to finish
