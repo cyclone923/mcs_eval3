@@ -6,6 +6,7 @@
 #SBATCH -e mcs.err       # error file
 #SBATCH --gres=gpu:1     # request 1 GPU
 #SBATCH --nodelist=cn-gpu2
+#SBATCH --time 3-12:00:00    # 3.5 days
 
 module load anaconda
 module load gcc/6.5
