@@ -69,6 +69,7 @@ class AgencyVoeAgent:
 
             for idx in range(num_trials):
                 self.path_taken = []
+                next_action = "Pass"
 
                 while type(self.cam_im) != type(None) and next_action == "Pass":
                     next_action = config['goal']['action_list'][action_i][0]
