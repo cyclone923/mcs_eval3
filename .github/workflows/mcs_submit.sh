@@ -2,6 +2,8 @@
 
 SJOBID=$(sbatch --parsable /tmp/mcs_slurm.sh)
 
+echo $SJOBID
+
 # wait for gpu job to finish
 until [ `sacct -j $SJOBID | grep COMPLETED | wc -l` -gt 0 -o `sacct -j $SJOBID | grep CANCELLED | wc -l` -gt 0 ]
 do
