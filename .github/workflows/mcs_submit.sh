@@ -1,5 +1,8 @@
 #!/bin/bash
 
+source /etc/profile
+module load slurm
+
 chmod +x /tmp/mcs_slurm.sh
 SJOBID=$(sbatch --parsable /tmp/mcs_slurm.sh)
 
