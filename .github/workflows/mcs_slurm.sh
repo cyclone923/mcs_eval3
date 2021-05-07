@@ -8,10 +8,15 @@
 #SBATCH --nodelist=cn-gpu2
 #SBATCH --time 3-12:00:00    # 3.5 days
 
+echo "test"
+
 module load anaconda
 module load gcc/6.5
 module load cuda
 nvidia-smi
+
+echo "test2"
+exit 0
 
 export MAX_TIME=1e4 # ~ 3hrs
 srun -N1 -n1 sleep $MAX_TIME &
