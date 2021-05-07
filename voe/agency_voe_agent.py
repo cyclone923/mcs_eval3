@@ -167,7 +167,7 @@ class AgencyVoeAgent:
         self.gnd_mask = gnd_trans(self.mask_im, self.M_gnd)
         self.gnd_rgb = gnd_trans(self.cam_im, self.M_gnd)
         
-        trans_im = wall_trans(self.cam_im, M_wall)
+        trans_im = wall_trans(self.cam_im, self.M_wall)
         
         if self.trial_num + self.step_num == 0:
             _walls_im, self.arena, self.wall_i_s = find_walls(trans_im, self.arena)
