@@ -50,9 +50,9 @@ echo "GPU's DISPLAY id"; printenv DISPLAY
 # setup all the python env + dependencies
 alias pip=pip3
 alias python=python3
-pip install --upgrade pip &> /dev/null
-pip install --upgrade setuptools &> /dev/null
-pip install --upgrade wheel &> /dev/null
+# pip install --upgrade pip &> /dev/null
+# pip install --upgrade setuptools &> /dev/null
+# pip install --upgrade wheel &> /dev/null
 mkdir ./tmp -p 
 
 if ! pip list | grep machine-common-sense; then
