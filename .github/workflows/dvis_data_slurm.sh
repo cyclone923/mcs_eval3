@@ -1,16 +1,16 @@
 #!/bin/bash
-#SBATCH -J mcs_ga_build      # name of job
-#SBATCH -A eecs              # sponsored account
-#SBATCH -p gpu               # partition or queue
-#SBATCH -o dvis_data.out     # output file
-#SBATCH -e dvis_data.err     # error file
-#SBATCH --ntasks-per-node=7 # num CPUs
+#SBATCH -J mcs_data_collection # name of job
+#SBATCH -A eecs                # sponsored account
+#SBATCH -p gpu                 # partition or queue
+#SBATCH -o dvis_data.out       # output file
+#SBATCH -e dvis_data.err       # error file
+#SBATCH --ntasks-per-node=5 # num CPUs
 #SBATCH --nodelist=cn-gpu2
 #SBATCH --gres=gpu:1         # request 1 GPU
-#SBATCH --time 1-06:00:00    # 1.25 days
+#SBATCH --time 0:12:00    # 1. hours
 
 
-export MAX_TIME=36e4
+export MAX_TIME=14e4
 srun -N1 -n1 sleep $MAX_TIME &
 module load gcc/6.5
 module load cuda/10.1
@@ -50,9 +50,9 @@ echo "GPU's DISPLAY id"; printenv DISPLAY
 # setup all the python env + dependencies
 alias pip=pip3
 alias python=python3
-# pip install --upgrade pip &> /dev/null
-# pip install --upgrade setuptools &> /dev/null
-# pip install --upgrade wheel &> /dev/null
+pip install --upgrade pip &> /dev/null
+pip install --upgrade setuptools &> /dev/null
+pip install --upgrade wheel &> /dev/null
 mkdir ./tmp -p 
 
 if ! pip list | grep machine-common-sense; then
@@ -65,7 +65,7 @@ pip show machine_common_sense
 bash setup_torch.sh &> /dev/null
 bash setup_unity.sh &> /dev/null
 bash setup_vision.sh &> /dev/null
-bash get_dataset.sh &> /dev/null
+# bash get_dataset.sh &> /dev/null
 export PYTHONPATH=$PWD
 
 cp -r /nfs/hpc/share/$USER/diego_bkup_2/retrieval_scenes_e4/ interaction_scenes/

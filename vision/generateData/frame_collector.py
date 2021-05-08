@@ -73,14 +73,14 @@ class Frame_collector:
                 #print(i.uuid, i.color) # uuid need to be finely categorized
 
     def reset(self):
-        # print("self.result_dir pre-reset: ", self.result_dir)
+        print("self.result_dir pre-reset: ", self.result_dir)
         self.scene_number += 1
-        # print("self.step", self.step)
+        print("self.step", self.step)
         self.step = 0
         self.result_dir = os.path.join(self.scene_dir, 'scene_'+str(self.scene_number))
         os.makedirs(self.result_dir, exist_ok=True)
-        # print("self.result_dir: ", self.result_dir)
-        # print("Reset, Current Scene: {}".format(self.scene_number))
+        print("self.result_dir: ", self.result_dir)
+        print("Reset, Current Scene: {}".format(self.scene_number))
         #print("un-set uuid key including: ", self.stru_new_keys)
         #print("un-set shape key including: ", self.shap_new_keys)
         print("statistical shape key counts: ", self.count_hist)
