@@ -17,6 +17,7 @@ nvidia-smi
 # chmod -R 775 /nfs/hpc/share/$USER
 cd /nfs/hpc/share/$USER
 
+. ~/.bashrc
 export CREATE_ENV=false
 # if conda not setup
 if ! [ -d "miniconda3" ]; then
