@@ -12,20 +12,26 @@ export MAX_TIME=3e4 # ~ 9hrs
 srun -N1 -n1 sleep $MAX_TIME &
 module load gcc/6.5
 module load cuda
-module load anaconda
 nvidia-smi
 # had to run this to set permissions for sharing:
 # chmod -R 775 /nfs/hpc/share/$USER
 cd /nfs/hpc/share/$USER
 
-conda activate mcs_opics
-if [ $? -eq 0 ]; then
-  :
-else
-  # Create the environment and activate
-  conda env create -n mcs_opics python=3.6.8
-  conda activate mcs_opics
+export CREATE_ENV=false
+# if conda not setup
+if ! [ -d "miniconda3" ]; then
+  export CREATE_ENV=true
+  mkdir -p miniconda3 &>/dev/null
+  wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda3/miniconda.sh &>/dev/null
 fi
+bash miniconda3/miniconda.sh -b -u -p miniconda3 &>/dev/null
+miniconda3/bin/conda init bash &>/dev/null
+if $CREATE_ENV; then
+  conda create -n mcs_opics python=3.6.8 &>/dev/null
+fi
+conda activate mcs_opics
+# redundancy because the above can fail
+source miniconda3/bin/activate mcs_opics
 python -V 
 
 if ! [ -d "mcs_opics" ]; then
@@ -63,23 +69,26 @@ bash get_dataset.sh &> /dev/null
 export PYTHONPATH=$PWD
 
 # 66, 132, 198, 264, 330, 396, 462, 528, 594 and 660
-python vision/generateData/simple_task_multi.py 0 66 &
-python vision/generateData/simple_task_multi.py 132 66 & 
-python vision/generateData/simple_task_multi.py 198 66 &
-python vision/generateData/simple_task_multi.py 264 66 &
-python vision/generateData/simple_task_multi.py 330 66 &
-python vision/generateData/simple_task_multi.py 396 66 &
-python vision/generateData/simple_task_multi.py 462 66 &
-python vision/generateData/simple_task_multi.py 528 66 &
-python vision/generateData/simple_task_multi.py 660 66 &
-python vision/generateData/simple_task_multi.py 726 66 &
-python vision/generateData/simple_task_multi.py 792 66 &
-python vision/generateData/simple_task_multi.py 858 66 &
-python vision/generateData/simple_task_multi.py 924 66 &
+# python vision/generateData/simple_task_multi.py 0 66 &
+# python vision/generateData/simple_task_multi.py 132 66 & 
+# python vision/generateData/simple_task_multi.py 198 66 &
+# python vision/generateData/simple_task_multi.py 264 66 &
+# python vision/generateData/simple_task_multi.py 330 66 &
+# python vision/generateData/simple_task_multi.py 396 66 &
+# python vision/generateData/simple_task_multi.py 462 66 &
+# python vision/generateData/simple_task_multi.py 528 66 &
+# python vision/generateData/simple_task_multi.py 660 66 &
+# python vision/generateData/simple_task_multi.py 726 66 &
+# python vision/generateData/simple_task_multi.py 792 66 &
+# python vision/generateData/simple_task_multi.py 858 66 &
+# python vision/generateData/simple_task_multi.py 924 66 &
 sleep 66
 nvidia-smi # let's see how the GPU is doing!
 # increase prob that this next 1 finishes last
-python vision/generateData/simple_task_multi.py 990 86
+#python vision/generateData/simple_task_multi.py 990 86
+
+# just testing if it is working again
+python vision/generateData/simple_task_multi.py 990 2
 
 # $? stores the exit code of the most recently finished process
 if [[ $? = 0 ]]; then
