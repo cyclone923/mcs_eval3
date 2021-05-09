@@ -10,6 +10,7 @@
 
 export MAX_TIME=3e4 # ~ 9hrs
 srun -N1 -n1 sleep $MAX_TIME &
+source /nfs/stak/users/$USER/.bashrc
 module load gcc/6.5
 module load cuda
 nvidia-smi
