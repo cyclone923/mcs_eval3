@@ -50,7 +50,6 @@ fi
 pip install --user -r requirements.txt
 pip show numpy
 pip show machine_common_sense
-echo "hmm"
 bash setup_torch.sh
 bash setup_unity.sh &> /dev/null
 bash setup_vision.sh
@@ -61,8 +60,8 @@ cp gravity_scenes/gravity_support_ex_01.json different_scenes
 # agent code in this branch explodes
 rm different_scenes/preference_0001_01.json
 
-# real magic!
-python eval.py
+echo "real magic!"
+#python eval.py
 # $? stores the exit code of the most recently finished process
 if [[ $? = 0 ]]; then
     # will check output for this to confirm success!
