@@ -71,7 +71,7 @@ class McsEnv:
     def reset(self, random_init=False, repeat_current=False):
         if not repeat_current:
             if not random_init:
-                # print(self.all_scenes[self.current_scene])
+                print("Current Scene: ", self.all_scenes[self.current_scene])
                 self.scene_config, status = mcs.load_scene_json_file(self.all_scenes[self.current_scene])
                 self.current_scene += 1
             else:
@@ -84,6 +84,7 @@ class McsEnv:
         #     print(self.scene_config['answer']["choice"])
 
         if self.trophy_config:
+            print("Trohpy config??? ")
             self.scene_config = set_goal_with_trophy(self.scene_config, self.trophy_config, trophy_prob=self.trophy_prob)
             with open(os.path.join(self.debug_dir, 'box_trophy_{0:0=4d}.json'.format(self.current_scene)), 'w') as fp:
                 json.dump(self.scene_config, fp, indent=4)
