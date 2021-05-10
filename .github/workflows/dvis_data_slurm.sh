@@ -35,7 +35,7 @@ if ! [ -d "mcs_opics" ]; then
 fi
 cd mcs_opics
 git stash
-git checkout test.yaml-rob #develop
+git checkout component/interactive-env.diego
 git pull &>/dev/null
 
 export OUR_XPID=`nvidia-smi | grep Xorg | awk '{print $5}'`
