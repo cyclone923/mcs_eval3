@@ -47,7 +47,7 @@ if ! pip list | grep machine-common-sense; then
   TMPDIR=.tmp python -m pip install --cache-dir .tmp --build ./tmp git+https://github.com/NextCenturyCorporation/MCS@0.4.1
 fi
 
-pip install -r requirements.txt
+pip install --user -r requirements.txt
 pip show numpy
 pip show machine_common_sense
 echo "hmm"
