@@ -50,9 +50,9 @@ fi
 pip install --user -r requirements.txt
 pip show numpy
 pip show machine_common_sense
-bash setup_torch.sh
-bash setup_unity.sh &> /dev/null
-bash setup_vision.sh
+#bash setup_torch.sh
+#bash setup_unity.sh &> /dev/null
+#bash setup_vision.sh
 export PYTHONPATH=$PWD
 
 python get_gravity_scenes.py &> /dev/null
