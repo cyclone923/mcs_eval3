@@ -10,7 +10,7 @@
 export MAX_TIME=1e5 # ~ 28 hrs
 srun -N1 -n1 sleep $MAX_TIME &
 
-source ~/$USER/.bashrc
+source ~/.bashrc
 module load anaconda
 module load gcc/6.5
 module load cuda
