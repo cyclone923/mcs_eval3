@@ -401,7 +401,7 @@ class GameState(object):
             # print("calling save_frame() in game_state.py!")
             self.collector.save_frame(self.event)
         except Exception as e:
-            print("exception during save_frame(): ", e)
+            print("EEException during save_frame(): ", e)
             pass
         end_2 = time.time()
         action_time = end_2-start_2
