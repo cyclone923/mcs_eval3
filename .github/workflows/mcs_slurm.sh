@@ -23,7 +23,7 @@ if [ $? -eq 0 ]; then
   :
 else
   # Create the environment and activate
-  conda env create -n mcs_opics python=3.6.8
+  conda env create -qvy -n mcs_opics python=3.6.8
   conda activate mcs_opics
 fi
 python -V 
