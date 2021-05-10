@@ -30,7 +30,7 @@ python -V
 
 if ! [ -d "mcs_opics" ]; then
   # get git repo, cd to it, select specific branch
-  git clone https://github.com/MCS-OSU/mcs_opics.git &>/dev/null
+  git clone https://github.com/MCS-OSU/mcs_opics.git
 fi
 cd mcs_opics
 git stash
@@ -41,21 +41,16 @@ export OUR_XPID=`nvidia-smi | grep Xorg | awk '{print $5}'`
 export DISPLAY=`pgrep Xorg | xargs ps | grep $OUR_XPID | awk '{print $6}'`
 echo "GPU's DISPLAY id"; printenv DISPLAY
 
-# setup all the python env + dependencies
-alias pip=pip3
-alias python=python3
-# pip install --upgrade pip &> /dev/null
-# pip install --upgrade setuptools &> /dev/null
-# pip install --upgrade wheel &> /dev/null
-mkdir ./tmp -p 
-
+mkdir .tmp -p 
 if ! pip list | grep machine-common-sense; then
   # /tmp on cn-gpu2 server can be full
-  TMPDIR=/scratch/MCS/tmp python -m pip install --cache-dir /scratch/MCS/tmp --build /scratch/MCS/tmp git+https://github.com/NextCenturyCorporation/MCS@0.4.1 &> /dev/null
+  TMPDIR=.tmp python -m pip install --cache-dir .tmp --build ./tmp git+https://github.com/NextCenturyCorporation/MCS@0.4.1
 fi
 
-pip install -r requirements.txt &> /dev/null
+pip install -r requirements.txt
+pip show numpy
 pip show machine_common_sense
+echo "hmm"
 bash setup_torch.sh
 bash setup_unity.sh &> /dev/null
 bash setup_vision.sh
