@@ -2,7 +2,6 @@ cmake==3.18.4.post1
 descartes==1.1.0
 easydict==1.9
 fastdtw==0.3.4
-numpy
 numpy-indexed==0.3.5
 numpy-quaternion==2020.5.19.15.27.24
 pathfinding==0.0.4
@@ -12,4 +11,4 @@ ray==1.0.1
 rich==9.13.0
 scikit-image==0.17.2
 webcolors==1.11.1
-open3d==0.9
+open3d==0.10
