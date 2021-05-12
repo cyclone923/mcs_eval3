@@ -11,8 +11,8 @@ def make_parser():
 
     parser = argparse.ArgumentParser()
 
-    parser.add_argument('--start_scene', default=0)
-    parser.add_argument('--end_escene', default=268)
+    parser.add_argument('--start_scene', default=0, type=int)
+    parser.add_argument('--end_scene', default=268, type=int)
     parser.add_argument('--outdir', default='simple_task_img')
     parser.add_argument('--dir1', default='interaction_scenes')
     parser.add_argument('--dir2', default='retrieval_scenes_e4')
@@ -43,7 +43,7 @@ if __name__ == "__main__":
 
     metaController = MetaController(env, level, collector)
 
-    for _ in range(args.end_escene):
+    for _ in range(args.end_scene):
         env.reset()
         result = metaController.execute()
 
