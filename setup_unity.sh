@@ -16,7 +16,7 @@ if ! ls | grep $UNITY_VERSION; then
     elif [ "$(expr substr $(uname -s) 1 5)" == "Linux" ]; then
         # Do something under GNU/Linux platform
         wget https://github.com/NextCenturyCorporation/MCS/releases/download/0.4.2/MCS-AI2-THOR-Unity-App-v0.4.2.x86_64
-        wget https://github.com/NextCenturyCorporation/MCS/releases/download/0.4.2/UnityPlayer.so
+        wget -O UnityPlayer.so https://github.com/NextCenturyCorporation/MCS/releases/download/0.4.2/UnityPlayer.so
         wget https://github.com/NextCenturyCorporation/MCS/releases/download/0.4.2/MCS-AI2-THOR-Unity-App-v0.4.2_Data.tar.gz
         tar -xzvf MCS-AI2-THOR-Unity-App-v0.4.2_Data.tar.gz
         rm MCS-AI2-THOR-Unity-App-v0.4.2_Data.tar.gz
