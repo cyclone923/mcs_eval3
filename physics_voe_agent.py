@@ -148,8 +148,11 @@ class VoeAgent:
         # else, if no pole or count(poles) == count(occluders) and we have enough data to compute velocity for targets, 
         
         # render current step in pybullet - TEST
-        if "targets" in step_output_dict["object_list"]:
-            obj_traj_orn = pybullet_utilities.render_in_pybullet(step_output_dict)
+        if len(step_output_dict["object_list"]["targets"]):
+            pb_step_count, obj_traj_orn = pybullet_utilities.render_in_pybullet(step_output_dict)
+            print(obj_traj_orn)
+            print(pb_step_count)
+            quit()
 
         # Output violations
         viols = dynamics_viols + obs_viols
