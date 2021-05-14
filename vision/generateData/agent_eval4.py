@@ -30,7 +30,7 @@ if __name__ == "__main__":
         env.reset(random_init=False)
         
         for x in env.scene_config['goal']['action_list']:
-            env.step(action=x[0])
+            env.step(action=x[0][0])
             if env.step_output is None:
                 break
 
