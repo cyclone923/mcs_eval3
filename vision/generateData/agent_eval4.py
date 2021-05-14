@@ -23,7 +23,7 @@ if __name__ == "__main__":
                  start_scene_number=start_scene_number,
                  frame_collector=collector,
                  set_trophy=False,
-                 trophy_prob=0 
+                 #trophy_prob=0 
     )
 
     for _ in range(number_scenes):
