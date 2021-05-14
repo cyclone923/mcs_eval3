@@ -25,7 +25,7 @@ def render_in_pybullet(step_output):
     }
     total_objects = 0
     # target / supports
-    for obj in step_output["object_list"]["targets"]:
+    for obj in step_output["object_list"].values():
         boxId = createObjectShape(obj)
         if boxId == -1:
             print("error creating obj: {}".format(obj.shape))
@@ -102,6 +102,7 @@ def render_in_pybullet(step_output):
     
 
 def getDims(obj):
+    print(obj)
     dims = obj["dimensions"]
     min_x = sys.maxsize
     min_y = sys.maxsize
