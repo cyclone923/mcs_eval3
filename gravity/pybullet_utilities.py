@@ -5,84 +5,101 @@ import sys
 import numpy as np
 import os
 import json
+import PIL
+from PIL import Image
+import matplotlib.pyplot as plt
 
-def render_in_pybullet(step_output, target, supporting, level):
-    # physicsClient = p.connect(p.GUI)#or p.DIRECT for non-graphical version
-    physicsClient = p.connect(p.DIRECT)
-
+def render_in_pybullet(step_output):
+    physicsClient = p.connect(p.GUI)#or p.DIRECT for non-graphical version
+    # physicsClient = p.connect(p.DIRECT)
+    
     p.setAdditionalSearchPath(os.getcwd() + "/gravity/pybullet_objects/") #optionally
     p.setGravity(0,0,-10)
     planeId = p.loadURDF("plane100.urdf")
-    print(planeId)
     
     p.resetDebugVisualizerCamera(3, 0, -42.5, [0,0,0])
     
-    # get objects from output
-    obj_dict = {}
-    boxId = createObjectShape(step_output["structural_object_list"][supporting])
-    print(boxId)
-    if boxId == -1:
-        print("trouble building supporting object")
-    else:
-        obj_dict[supporting] = {
-        "boxID": boxId,
-        "orn": [],
-        "pos": []
-        }
+    # build objects in the object_list:
+    obj_dict = {
+        "targets": []
+    }
+    total_objects = 0
+    # target / supports
+    for obj in step_output["object_list"]["targets"]:
+        boxId = createObjectShape(obj)
+        if boxId == -1:
+            print("error creating obj: {}".format(obj.shape))
+        else:
+            total_objects += 1
+            obj_dict["targets"].append({
+                "id": boxId,
+                "pos": [],
+                "orn": [],
+                "floor_contact": [],
+                # a dict where each key is the box_id of another object, the value of that key is a list t entries long with pybullet
+                # contact calculation output. contacts[boxID][t] = () means no contact, contacts[boxID][t] != () means contact 
+                "object_contacts": {},
+                "aab_min": [],
+                "aab_max": []
+            })
 
-    # print(json.dumps(step_output["object_list"][target], indent=4))
-    # print(json.dumps(step_output["structural_object_list"][supporting], indent=4))
-    # quit()
-    boxId = createObjectShape(step_output["object_list"][target])
-    print(boxId)
-    
-    if boxId == -1:
-        print("trouble building target object")
-    else:
-        obj_dict[target] = {
-            "boxID": boxId,
-            "pos": [],
-            "orn": [],
-            "support_contact": [],
-            "floor_contact": [],
-            "aabbMin": [],
-            "aabbMax": []
-        }
-
-    # p.setRealTimeSimulation()
-    for i in range(750):
+    steps = 0
+    # let simulation run
+    while steps < 1000:
         p.stepSimulation()
         time.sleep(1./400.)
+
+        at_rest = []
+        for i, obj in enumerate(obj_dict["targets"]):
+            # get position and orientation
+            cubePos, cubeOrn = p.getBasePositionAndOrientation(obj["id"])
+
+            # get bounding box
+            aabb_min, aabb_max = p.getAABB(obj["id"])
+            
+            # get floor contact of object
+            floor_contact = p.getContactPoints(obj["id"], planeId)
+
+            # get contact of other objects
+            for j, obj2 in enumerate(obj_dict["targets"]):
+                if i != j:
+                    contact = p.getContactPoints(obj["id"], obj2["id"])
+
+                    # on first pass, we need to instantiate the list of contact over time
+                    if not obj2["id"] in obj["object_contacts"].keys():
+                        obj["object_contacts"][obj2["id"]] = [contact]
+                    else:
+                        obj["object_contacts"][obj2["id"]].append(contact)
+
+            # if object has not moved or rotated, say it is at rest
+            if steps > 1:
+                prev_pos = obj["pos"][-1]
+                prev_orn = obj["orn"][-1]
+                if np.isclose(cubePos, prev_pos, rtol=1e-04, atol=1e-05).all() and np.isclose(cubeOrn, prev_orn).all():
+                    at_rest.append(True)
+                else:
+                    at_rest.append(False)
+
+            # update lists for new point in time
+            obj["floor_contact"].append(floor_contact)
+            obj["aab_min"].append(aabb_min)
+            obj["aab_max"].append(aabb_max)
+            obj["pos"].append(cubePos)
+            obj["orn"].append(cubeOrn)
+
+            # save updates to obj_dict
+            obj_dict["targets"][i] = obj
+
+        # all objects are at rest, go ahead and end the simulation early 
+        if steps > 1 and all(at_rest):
+            break
+
+        steps += 1
     
-        # confirm there aren't any overlaps on target object
-        aabb_min, aabb_max = p.getAABB(obj_dict[target]["boxID"])
-        overlaps = p.getOverlappingObjects(aabb_min, aabb_max)
-        # print("overlaps", overlaps)
-        
-        # get contact points between target and supporting
-        object_contact = p.getContactPoints(obj_dict[target]["boxID"], obj_dict[supporting]["boxID"])
-        floor_contact = p.getContactPoints(obj_dict[target]["boxID"], planeId)
-        # if contact != ():
-        #     print("support and target are making contact")
-        #     print(contact)
-
-        # keep track of obj position
-        for obj in obj_dict:
-            if obj == target:
-                obj_dict[obj]["support_contact"].append(object_contact)
-                obj_dict[obj]["floor_contact"].append(floor_contact)
-                obj_dict[obj]["aabbMin"].append(aabb_min)
-                obj_dict[obj]["aabbMax"].append(aabb_max)
-            cubePos, cubeOrn = p.getBasePositionAndOrientation(obj_dict[obj]["boxID"])
-            obj_dict[obj]["pos"].append(cubePos)
-            obj_dict[obj]["orn"].append(cubeOrn)
-
     p.disconnect()
 
-    if level == "oracle":
-        return obj_dict
-    else:
-        return obj_dict
+    return steps, obj_dict    
+    
 
 def getDims(obj):
     dims = obj["dimensions"]

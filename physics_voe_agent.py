@@ -483,14 +483,17 @@ class VoeAgent:
         all_obj_ids = list(range(self.track_info['object_index']))
         masks_list = [self.track_info['objects'][i]['mask'] for i in all_obj_ids]
         tracked_masks = squash_masks(depth_map, masks_list, all_obj_ids)
+        
         # Calculate occlusion from masks
         area_hists = {o_id:o_info['area_history'] for o_id, o_info in self.track_info['objects'].items()}
         obj_occluded = occlude.detect_occlusions(depth_map, tracked_masks, all_obj_ids, area_hists)
+        
         # Calculate object level info from masks
         obj_ids, obj_pos, obj_present = \
             framewisevoe.calc_world_pos(depth_map, tracked_masks, camera_info)
         occ_heatmap = framewisevoe.make_occ_heatmap(obj_occluded, obj_ids, tracked_masks)
-        # Calculate violations
+        
+        # Calculate appearance violations
         det_result = self.detector.detect(frame_num, obj_pos, obj_occluded, obj_ids, depth_map, camera_info)
         if det_result is None:
             dynamics_viols = []
@@ -507,10 +510,21 @@ class VoeAgent:
             if app_viol:
                 _idx = obj_ids.index(o_id)
                 appearance_viols.append(framewisevoe.AppearanceViolation(o_id, obj_pos[_idx]))
+        
         # Update tracker
         vis_count = {o_id:o_info['visible_count'] for o_id, o_info in self.track_info['objects'].items()}
         pos_hists = {o_id:o_info['position_history'] for o_id, o_info in self.track_info['objects'].items()}
+        
+        # detect Entrance violation
         obs_viols = self.detector.record_obs(frame_num, obj_ids, obj_pos, obj_present, obj_occluded, vis_count, pos_hists, camera_info)
+        
+        # GRAVITY ONLY - if we have a pole and no occluders, see if we can predict drop step
+        # else, if no pole or count(poles) == count(occluders) and we have enough data to compute velocity for targets, 
+        
+        # render current step in pybullet - TEST
+        if len(step_output_dict["object_list"]["targets"]):
+            pb_step_count, obj_traj_orn = pybullet_utilities.render_in_pybullet(step_output_dict)
+
         # Output violations
         viols = dynamics_viols + obs_viols
         if self.level != 'level1': #Ignore appearance violations in the level1 case
