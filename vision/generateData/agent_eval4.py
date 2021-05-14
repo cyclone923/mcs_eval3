@@ -12,7 +12,7 @@ if __name__ == "__main__":
     config_ini.read("mcs_config.ini")
     level = config_ini['MCS']['metadata']
     
-    collector = Frame_collector(scene_dir="agents/eval4",
+    collector = Frame_collector(scene_dir="agents",
                                 start_scene_number=start_scene_number,
                                 scene_type='agents',
                                 fg_class_en=False)
