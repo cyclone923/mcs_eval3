@@ -21,17 +21,17 @@ def render_in_pybullet(step_output):
     
     # build objects in the object_list:
     obj_dict = {
-        "targets": []
+        "default": []
     }
     total_objects = 0
     # target / supports
-    for obj in step_output["object_list"].values():
+    for obj in step_output["object_list"]['default']:
         boxId = createObjectShape(obj)
         if boxId == -1:
             print("error creating obj: {}".format(obj.shape))
         else:
             total_objects += 1
-            obj_dict["targets"].append({
+            obj_dict["default"].append({
                 "id": boxId,
                 "pos": [],
                 "orn": [],
@@ -50,7 +50,7 @@ def render_in_pybullet(step_output):
         time.sleep(1./400.)
 
         at_rest = []
-        for i, obj in enumerate(obj_dict["targets"]):
+        for i, obj in enumerate(obj_dict["default"]):
             # get position and orientation
             cubePos, cubeOrn = p.getBasePositionAndOrientation(obj["id"])
 
@@ -61,7 +61,7 @@ def render_in_pybullet(step_output):
             floor_contact = p.getContactPoints(obj["id"], planeId)
 
             # get contact of other objects
-            for j, obj2 in enumerate(obj_dict["targets"]):
+            for j, obj2 in enumerate(obj_dict["default"]):
                 if i != j:
                     contact = p.getContactPoints(obj["id"], obj2["id"])
 
@@ -88,7 +88,7 @@ def render_in_pybullet(step_output):
             obj["orn"].append(cubeOrn)
 
             # save updates to obj_dict
-            obj_dict["targets"][i] = obj
+            obj_dict["default"][i] = obj
 
         # all objects are at rest, go ahead and end the simulation early 
         if steps > 1 and all(at_rest):

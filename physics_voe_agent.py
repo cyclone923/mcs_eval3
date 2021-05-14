@@ -5,7 +5,7 @@ from physicsvoe.timer import Timer
 from physicsvoe.data.types import make_camera
 from fastdtw import fastdtw
 from scipy.spatial.distance import euclidean
-from gravity import pybullet_utilities
+from gravity import pybullet_utilities, gravity_utilities
 from vision.physics import L2DataPacketV2
 # from gravity.gravity_utilities import convert_l2_to_dict
 
@@ -160,67 +160,58 @@ class PhysicsVoeAgent:
             "camera_field_of_view": 42.5,
             "camera_aspect_ratio": (600, 400),
             "structural_object_list": {
-                "support": {
-                    "dimensions": metadata.support.dims,
-                    "position": {
-                        "x": metadata.support.centroid[0],
-                        "y": metadata.support.centroid[1],
-                        "z": metadata.support.centroid[2]
-                    },
-                    "color": {
-                        "r": metadata.support.color[0],
-                        "g": metadata.support.color[1],
-                        "b": metadata.support.color[2],
-                    },
-                    "shape": metadata.support.kind,
-                    "mass": 100
-                },
                 "floor": {
                     "dimensions": metadata.floor.dims,
                     "position": metadata.floor.centroid,
                     "color": metadata.floor.color,
                     "shape": metadata.floor.kind
-                },
-                "occluders": {}
+                }
             },
             "object_list": {}
         }
 
-        if hasattr(metadata, "pole"):
-            step_output_dict["structural_object_list"]["pole"] = {
-                "dimensions": metadata.pole.dims,
-                "position": metadata.pole.centroid,
-                "color": metadata.pole.color,
-                "shape": metadata.pole.kind
-            }
+        if hasattr(metadata, "poles"):
+            step_output_dict["structural_object_list"]["poles"] = []
+
+            for pole in metadata.poles:
+                step_output_dict["structural_object_list"]["poles"].append({
+                    "dimensions": pole.dims,
+                    "position": pole.centroid,
+                    "color": pole.color,
+                    "shape": pole.kind
+                })
         
         if hasattr(metadata, "occluders"):
-            for o_id, occluder in metadata.occluders.items():
-                step_output_dict["structural_object_list"]["occluders"][o_id] = {
+            step_output_dict["structural_object_list"]["occluders"] = []
+
+            for occluder in metadata.occluders:
+                step_output_dict["structural_object_list"]["occluders"].append({
                     "dimensions": occluder.dims,
                     "position": occluder.centroid,
                     "color": occluder.color,
                     "shape": occluder.kind
-                }
+                })
         
-        if hasattr(metadata, "default"):
-            for o_id, object in metadata.default.items():
-                step_output_dict["object_list"][o_id] = {
-                    "dimensions": object.dims,
+        if hasattr(metadata, "targets"):
+            step_output_dict["object_list"]["default"] = []
+            
+            for target in metadata.targets:
+                step_output_dict["object_list"]["default"].append({
+                    "dimensions": target.dims,
                     "position": {
-                        "x": object.centroid[0],
-                        "y": object.centroid[1],
-                        "z": object.centroid[2]
+                        "x": target.centroid[0],
+                        "y": target.centroid[1],
+                        "z": target.centroid[2]
                     },
                     "color": {
-                            "r": object.color[0],
-                            "g": object.color[1],
-                            "b": object.color[2],
+                            "r": target.color[0],
+                            "g": target.color[1],
+                            "b": target.color[2],
                     },
-                    "shape": object.kind,
-                    "mass": 4.0,
-                    "pixel_center": object.centroid_px
-                }
+                    "shape": target.kind,
+                    "mass": 10.0,
+                    "pixel_center": target.centroid_px
+                })
 
         return step_output_dict
     
@@ -302,23 +293,23 @@ class PhysicsVoeAgent:
                 # console.log(floor_coords)
 
                 # Target / Pole may not appear in view yet, start recording when available
-                for obj_id, obj in step_output_dict['object_list'].items():
-                    if obj_id not in self.track_info.keys():
-                        self.track_info[obj_id] = {
+                for i, obj in enumerate(step_output_dict['object_list']['default']):
+                    if not i in self.track_info.keys():
+                        self.track_info[i] = {
                             'trajectory': list(),
                             'position': list()
                         }
-                    self.track_info[obj_id]['trajectory'].append(obj["dimensions"])
-                    self.track_info[obj_id]['position'].append(obj['position'])
-                    step_output_dict["object_list"][obj_id]["pixel_center"] = step_output.default[obj_id].centroid_px
+                    self.track_info[i]['trajectory'].append(list(obj["dimensions"].values()))
+                    self.track_info[i]['position'].append(obj['position'])
+                    step_output_dict["object_list"]['default'][i]["pixel_center"] = obj['pixel_center']
                 
-                if self.level == 'level2':
-                    pole_history.append({
-                            "color": step_output_dict["structural_object_list"][pole_object]['color'],
-                            "step_id": i
-                        })
-                elif self.level == "oracle":
-                    pole_history.append(self.getMinMax(step_output_dict["structural_object_list"][pole_object]))
+                # if self.level == 'level2':
+                #     pole_history.append({
+                #             "color": step_output_dict["structural_object_list"][pole_object]['color'],
+                #             "step_id": i
+                #         })
+                # elif self.level == "oracle":
+                #     pole_history.append(self.getMinMax(step_output_dict["structural_object_list"][pole_object]))
             
             except KeyError:  # Object / Pole is not in view yet
                 pass
@@ -338,9 +329,8 @@ class PhysicsVoeAgent:
                     pb_state = 'complete'
             else:
                 new_obj_in_scene = False
-                # console.log(self.track_info)
                 for obj in self.track_info.values():
-                    if len(obj['position']) == 3 and len(obj['trajectory']) == 3:
+                    if len(obj['position']) <= 3 and len(obj['trajectory']) <= 3:
                         new_obj_in_scene = True
                         break
                 if new_obj_in_scene:
@@ -358,11 +348,11 @@ class PhysicsVoeAgent:
                 for obj_id, obj in self.track_info.items():
                     unity_traj = [[x['x'], x['y'], x['z']] for x in obj['trajectory']]
 
-                    if unity_traj[-1] != unity_traj[-2]:
+                    if len(unity_traj) > 2 and unity_traj[-1] != unity_traj[-2]:
                         confidence = 1.0
                     elif obj_traj_orn != None:
-                        distance, _ = self.calc_simulator_voe(obj_traj_orn['default'][obj_id]['position'], unity_traj)
-                        confidence = 100 * np.tanh(1 / distance)
+                        distance, _ = self.calc_simulator_voe(obj_traj_orn['default'][obj_id]['pos'], unity_traj)
+                        confidence = 100 * np.tanh(1 / (distance + 1e-9))
             
                 # TODO: If distance is sufficiently large, raise Position VoE
                 # confidence has to be bounded between 0 and 1
@@ -376,7 +366,7 @@ class PhysicsVoeAgent:
                         }
                     )
                 else:
-                    p_c = step_output_dict["object_list"]['default'][obj_id]["pixel_center"]
+                    p_c = step_output_dict["object_list"]['default'][0]["pixel_center"]
                     voe_xy_list.append(
                         {
                             "x": p_c[0],
