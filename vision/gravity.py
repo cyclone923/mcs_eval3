@@ -552,7 +552,7 @@ class ObjectV2:
         scene_point_cloud.points = o3d.utility.Vector3dVector(scene_points)
         
         obj_idx = np.nonzero(obj.obj_mask.reshape(-1))[0]
-        obj_point_cloud = scene_point_cloud.select_by_index(obj_idx)
+        obj_point_cloud = scene_point_cloud.select_down_sample(obj_idx)
         self.obj_cloud = obj_point_cloud
 
         assert obj_point_cloud.dimension() == 3, "RGB-D couldn't return a 3D object!"

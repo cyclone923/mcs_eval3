@@ -65,9 +65,18 @@ unity_path.yaml
 #ignore models not currently being used
 tracker/siftModel_t.p
 tracker/train_object_dataset_f.p
+tracker/training_dataset.p
+
+#ignore training data for eval4
+tracker/training_data/
+masks-occluder/training_dataset.p
+masks-occluder/SCENE_HISTORY/
 
 #other
 out/
 out.zip
 machine.sh
 Open3D/
+
+visionmodule/Result/*
+visionmodule/data/dataset/*

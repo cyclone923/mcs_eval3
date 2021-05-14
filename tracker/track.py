@@ -7,7 +7,7 @@ from pathlib import Path
 
 import numpy as np
 
-from .utils import draw_bounding_boxes, split_obj_masks, get_obj_position, get_mask_box
+from utils import draw_bounding_boxes, split_obj_masks, get_obj_position, get_mask_box
 
 
 def l2_distance(src_pos, dest_pos):

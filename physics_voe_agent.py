@@ -5,17 +5,18 @@ from physicsvoe.data.types import make_camera
 
 from tracker import track, appearence, filter_masks
 import visionmodule.inference as vision
-
+from rich.console import Console
 from pathlib import Path
 from PIL import Image
 import numpy as np
 import torch
 import pickle
 
+
 APP_MODEL_PATH = './tracker/model.p'
 VISION_MODEL_PATH = './visionmodule/dvis_resnet50_mc_voe.pth'
-DEBUG = False
-
+DEBUG = True
+console = Console()
 class VoeAgent:
     def __init__(self, controller, level, out_prefix=None):
         self.controller = controller
@@ -66,6 +67,7 @@ class VoeAgent:
         if DEBUG:
             with open(folder_name/'viols.pkl', 'wb') as fd:
                 pickle.dump((all_viols, all_errs), fd)
+        print(f'Scene wide VOE:{scene_voe_detected}')
         return scene_voe_detected
 
     def calc_voe(self, step_output, frame_num, scene_name=None):
@@ -109,6 +111,7 @@ class VoeAgent:
         else:
             dynamics_viols, all_errs = det_result
         appearance_viols = []
+        console.print('[yellow]Dynamics violations:[/yellow]', dynamics_viols)
         for o_id, obj_info in self.track_info['objects'].items():
             o_visible = obj_info['visible']
             o_mismatch = not obj_info['appearance']['match']
@@ -119,6 +122,7 @@ class VoeAgent:
                 _idx = obj_ids.index(o_id)
                 appearance_viols.append(framewisevoe.AppearanceViolation(o_id, obj_pos[_idx]))
         # Update tracker
+        console.print('[yellow]Appearance violations:[/yellow]', appearance_viols)
         vis_count = {o_id:o_info['visible_count'] for o_id, o_info in self.track_info['objects'].items()}
         pos_hists = {o_id:o_info['position_history'] for o_id, o_info in self.track_info['objects'].items()}
         obs_viols = self.detector.record_obs(frame_num, obj_ids, obj_pos, obj_present, obj_occluded, vis_count, pos_hists, camera_info)

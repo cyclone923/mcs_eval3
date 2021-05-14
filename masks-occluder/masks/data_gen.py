@@ -1,6 +1,6 @@
 from .mcs_env import McsEnv
 from .types import ThorFrame, CameraInfo
-
+import ubjson
 import pickle
 import random
 import itertools
@@ -8,6 +8,7 @@ import gzip
 import numpy as np
 from pathlib import Path
 from argparse import ArgumentParser
+# from vision.generateData.frame_collector import Frame_collector
 
 
 def convert_scenes(env, paths):
@@ -17,22 +18,26 @@ def convert_scenes(env, paths):
             print(f'{out_path} exists, skipping')
             continue
         print(f'Converting {scene_path} -> {out_path}')
+        #incude frame collector's save frames here
         scene_output = [convert_frame(o, i) for i, o in enumerate(env.run_scene(scene_path))]
-        with gzip.open(out_path, 'wb') as fd:
-            pickle.dump(scene_output, fd)
+        # with gzip.open(out_path, 'wb') as fd:
+        #     pickle.dump(scene_output, fd)
+        print(help(scene_output))
 
 
 def convert_frame(o, i):
     objs = o.object_list
+    # print(len(objs), len(o.image_list), len(o.object_mask_list))
     structs = o.structural_object_list
     img = o.image_list[-1]
+        #print(help(o))
     obj_mask = convert_obj_mask(o.object_mask_list[-1], objs)
     struct_mask = convert_obj_mask(o.object_mask_list[-1], structs)
     depth_mask = np.array(o.depth_map_list[-1])
     print(len(o.object_mask_list), len(o.depth_map_list), len(o.image_list))
     camera_desc = CameraInfo(o.camera_field_of_view, o.position, o.rotation, o.head_tilt)
-    # Project depth map to a 3D point cloud - removed for performance
-    # depth_pts = depth_to_points(depth_mask, *camera_desc)
+        # Project depth map to a 3D point cloud - removed for performance
+        # depth_pts = depth_to_points(depth_mask, *camera_desc)
     return ThorFrame(objs, structs, img, depth_mask, obj_mask, struct_mask, camera_desc)
 
 
@@ -110,12 +115,13 @@ def make_parser():
     parser = ArgumentParser()
     parser.add_argument('--sim', type=Path, default=Path('data/thor'))
     parser.add_argument('--scenes', type=Path, default=Path('data/thor/scenes'))
+    parser.add_argument('--config', type=Path, default=Path('/home/gulsh/mcs_opics/mcs_config.ini'))
     parser.add_argument('--filter', type=str, default=None)
     return parser
 
 
-def main(sim_path, data_path, filter):
-    env = McsEnv(sim_path, data_path, filter)
+def main(sim_path, data_path, config_path, filter):
+    env = McsEnv(sim_path, data_path, config_path, filter)
 
     scenes = list(env.all_scenes)
     print(f'Found {len(scenes)} scenes')
@@ -126,5 +132,5 @@ def main(sim_path, data_path, filter):
 
 if __name__ == '__main__':
     args = make_parser().parse_args()
-    main(args.sim, args.scenes, args.filter)
+    main(args.sim, args.scenes, args.config, args.filter)
 

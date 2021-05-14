@@ -1,11 +1,11 @@
 import pickle
-import gzip
+import gzip, joblib
 from pathlib import Path
 from argparse import ArgumentParser
 import os
-from .utils import draw_bounding_boxes, draw_appearance_bars, split_obj_masks, get_obj_position, get_mask_box
-
-from .track import track_objects
+from utils import draw_bounding_boxes, draw_appearance_bars, split_obj_masks, get_obj_position, get_mask_box
+# from types import ThorFrame, CameraInfo
+from track import track_objects
 import torch
 import numpy as np
 from torch.utils.data import Dataset, DataLoader
@@ -16,6 +16,10 @@ import torch.nn as nn
 import cv2
 import webcolors
 import sys
+from collections import namedtuple
+
+ThorFrame = namedtuple('ThorFrame', ('obj_data', 'struct_obj_data', 'image', 'depth_mask', 'obj_mask', 'struct_mask', 'camera_info'))
+CameraInfo = namedtuple('CameraInfo', ('field_of_view', 'position', 'rotation', 'head_tilt'))
 
 
 def closest_colour(requested_colour):
@@ -193,7 +197,7 @@ def object_appearance_match(appearance_model, image, objects_info, device='cpu',
 
     return objects_info
 
-
+#import masks
 def process_video(video_data, appearance_model, save_path=None, save_mp4=False, save_gif=False, device='cpu'):
     appearance_model.eval()
 
@@ -264,7 +268,8 @@ class ObjectDataset(Dataset):
     def __init__(self, data, transform=None):
         self.data = data
         self.shape_labels = sorted(set(data['shapes']))
-        self.color_labels = sorted(set(np.array(data['textures']).squeeze(1)))
+        print(len(data['textures']))
+        self.color_labels = sorted(set(np.array(data['textures']).squeeze(0)))
 
         self.data['shapes'] = np.array(self.data['shapes'])
         self.data['color'] = np.array(data['textures']).squeeze(1)
@@ -320,8 +325,12 @@ def generate_data(scenes_files):
     data = {'images': [], 'shapes': [], 'materials': [], 'textures': []}
     for scene_file in tqdm(sorted(scenes_files)):
         with gzip.open(scene_file, 'rb') as fd:
-            scene_data = pickle.load(fd)
+            import pdb
+            pdb.set_trace()
 
+            scene_data = pickle.load(fd)
+            #print(scene_data)
+        
         for frame_num, frame in enumerate(scene_data):
 
             objs = frame.obj_data
@@ -436,8 +445,8 @@ def train_appearance_matching(dataloader, model, optimizer, epochs: int, writer,
 
 def make_parser():
     parser = ArgumentParser()
-    parser.add_argument('--test-scenes-path', required=True, type=Path)
-    parser.add_argument('--train-scenes-path', required=True, type=Path)
+    parser.add_argument('--test-scenes-path', required=False, type=Path)
+    parser.add_argument('--train-scenes-path', required=False, type=Path)
     parser.add_argument('--train-dataset-path', required=False, type=Path,
                         default=os.path.join(os.getcwd(), 'train_object_dataset.p'))
     parser.add_argument('--test-dataset-path', required=False, type=Path,
@@ -446,7 +455,7 @@ def make_parser():
     parser.add_argument('--results-dir', required=False, type=Path, default=os.path.join(os.getcwd(), 'results'))
     parser.add_argument('--run', required=False, type=int, default=1)
     parser.add_argument('--lr', required=False, type=float, default=0.001)
-    parser.add_argument('--epochs', required=False, type=int, default=50)
+    parser.add_argument('--epochs', required=False, type=int, default=100)
     parser.add_argument('--checkpoint-interval', required=False, type=int, default=1)
     parser.add_argument('--log-interval', required=False, type=int, default=1)
     parser.add_argument('--opr', choices=['generate_dataset', 'train', 'test', 'demo'], default='demo',

@@ -107,8 +107,8 @@ def parse_label_info(cfg, mask_clrI, uuid_list, shape_list, result_dir='', sname
     imgSaver.save_single_pilImage_gray(instI, 'label',
                                        save_path=osp.join(result_dir, 'inst'+sname+'.png'))
 
-    imgSaver.save_single_pilImage_gray(semI, 'label',
-                                       save_path=osp.join(result_dir, 'cls'+sname+'.png'))
+    # imgSaver.save_single_pilImage_gray(semI, 'label',
+    #                                    save_path=osp.join(result_dir, 'cls'+sname+'.png'))
 
 
 def save_depth_image(depthI, result_dir='', sname='-dummy'):

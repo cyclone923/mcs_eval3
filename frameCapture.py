@@ -10,6 +10,7 @@ from voe.voe_agent import VoeAgent
 from voe.agency_voe_agent import AgencyVoeAgent
 import physics_voe_agent
 import gravity_agent
+import save_frames 
 
 class Evaluation3_Agent:
 
@@ -40,6 +41,7 @@ class Evaluation3_Agent:
         # self.agency_voe_agent = AgencyVoeAgent(self.controller, self.level)
         self.gravity_agent = gravity_agent.GravityAgent(self.controller, self.level)
         self.phys_voe = physics_voe_agent.VoeAgent(self.controller, self.level, prefix)
+        self.phys_voe_save = save_frames.VoeAgent(self.controller, self.level, prefix)
 
         if seed != -1:
             random.seed(seed)
@@ -49,20 +51,22 @@ class Evaluation3_Agent:
         if scene_config == {}:
             raise ValueError("Scene Config is Empty", one_scene)
         goal_type = scene_config['goal']['category']
+        # import pdb
+        # pdb.set_trace()
         if goal_type == "intuitive physics":
             if 'gravity' in scene_config['name'] or self.scene_type == 'gravity':
-                print("\nGRAVITY SCENE...\n")
                 return self.gravity_agent.run_scene(scene_config, one_scene)
             else:
-                print("\nPHYSICS VOE SCENE...\n")
-                return self.phys_voe.run_scene(scene_config, one_scene)
+                # return self.phys_voe.run_scene(scene_config, one_scene)
+                print (scene_config)
+                return self.phys_voe_save.run_scene(scene_config, one_scene)
+
         elif goal_type == "agents":
             if self.level == "level1":
                 print("Agency task cannot be run in level1. Exiting")
                 return
             self.agency_voe_agent.run_scene(scene_config)
         elif goal_type == "retrieval":
-            print("\nPLAYROOM SCENE...\n")
             self.exploration_agent.run_scene(scene_config)
         else:
             print("Current goal type: {}".format(goal_type))
@@ -74,8 +78,8 @@ def make_parser():
     parser.add_argument('--unity-path', default='unity_path.yaml')
     parser.add_argument('--config', default='mcs_config.ini')
     parser.add_argument('--prefix', default='out')
-    parser.add_argument('--scenes', default='different_scenes')
-    parser.add_argument('--scene-type', default='')
+    parser.add_argument('--scenes', default='different')
+    parser.add_argument('--scene-type', default='intuitive-physics')
     return parser
 
 

@@ -55,7 +55,7 @@ python -m pip install git+https://github.com/NextCenturyCorporation/MCS@master#e
 pip install -r requirements.txt
 ```
 
-4. Ensure you've installed `ai2thor` version `2.2.0`:
+4. Ensure you've installed `ai2thor` version `2.5.0`:
 
 ```
 pip show ai2thor
@@ -107,4 +107,6 @@ python get_gravity_scenes.py
 python eval.py --scenes gravity_scenes/[rest of the relative path to the directory with the scenes you want to test]
 ```
 
-The gravity scenes require Unity v0.3.7 or newer. Running setup_unity.sh should download it and set it to be used in unity_path.yaml.
+Requires Unity v0.4.2 or newer. Running setup_unity.sh should download it and set it to be used in unity_path.yaml.
+
+### [GPU SERVER & HEADLESS](.github/workflows/README.md)

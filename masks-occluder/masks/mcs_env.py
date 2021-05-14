@@ -6,26 +6,38 @@ Modified from Chengxi's McsEnv wrapper
 """
 
 from pathlib import Path
-import os
+import os, configparser, yaml
 import machine_common_sense as mcs
 import pickle
 import platform
 
 class McsEnv:
-    def __init__(self, base, scenes, filter=None):
+    def __init__(self, base, scenes, configPath, filter=None):
         base = Path(base)
         scenes = Path(scenes)
-        os.environ['MCS_CONFIG_FILE_PATH'] = str(base/'mcs_config.yaml')
-
+        # config_path= Path(configPath)
+        # os.environ['MCS_CONFIG_FILE_PATH'] = str(base/'mcs_config.ini')
+        # config_path = str(base/'')
         if platform.system() == "Linux":
-            app = base/'MCS-AI2-THOR-Unity-App-v0.3.3.x86_64'
+            app = base/'MCS-AI2-THOR-Unity-App-v0.4.1.1.x86_64'
         elif platform.system() == "Darwin":
             app = base/"MCSai2thor"
         else:
             app = None
+        
+        # with open("../unity_path.yaml", 'r') as config_file:
+        #     config = yaml.safe_load(config_file)
 
-        self.controller = mcs.create_controller(str(app), depth_maps=True,
-                                                object_masks=True)
+        # config_ini = configparser.ConfigParser()
+        # config_ini.read(config_path)
+
+        # self.controller = mcs.create_controller(
+        #     os.path.join(config['unity_path']),
+        #     config_file_path=config_path
+        # )
+
+        print(base, type(base))
+        self.controller = mcs.create_controller(str(app), config_file_path=str(configPath))
         self.read_scenes(scenes, filter)
 
     def read_scenes(self, scenedir, filter):
@@ -36,7 +48,7 @@ class McsEnv:
             self.all_scenes = [s for s in _scenegen if filter in s.name]
 
     def run_scene(self, scene_path):
-        scene_config, _ = mcs.load_config_json_file(scene_path)
+        scene_config,_= mcs.load_scene_json_file(scene_path)
         step_output = self.controller.start_scene(scene_config)
         for action in scene_config['goal']['action_list']:
             step_output = self.controller.step(action=action[0])
