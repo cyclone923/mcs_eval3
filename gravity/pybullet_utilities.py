@@ -8,6 +8,9 @@ import json
 import PIL
 from PIL import Image
 import matplotlib.pyplot as plt
+from rich.console import Console
+
+console = Console()
 
 def render_in_pybullet(step_output):
     physicsClient = p.connect(p.GUI)#or p.DIRECT for non-graphical version
@@ -21,17 +24,18 @@ def render_in_pybullet(step_output):
     
     # build objects in the object_list:
     obj_dict = {
-        "default": []
+        "default": {}
     }
     total_objects = 0
     # target / supports
-    for obj in step_output["object_list"]['default']:
+    for obj_id, obj in step_output["object_list"].items():
         boxId = createObjectShape(obj)
+        console.log(boxId)
         if boxId == -1:
             print("error creating obj: {}".format(obj.shape))
         else:
             total_objects += 1
-            obj_dict["default"].append({
+            obj_dict["default"][obj_id] = {
                 "id": boxId,
                 "pos": [],
                 "orn": [],
@@ -41,7 +45,7 @@ def render_in_pybullet(step_output):
                 "object_contacts": {},
                 "aab_min": [],
                 "aab_max": []
-            })
+            }
 
     steps = 0
     # let simulation run
@@ -50,7 +54,7 @@ def render_in_pybullet(step_output):
         time.sleep(1./400.)
 
         at_rest = []
-        for i, obj in enumerate(obj_dict["default"]):
+        for i, obj in obj_dict["default"].items():
             # get position and orientation
             cubePos, cubeOrn = p.getBasePositionAndOrientation(obj["id"])
 
@@ -61,7 +65,7 @@ def render_in_pybullet(step_output):
             floor_contact = p.getContactPoints(obj["id"], planeId)
 
             # get contact of other objects
-            for j, obj2 in enumerate(obj_dict["default"]):
+            for j, obj2 in obj_dict["default"].items():
                 if i != j:
                     contact = p.getContactPoints(obj["id"], obj2["id"])
 

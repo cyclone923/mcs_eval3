@@ -285,6 +285,7 @@ class GravityAgent:
                 floor_coords = step_output_dict["structural_object_list"][floor_object]["dimensions"]
                 
                 # Target / Pole may not appear in view yet, start recording when available
+                print(step_output_dict["object_list"][target_object]["dimensions"])
                 target_trajectory.append(step_output_dict["object_list"][target_object]["dimensions"])
                 step_output_dict["object_list"][target_object]["pixel_center"] = step_output.target.centroid_px
                 
