@@ -410,3 +410,24 @@ class PhysicsVoeAgent:
 
 
         # TODO: Make final scene-wide prediction
+
+def squash_masks(ref, mask_l, ids):
+    flat_mask = np.ones_like(ref) * -1
+    for m, id_ in zip(mask_l, ids):
+        flat_mask[m] = id_
+    return flat_mask
+
+def prob_to_mask(prob, cutoff, obj_scores):
+    obj_pred_class = obj_scores.argmax(-1)
+    valid_ids = []
+    for mask_id, pred_class in zip(range(cutoff, prob.shape[0]), obj_pred_class):
+        if pred_class == 1: #An object!
+            valid_ids.append(mask_id+cutoff)
+    out_mask = -1 * np.ones(prob.shape[1:], dtype=np.int)
+    am = np.argmax(prob, axis=0)
+    for out_id, mask_id in enumerate(valid_ids):
+        out_mask[am==mask_id-cutoff] = out_id
+    return out_mask
+
+def plausible_str(violation_detected):
+    return 'implausible' if violation_detected else 'plausible'
