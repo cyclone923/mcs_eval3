@@ -145,7 +145,7 @@ class PhysicsVoeAgent:
         filtered_keys = [
             key 
             for key in step_output["structural_object_list"].keys() 
-            if len(key) > 35
+            # if len(key) > 35
         ]
         out = dict({
             ("pole", so) if "pole_" in so else ("support", so) if "support_" in so else ("occluder", so)
@@ -193,10 +193,10 @@ class PhysicsVoeAgent:
                 })
         
         if hasattr(metadata, "targets"):
-            step_output_dict["object_list"]["default"] = []
+            # step_output_dict["object_list"] = dict()
             
-            for target in metadata.targets:
-                step_output_dict["object_list"]["default"].append({
+            for i, target in enumerate(metadata.targets):
+                step_output_dict["object_list"][str(i)] = {
                     "dimensions": target.dims,
                     "position": {
                         "x": target.centroid[0],
@@ -211,7 +211,7 @@ class PhysicsVoeAgent:
                     "shape": target.kind,
                     "mass": 10.0,
                     "pixel_center": target.centroid_px
-                })
+                }
 
         return step_output_dict
     
@@ -264,6 +264,7 @@ class PhysicsVoeAgent:
                 floor_object = "floor"  # Not a dynamic object ID
                 # console.log(step_output_dict)
                 target_objects = self.target_obj_ids(step_output_dict)
+                # console.log(target_objects)
                 supporting_object, pole_object, occluder_objects = self.struc_obj_ids(step_output_dict)
             else:
                 if step_output is None:
@@ -277,10 +278,14 @@ class PhysicsVoeAgent:
                     continue
                 
                 # convert L2DataPacketV2 to dictionary
+                # console.log(dir(step_output.step_meta))
+                # console.log(dir(step_output))
                 step_output_dict = self.convert_l2_to_dict(step_output)
+                # console.log(step_output_dict.keys())
                 
                 floor_object = "floor"
                 target_objects = self.target_obj_ids(step_output_dict)
+                # console.log(target_objects)
                 supporting_object, pole_object, occluder_objects = self.struc_obj_ids(step_output_dict)
             
             # console.log('check')
@@ -293,15 +298,19 @@ class PhysicsVoeAgent:
                 # console.log(floor_coords)
 
                 # Target / Pole may not appear in view yet, start recording when available
-                for i, obj in enumerate(step_output_dict['object_list']['default']):
-                    if not i in self.track_info.keys():
-                        self.track_info[i] = {
+                # console.log(step_output_dict['object_list'].keys())
+                # console.log(self.track_info.keys())
+                for obj_id, obj in step_output_dict['object_list'].items():
+                    # console.log(obj_id)
+                    if obj_id not in self.track_info.keys():
+                        console.log('new')
+                        self.track_info[obj_id] = {
                             'trajectory': list(),
                             'position': list()
                         }
-                    self.track_info[i]['trajectory'].append(list(obj["dimensions"].values()))
-                    self.track_info[i]['position'].append(obj['position'])
-                    step_output_dict["object_list"]['default'][i]["pixel_center"] = obj['pixel_center']
+                    self.track_info[obj_id]['trajectory'].extend(obj["dimensions"])
+                    self.track_info[obj_id]['position'].append(obj['position'])
+                    step_output_dict["object_list"][obj_id]["pixel_center"] = obj['pixel_center']
                 
                 # if self.level == 'level2':
                 #     pole_history.append({
@@ -311,9 +320,11 @@ class PhysicsVoeAgent:
                 # elif self.level == "oracle":
                 #     pole_history.append(self.getMinMax(step_output_dict["structural_object_list"][pole_object]))
             
-            except KeyError:  # Object / Pole is not in view yet
+            except KeyError as e:  # Object / Pole is not in view yet
+                console.log(e)
                 pass
-            except AttributeError:
+            except AttributeError as e:
+                console.log(e)
                 pass
 
             # TODO: PERFORM TARGET OBJECT APPEARANCE MATCH
@@ -330,7 +341,7 @@ class PhysicsVoeAgent:
             else:
                 new_obj_in_scene = False
                 for obj in self.track_info.values():
-                    if len(obj['position']) <= 3 and len(obj['trajectory']) <= 3:
+                    if len(obj['position']) == 3:
                         new_obj_in_scene = True
                         break
                 if new_obj_in_scene:
@@ -346,6 +357,7 @@ class PhysicsVoeAgent:
             if pb_state == 'complete' and ('pole' not in step_output_dict['structural_object_list'].keys() or (len(pole_history) > 1 and drop_step != -1)):
                 # Calculate confidence
                 for obj_id, obj in self.track_info.items():
+                    # console.log(obj['trajectory'])
                     unity_traj = [[x['x'], x['y'], x['z']] for x in obj['trajectory']]
 
                     if len(unity_traj) > 2 and unity_traj[-1] != unity_traj[-2]:
@@ -354,34 +366,34 @@ class PhysicsVoeAgent:
                         distance, _ = self.calc_simulator_voe(obj_traj_orn['default'][obj_id]['pos'], unity_traj)
                         confidence = 100 * np.tanh(1 / (distance + 1e-9))
             
-                # TODO: If distance is sufficiently large, raise Position VoE
-                # confidence has to be bounded between 0 and 1
-                if confidence >= 1:
-                    confidence = 1.0
-                    # if confidence is 1, throw a no voe signal in the pixels, or the object in unity hasn't stopped moving
-                    voe_xy_list.append(
-                        {
-                            "x": -1, # no voe 
-                            "y": -1  # noe voe
-                        }
-                    )
-                else:
-                    p_c = step_output_dict["object_list"]['default'][0]["pixel_center"]
-                    voe_xy_list.append(
-                        {
-                            "x": p_c[0],
-                            "y": p_c[1] 
-                        }
-                    )
-                    voe_heatmap = np.float32(step_output.target.obj_mask)
-                    voe_heatmap[np.all(1.0 == voe_heatmap, axis=-1)] = confidence
-                    voe_heatmap[np.all(0 == voe_heatmap, axis=-1)] = 1.0
+                    # TODO: If distance is sufficiently large, raise Position VoE
+                    # confidence has to be bounded between 0 and 1
+                    if confidence >= 1:
+                        confidence = 1.0
+                        # if confidence is 1, throw a no voe signal in the pixels, or the object in unity hasn't stopped moving
+                        voe_xy_list.append(
+                            {
+                                "x": -1, # no voe 
+                                "y": -1  # noe voe
+                            }
+                        )
+                    else:
+                        p_c = step_output_dict["object_list"][obj_id]["pixel_center"]
+                        voe_xy_list.append(
+                            {
+                                "x": p_c[0],
+                                "y": p_c[1] 
+                            }
+                        )
+                        voe_heatmap = np.float32(step_output.target.obj_mask)
+                        voe_heatmap[np.all(1.0 == voe_heatmap, axis=-1)] = confidence
+                        voe_heatmap[np.all(0 == voe_heatmap, axis=-1)] = 1.0
 
-                console.log(confidence)
-                if confidence <= 0.5:
-                    choice = plausible_str(True)
+                    # console.log(confidence)
+                    if confidence <= 0.5:
+                        choice = plausible_str(True)
 
-                # TODO: If object not found in Unity but is expected in PB: raise Presence VoE
+                    # TODO: If object not found in Unity but is expected in PB: raise Presence VoE
                 
                 # TODO: Make step prediction
                 self.controller.make_step_prediction(
