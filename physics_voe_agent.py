@@ -295,9 +295,11 @@ class PhysicsVoeAgent:
                 # elif self.level == "oracle":
                 #     pole_history.append(self.getMinMax(step_output_dict["structural_object_list"][pole_object]))
             
-            except KeyError:  # Object / Pole is not in view yet
+            except KeyError as e:  # Object / Pole is not in view yet
+                console.log(e)
                 pass
-            except AttributeError:
+            except AttributeError as e:
+                console.log(e)
                 pass
 
             # TODO: PERFORM TARGET OBJECT APPEARANCE MATCH
