@@ -210,7 +210,8 @@ class PhysicsVoeAgent:
                     },
                     "shape": target.kind,
                     "mass": 10.0,
-                    "pixel_center": target.centroid_px
+                    "pixel_center": target.centroid_px,
+                    "obj_mask": target.obj_mask
                 }
 
         return step_output_dict
@@ -308,7 +309,7 @@ class PhysicsVoeAgent:
                             'trajectory': list(),
                             'position': list()
                         }
-                    self.track_info[obj_id]['trajectory'].extend(obj["dimensions"])
+                    self.track_info[obj_id]['trajectory'].append(obj["dimensions"])
                     self.track_info[obj_id]['position'].append(obj['position'])
                     step_output_dict["object_list"][obj_id]["pixel_center"] = obj['pixel_center']
                 
@@ -355,21 +356,24 @@ class PhysicsVoeAgent:
             # if pb_run:
             # TODO: Calculate distance between actual position (Unity) and expected position (PB)
             if pb_state == 'complete' and ('pole' not in step_output_dict['structural_object_list'].keys() or (len(pole_history) > 1 and drop_step != -1)):
+                obj_confidence = dict()
                 # Calculate confidence
                 for obj_id, obj in self.track_info.items():
-                    # console.log(obj['trajectory'])
-                    unity_traj = [[x['x'], x['y'], x['z']] for x in obj['trajectory']]
+                    unity_traj = [[x['x'], x['y'], x['z']] for x in obj['position']]
 
                     if len(unity_traj) > 2 and unity_traj[-1] != unity_traj[-2]:
-                        confidence = 1.0
-                    elif obj_traj_orn != None:
+                        obj_confidence[obj_id] = 1.0
+                    try:
                         distance, _ = self.calc_simulator_voe(obj_traj_orn['default'][obj_id]['pos'], unity_traj)
-                        confidence = 100 * np.tanh(1 / (distance + 1e-9))
+                        obj_confidence[obj_id] = 100 * np.tanh(1 / (distance + 1e-9))
+                    except KeyError as e:
+                        console.log(e)
+                        obj_confidence[obj_id] = 1.0
             
                     # TODO: If distance is sufficiently large, raise Position VoE
                     # confidence has to be bounded between 0 and 1
-                    if confidence >= 1:
-                        confidence = 1.0
+                    if obj_confidence[obj_id] >= 1:
+                        obj_confidence[obj_id] = 1.0
                         # if confidence is 1, throw a no voe signal in the pixels, or the object in unity hasn't stopped moving
                         voe_xy_list.append(
                             {
@@ -385,19 +389,19 @@ class PhysicsVoeAgent:
                                 "y": p_c[1] 
                             }
                         )
-                        voe_heatmap = np.float32(step_output.target.obj_mask)
-                        voe_heatmap[np.all(1.0 == voe_heatmap, axis=-1)] = confidence
+                        voe_heatmap = np.float32(step_output_dict['object_list'][obj_id]['obj_mask'])
+                        voe_heatmap[np.all(1.0 == voe_heatmap, axis=-1)] = obj_confidence[obj_id]
                         voe_heatmap[np.all(0 == voe_heatmap, axis=-1)] = 1.0
 
                     # console.log(confidence)
-                    if confidence <= 0.5:
+                    if obj_confidence[obj_id] <= 0.5:
                         choice = plausible_str(True)
 
                     # TODO: If object not found in Unity but is expected in PB: raise Presence VoE
                 
                 # TODO: Make step prediction
                 self.controller.make_step_prediction(
-                    choice=choice, confidence=confidence, violations_xy_list=voe_xy_list[-1],
+                    choice=choice, confidence=min([c for c in obj_confidence.values()]), violations_xy_list=voe_xy_list[-1],
                     heatmap_img=voe_heatmap)
             else:   # Not enough info to make a prediction on yet
                 self.controller.make_step_prediction(
