@@ -397,12 +397,13 @@ class GameState(object):
 
         start_2 = time.time()
         self.event = self.env.step(action=action)
-        try:
-            # print("calling save_frame() in game_state.py!")
-            self.collector.save_frame(self.event)
-        except Exception as e:
-            print("EEException during save_frame(): ", e)
-            pass
+        if self.collector:
+            try:
+                # print("calling save_frame() in game_state.py!")
+                self.collector.save_frame(self.event)
+            except Exception as e:
+                print("EEException during save_frame(): ", e)
+                pass
         end_2 = time.time()
         action_time = end_2-start_2
         # print(f"MS action time {action_time}")
