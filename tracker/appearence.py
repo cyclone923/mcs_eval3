@@ -3,9 +3,9 @@ import gzip, joblib
 from pathlib import Path
 from argparse import ArgumentParser
 import os
-from utils import draw_bounding_boxes, draw_appearance_bars, split_obj_masks, get_obj_position, get_mask_box
+from .utils import draw_bounding_boxes, draw_appearance_bars, split_obj_masks, get_obj_position, get_mask_box
 # from types import ThorFrame, CameraInfo
-from track import track_objects
+from .track import track_objects
 import torch
 import numpy as np
 from torch.utils.data import Dataset, DataLoader

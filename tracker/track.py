@@ -4,10 +4,10 @@ import os
 import pickle
 from argparse import ArgumentParser
 from pathlib import Path
-
+from moviepy import editor as mp
 import numpy as np
 
-from utils import draw_bounding_boxes, split_obj_masks, get_obj_position, get_mask_box
+from .utils import draw_bounding_boxes, split_obj_masks, get_obj_position, get_mask_box
 
 
 def l2_distance(src_pos, dest_pos):
@@ -51,7 +51,7 @@ def track_objects(frame_mask, track_info={}):
             track_info['object_index'] += 1
             if 'objects' not in track_info:
                 track_info['objects'] = {}
-            track_info['objects'][_key] = {'position_history': [], 'area_history': [], 'hidden_for': 0, 'visible_count': 0}
+            track_info['objects'][_key] = {'position_history': [], 'area_history': [], 'hidden_for': 0, 'visible_count': 0, 'history_count':0}
 
         else:
             _, _, _key = min(track_to_exist_obj)
@@ -64,6 +64,7 @@ def track_objects(frame_mask, track_info={}):
         track_info['objects'][_key]['visible'] = True
         track_info['objects'][_key]['hidden_for'] = 0
         track_info['objects'][_key]['visible_count'] += 1
+        track_info['objects'][_key]['history_count'] +=1
 
     for obj_key, obj in track_info['objects'].items():
         if obj_key not in resolved_objs:
@@ -92,7 +93,7 @@ def process_video(video_data, save_path=None, save_mp4=False):
 
     # save video
     if save_mp4:
-        import moviepy.editor as mp
+        
         clip = mp.VideoFileClip(save_path + '.gif')
         clip.write_videofile(save_path + '.mp4')
         os.remove(save_path + '.gif')

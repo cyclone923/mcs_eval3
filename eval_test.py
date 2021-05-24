@@ -8,9 +8,11 @@ from exploration.controller_agent import ExploreAgent
 from MCS_exploration.sequence_generator import SequenceGenerator
 from voe.voe_agent import VoeAgent
 from voe.agency_voe_agent import AgencyVoeAgent
-import physics_voe_agent
+#import physics_voe_agent
 import gravity_agent
 import save_frames 
+
+from tracker import siamesePhysicsVoe
 
 class Evaluation3_Agent:
 
@@ -40,7 +42,7 @@ class Evaluation3_Agent:
         self.scene_type = scene_type
         # self.agency_voe_agent = AgencyVoeAgent(self.controller, self.level)
         self.gravity_agent = gravity_agent.GravityAgent(self.controller, self.level)
-        self.phys_voe = physics_voe_agent.VoeAgent(self.controller, self.level, prefix)
+        self.phys_voe = siamesePhysicsVoe.VoeAgent(self.controller, self.level, prefix)
         self.phys_voe_save = save_frames.VoeAgent(self.controller, self.level, prefix)
 
         if seed != -1:
@@ -58,8 +60,7 @@ class Evaluation3_Agent:
                 return self.gravity_agent.run_scene(scene_config, one_scene)
             else:
                 # return self.phys_voe.run_scene(scene_config, one_scene)
-                print (scene_config)
-                return self.phys_voe_save.run_scene(scene_config, one_scene)
+                return self.phys_voe.run_scene(scene_config, one_scene)
 
         elif goal_type == "agents":
             if self.level == "level1":
@@ -78,7 +79,7 @@ def make_parser():
     parser.add_argument('--unity-path', default='unity_path.yaml')
     parser.add_argument('--config', default='mcs_config.ini')
     parser.add_argument('--prefix', default='out')
-    parser.add_argument('--scenes', default='different')
+    parser.add_argument('--scenes', default='different_scenes')
     parser.add_argument('--scene-type', default='intuitive-physics')
     return parser
 

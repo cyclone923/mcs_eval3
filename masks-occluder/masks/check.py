@@ -55,7 +55,7 @@ def check_data(data):
     # plt.show()
     color = np.array(data['textures'], dtype=str)
     print()
-    print(len(colors))
+    print(len(color))
 
 
 check_data(pickle.load(open('/home/gulsh/mcs_opics/masks-occluder/training_dataset.p', 'rb')))
