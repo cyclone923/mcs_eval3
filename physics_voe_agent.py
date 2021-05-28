@@ -248,7 +248,6 @@ class PhysicsVoeAgent:
         pb_state = 'incomplete'
         for i, x in enumerate(config['goal']['action_list']):
             step_output = self.controller.step(action=x[0]) # Get the step output
-
             # Get details of the objects in the scene
             if self.level == "oracle":
                 if step_output is None:
@@ -279,10 +278,7 @@ class PhysicsVoeAgent:
                     continue
                 
                 # convert L2DataPacketV2 to dictionary
-                # console.log(dir(step_output.step_meta))
-                # console.log(dir(step_output))
                 step_output_dict = self.convert_l2_to_dict(step_output)
-                # console.log(step_output_dict.keys())
                 
                 floor_object = "floor"
                 target_objects = self.target_obj_ids(step_output_dict)
@@ -295,23 +291,18 @@ class PhysicsVoeAgent:
                 # Expected to not dissapear until episode ends
                 # support_coords = step_output_dict["structural_object_list"][supporting_object]["dimensions"]
                 # floor_coords = step_output_dict["structural_object_list"][floor_object]["dimensions"]
-                # console.log(support_coords)
-                # console.log(floor_coords)
 
                 # Target / Pole may not appear in view yet, start recording when available
-                # console.log(step_output_dict['object_list'].keys())
-                # console.log(self.track_info.keys())
                 for obj_id, obj in step_output_dict['object_list'].items():
-                    # console.log(obj_id)
                     if obj_id not in self.track_info.keys():
-                        console.log('new')
                         self.track_info[obj_id] = {
+                            'color': list(),
                             'trajectory': list(),
                             'position': list()
                         }
                     self.track_info[obj_id]['trajectory'].append(obj["dimensions"])
                     self.track_info[obj_id]['position'].append(obj['position'])
-                    step_output_dict["object_list"][obj_id]["pixel_center"] = obj['pixel_center']
+                    self.track_info[obj_id]['color'].append(obj['color'])
                 
                 # if self.level == 'level2':
                 #     pole_history.append({
@@ -322,10 +313,10 @@ class PhysicsVoeAgent:
                 #     pole_history.append(self.getMinMax(step_output_dict["structural_object_list"][pole_object]))
             
             except KeyError as e:  # Object / Pole is not in view yet
-                console.log(e)
+                console.log("key error", e)
                 pass
             except AttributeError as e:
-                console.log(e)
+                console.log("attribute error", e)
                 pass
 
             # TODO: PERFORM TARGET OBJECT APPEARANCE MATCH
@@ -340,14 +331,16 @@ class PhysicsVoeAgent:
                     _, obj_traj_orn = pybullet_utilities.render_in_pybullet(step_output_dict)
                     pb_state = 'complete'
             else:
-                new_obj_in_scene = False
-                for obj in self.track_info.values():
+                new_obj_velocity = {}
+                for obj_id, obj in self.track_info.items():
                     if len(obj['position']) == 3:
-                        new_obj_in_scene = True
-                        break
-                if new_obj_in_scene:
+                        initial_position = np.array(list(obj['position'][0].values()))
+                        current_position = np.array(list(obj['position'][-1].values()))
+                        new_obj_velocity[obj_id] = (current_position - initial_position) / 5 ## average velocity of object
+
+                if len(new_obj_velocity.keys()):
                     # TEMP; NEED TO HANDLE PB OUTPUT
-                    _, obj_traj_orn = pybullet_utilities.render_in_pybullet(step_output_dict)
+                    _, obj_traj_orn = pybullet_utilities.render_in_pybullet(step_output_dict, velocities=new_obj_velocity)
                     pb_state = 'complete'
             
             choice = plausible_str(False)
@@ -360,7 +353,6 @@ class PhysicsVoeAgent:
                 # Calculate confidence
                 for obj_id, obj in self.track_info.items():
                     unity_traj = [[x['x'], x['y'], x['z']] for x in obj['position']]
-
                     if len(unity_traj) > 2 and unity_traj[-1] != unity_traj[-2]:
                         obj_confidence[obj_id] = 1.0
                     try:
@@ -410,3 +402,24 @@ class PhysicsVoeAgent:
 
 
         # TODO: Make final scene-wide prediction
+
+def squash_masks(ref, mask_l, ids):
+    flat_mask = np.ones_like(ref) * -1
+    for m, id_ in zip(mask_l, ids):
+        flat_mask[m] = id_
+    return flat_mask
+
+def prob_to_mask(prob, cutoff, obj_scores):
+    obj_pred_class = obj_scores.argmax(-1)
+    valid_ids = []
+    for mask_id, pred_class in zip(range(cutoff, prob.shape[0]), obj_pred_class):
+        if pred_class == 1: #An object!
+            valid_ids.append(mask_id+cutoff)
+    out_mask = -1 * np.ones(prob.shape[1:], dtype=np.int)
+    am = np.argmax(prob, axis=0)
+    for out_id, mask_id in enumerate(valid_ids):
+        out_mask[am==mask_id-cutoff] = out_id
+    return out_mask
+
+def plausible_str(violation_detected):
+    return 'implausible' if violation_detected else 'plausible'
