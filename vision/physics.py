@@ -338,9 +338,6 @@ class ObjectV2:
             self.kind = "cylinder"
             return
         # TODO: reintroduce nn
-        else:
-            self.kind = "cube"
-            return
         
         x, y, w, h = cv2.boundingRect(
             cv2.findContours(

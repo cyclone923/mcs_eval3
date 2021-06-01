@@ -328,8 +328,8 @@ class PhysicsVoeAgent:
                 drop_step = self.determine_drop_step(pole_history)
                 if drop_step != -1 and pb_state != 'complete' and len(step_output_dict['structural_object_list']['occluders']) == 0:
                     # TEMP; NEED TO HANDLE PB OUTPUT
+                    print("rendering in pybullet")
                     _, obj_traj_orn = pybullet_utilities.render_in_pybullet(step_output_dict)
-                    pb_state = 'complete'
             else:
                 new_obj_velocity = {}
                 for obj_id, obj in self.track_info.items():
@@ -338,10 +338,10 @@ class PhysicsVoeAgent:
                         current_position = np.array(list(obj['position'][-1].values()))
                         new_obj_velocity[obj_id] = (current_position - initial_position) / 5 ## average velocity of object
 
-                if len(new_obj_velocity.keys()):
+                if len(new_obj_velocity.keys()) and len(step_output_dict['object_list']):
                     # TEMP; NEED TO HANDLE PB OUTPUT
+                    print("rendering in pybullet")
                     _, obj_traj_orn = pybullet_utilities.render_in_pybullet(step_output_dict, velocities=new_obj_velocity)
-                    pb_state = 'complete'
             
             choice = plausible_str(False)
             voe_heatmap = np.ones((600, 400))
@@ -374,16 +374,17 @@ class PhysicsVoeAgent:
                             }
                         )
                     else:
-                        p_c = step_output_dict["object_list"][obj_id]["pixel_center"]
-                        voe_xy_list.append(
-                            {
-                                "x": p_c[0],
-                                "y": p_c[1] 
-                            }
-                        )
-                        voe_heatmap = np.float32(step_output_dict['object_list'][obj_id]['obj_mask'])
-                        voe_heatmap[np.all(1.0 == voe_heatmap, axis=-1)] = obj_confidence[obj_id]
-                        voe_heatmap[np.all(0 == voe_heatmap, axis=-1)] = 1.0
+                        if obj_id in step_output_dict['object_list']:
+                            p_c = step_output_dict["object_list"][obj_id]["pixel_center"]
+                            voe_xy_list.append(
+                                {
+                                    "x": p_c[0],
+                                    "y": p_c[1] 
+                                }
+                            )
+                            voe_heatmap = np.float32(step_output_dict['object_list'][obj_id]['obj_mask'])
+                            voe_heatmap[np.all(1.0 == voe_heatmap, axis=-1)] = obj_confidence[obj_id]
+                            voe_heatmap[np.all(0 == voe_heatmap, axis=-1)] = 1.0
 
                     # console.log(confidence)
                     if obj_confidence[obj_id] <= 0.5:
