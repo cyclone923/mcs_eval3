@@ -12,7 +12,7 @@ from rich.console import Console
 
 console = Console()
 
-def render_in_pybullet(step_output):
+def render_in_pybullet(step_output, velocities=None):
     physicsClient = p.connect(p.GUI)#or p.DIRECT for non-graphical version
     # physicsClient = p.connect(p.DIRECT)
     
@@ -29,7 +29,9 @@ def render_in_pybullet(step_output):
     total_objects = 0
     # target / supports
     for obj_id, obj in step_output["object_list"].items():
+        
         boxId = createObjectShape(obj)
+        print(boxId)
         console.log(boxId)
         if boxId == -1:
             print("error creating obj: {}".format(obj.shape))
@@ -52,6 +54,13 @@ def render_in_pybullet(step_output):
     while steps < 1000:
         p.stepSimulation()
         time.sleep(1./400.)
+
+        for obj_id in velocities:
+            if obj_id in obj_dict['default']:
+                boxId = obj_dict['default'][obj_id]['id']
+                pos, orn = p.getBasePositionAndOrientation(boxId)
+                obj_vel = velocities[obj_id]
+                p.applyExternalForce(boxId, linkIndex=-1, forceObj=100*obj_vel, posObj=pos, flags=p.WORLD_FRAME)
 
         at_rest = []
         for i, obj in obj_dict["default"].items():
@@ -106,7 +115,6 @@ def render_in_pybullet(step_output):
     
 
 def getDims(obj):
-    print(obj)
     dims = obj["dimensions"]
     min_x = sys.maxsize
     min_y = sys.maxsize
@@ -142,7 +150,6 @@ def getColor(color_vals):
 
 def createObjectShape(obj):
     meshScale = getDims(obj)
-    print(meshScale)
     if obj["shape"] != "structural":
         # generate noise on position and orientation
         shift = [0, 0, 0]
@@ -161,7 +168,6 @@ def createObjectShape(obj):
         # shift = [0, 0, 0]
         start_position = list(obj["position"].values())
         start_position = [start_position[0], start_position[2], start_position[1]]
-    print(start_position)
     # set color
     rgba_color = getColor(obj["color"])
 
@@ -173,7 +179,6 @@ def createObjectShape(obj):
     #     return p.loadURDF("duck_vhacd.urdf", basePosition=start_position, baseOrientation=start_orientation)
 
     # create visual and colision shapes
-    print("obj shape", obj["shape"])
     if obj["shape"] == "cube" or obj["shape"] == "structural":
         visualShapeId = p.createVisualShape(shapeType=p.GEOM_MESH,fileName="cube.obj", rgbaColor=rgba_color, specularColor=[0.4,.4,0], visualFramePosition=shift, meshScale=meshScale)
         collisionShapeId = p.createCollisionShape(shapeType=p.GEOM_MESH, fileName="cube.obj", collisionFramePosition=shift,meshScale=meshScale)
@@ -190,7 +195,7 @@ def createObjectShape(obj):
         meshScale = [meshScale[0], meshScale[1], meshScale[2] * 0.75] # hard coded transformations to compensate for unknown wonkiness... needs to be tested
         start_orientation = [start_orientation[0], start_orientation[1], 90, 0.011]
         visualShapeId = p.createVisualShape(shapeType=p.GEOM_MESH,fileName="l_joint.obj", rgbaColor=rgba_color, specularColor=[0.4,.4,0], visualFramePosition=shift, meshScale=meshScale)
-        collisionShapeId = p.createCollisionShape(shapeType=p.GEOM_MESH, fileName="l_joint.obj", collisionFramePosition=shift, meshScale=meshScale)
+        collisionShapeId = p.createCollisionShape(shapeType=p.GEOM_MESH, fileName="L_joint.obj", collisionFramePosition=shift, meshScale=meshScale)
     elif "triangular prism" == obj["shape"]:
         meshScale = [meshScale[1], meshScale[2], meshScale[0]]
         visualShapeId = p.createVisualShape(shapeType=p.GEOM_MESH,fileName="triangular prism.obj", rgbaColor=rgba_color, specularColor=[0.4,.4,0], visualFramePosition=shift, meshScale=meshScale)

@@ -248,7 +248,6 @@ class PhysicsVoeAgent:
         pb_state = 'incomplete'
         for i, x in enumerate(config['goal']['action_list']):
             step_output = self.controller.step(action=x[0]) # Get the step output
-
             # Get details of the objects in the scene
             if self.level == "oracle":
                 if step_output is None:
@@ -279,10 +278,7 @@ class PhysicsVoeAgent:
                     continue
                 
                 # convert L2DataPacketV2 to dictionary
-                # console.log(dir(step_output.step_meta))
-                # console.log(dir(step_output))
                 step_output_dict = self.convert_l2_to_dict(step_output)
-                # console.log(step_output_dict.keys())
                 
                 floor_object = "floor"
                 target_objects = self.target_obj_ids(step_output_dict)
@@ -295,23 +291,18 @@ class PhysicsVoeAgent:
                 # Expected to not dissapear until episode ends
                 # support_coords = step_output_dict["structural_object_list"][supporting_object]["dimensions"]
                 # floor_coords = step_output_dict["structural_object_list"][floor_object]["dimensions"]
-                # console.log(support_coords)
-                # console.log(floor_coords)
 
                 # Target / Pole may not appear in view yet, start recording when available
-                # console.log(step_output_dict['object_list'].keys())
-                # console.log(self.track_info.keys())
                 for obj_id, obj in step_output_dict['object_list'].items():
-                    # console.log(obj_id)
                     if obj_id not in self.track_info.keys():
-                        console.log('new')
                         self.track_info[obj_id] = {
+                            'color': list(),
                             'trajectory': list(),
                             'position': list()
                         }
                     self.track_info[obj_id]['trajectory'].append(obj["dimensions"])
                     self.track_info[obj_id]['position'].append(obj['position'])
-                    step_output_dict["object_list"][obj_id]["pixel_center"] = obj['pixel_center']
+                    self.track_info[obj_id]['color'].append(obj['color'])
                 
                 # if self.level == 'level2':
                 #     pole_history.append({
@@ -322,10 +313,10 @@ class PhysicsVoeAgent:
                 #     pole_history.append(self.getMinMax(step_output_dict["structural_object_list"][pole_object]))
             
             except KeyError as e:  # Object / Pole is not in view yet
-                console.log(e)
+                console.log("key error", e)
                 pass
             except AttributeError as e:
-                console.log(e)
+                console.log("attribute error", e)
                 pass
 
             # TODO: PERFORM TARGET OBJECT APPEARANCE MATCH
@@ -337,18 +328,20 @@ class PhysicsVoeAgent:
                 drop_step = self.determine_drop_step(pole_history)
                 if drop_step != -1 and pb_state != 'complete' and len(step_output_dict['structural_object_list']['occluders']) == 0:
                     # TEMP; NEED TO HANDLE PB OUTPUT
+                    print("rendering in pybullet")
                     _, obj_traj_orn = pybullet_utilities.render_in_pybullet(step_output_dict)
-                    pb_state = 'complete'
             else:
-                new_obj_in_scene = False
-                for obj in self.track_info.values():
+                new_obj_velocity = {}
+                for obj_id, obj in self.track_info.items():
                     if len(obj['position']) == 3:
-                        new_obj_in_scene = True
-                        break
-                if new_obj_in_scene:
+                        initial_position = np.array(list(obj['position'][0].values()))
+                        current_position = np.array(list(obj['position'][-1].values()))
+                        new_obj_velocity[obj_id] = (current_position - initial_position) / 5 ## average velocity of object
+
+                if len(new_obj_velocity.keys()) and len(step_output_dict['object_list']):
                     # TEMP; NEED TO HANDLE PB OUTPUT
-                    _, obj_traj_orn = pybullet_utilities.render_in_pybullet(step_output_dict)
-                    pb_state = 'complete'
+                    print("rendering in pybullet")
+                    _, obj_traj_orn = pybullet_utilities.render_in_pybullet(step_output_dict, velocities=new_obj_velocity)
             
             choice = plausible_str(False)
             voe_heatmap = np.ones((600, 400))
@@ -360,7 +353,6 @@ class PhysicsVoeAgent:
                 # Calculate confidence
                 for obj_id, obj in self.track_info.items():
                     unity_traj = [[x['x'], x['y'], x['z']] for x in obj['position']]
-
                     if len(unity_traj) > 2 and unity_traj[-1] != unity_traj[-2]:
                         obj_confidence[obj_id] = 1.0
                     try:
@@ -382,16 +374,17 @@ class PhysicsVoeAgent:
                             }
                         )
                     else:
-                        p_c = step_output_dict["object_list"][obj_id]["pixel_center"]
-                        voe_xy_list.append(
-                            {
-                                "x": p_c[0],
-                                "y": p_c[1] 
-                            }
-                        )
-                        voe_heatmap = np.float32(step_output_dict['object_list'][obj_id]['obj_mask'])
-                        voe_heatmap[np.all(1.0 == voe_heatmap, axis=-1)] = obj_confidence[obj_id]
-                        voe_heatmap[np.all(0 == voe_heatmap, axis=-1)] = 1.0
+                        if obj_id in step_output_dict['object_list']:
+                            p_c = step_output_dict["object_list"][obj_id]["pixel_center"]
+                            voe_xy_list.append(
+                                {
+                                    "x": p_c[0],
+                                    "y": p_c[1] 
+                                }
+                            )
+                            voe_heatmap = np.float32(step_output_dict['object_list'][obj_id]['obj_mask'])
+                            voe_heatmap[np.all(1.0 == voe_heatmap, axis=-1)] = obj_confidence[obj_id]
+                            voe_heatmap[np.all(0 == voe_heatmap, axis=-1)] = 1.0
 
                     # console.log(confidence)
                     if obj_confidence[obj_id] <= 0.5:

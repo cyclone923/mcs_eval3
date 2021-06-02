@@ -52,6 +52,7 @@ class ObjectV2:
 
     role: str = "default"
     kind: str = "default"
+    id: str = "default"
 
     dims: tuple = None
     w_h_d: tuple = None
@@ -72,7 +73,6 @@ class ObjectV2:
         masked_rgb = np.ma.masked_equal(cropped_rgb, 0)
         # Variation for wall & floor objects is a lot. 
         # So color attr doesn't make sense of these roles
-        cv2.imwrite("pole.png", masked_rgb)
         return masked_rgb.mean((0, 1)).astype(np.int).data.tolist()
 
     @staticmethod
@@ -97,6 +97,9 @@ class ObjectV2:
         These range from (-1, 1), with the top left pixel at index [0,0] having
         UV coords (-1, 1).
         """
+        depth_scale_correction_factor = 255 / CAM_CLIP_PLANES[1]
+        depth = (depth_scale_correction_factor * depth).astype(np.uint8)
+
         aspect_ratio = (depth.shape[1], depth.shape[0])
         #print ("aspect ratio" ,aspect_ratio)
 
@@ -124,6 +127,7 @@ class ObjectV2:
         const_zs = np.ones((px_dir_vec.shape[0:2])+(1,))
         px_dir_vec = np.concatenate((px_dir_vec, const_zs), axis=-1)
         camera_offsets = px_dir_vec * np.expand_dims(z_depth, axis=-1)
+        camera_offsets /= depth_scale_correction_factor
 
         return camera_offsets
 
@@ -165,11 +169,18 @@ class ObjectV2:
         ]
         self.w_h_d = np.abs(bbox.get_extent()).tolist()
 
+    @staticmethod
+    def clamp(x):
+        return max(0, min(x, 255))
+
     def extract_physical_props(self):
         '''
         Uses blob to determine `color` & `dims`
         '''
         self.color = self._color_prop(self.obj_mask, self.rgb_im)
+        # r, g, b = self.color[0], self.color[1], self.color[2]
+
+        # self.id = "{0:02},{1:02},{2:02}".format(self.clamp(r), self.clamp(g), self.clamp(b))
 
         self._dims_prop(self)
 
@@ -326,9 +337,7 @@ class ObjectV2:
         if self.role == "pole":
             self.kind = "cylinder"
             return
-        else:
-            self.kind = "cube"
-            return
+        # TODO: reintroduce nn
         
         x, y, w, h = cv2.boundingRect(
             cv2.findContours(
@@ -412,7 +421,7 @@ class L2DataPacketV2:
             this_ob = ObjectV2(
                 rgb_im=self.rgb_im,
                 obj_mask=obj,
-                depth_map=self.depth_map
+                depth_map=self.depth_map,
             )
 
             objects.append(this_ob)
@@ -467,9 +476,9 @@ class L2DataPacketV2:
                 self.objects[occluder_idx].role = "occluder"
                 occluder_idx = None
 
-        # keep everything else labeled as default
-        for obj in self.objects:
-            print(obj.role)
+        # for idx, this_ob in enumerate(self.objects):
+        #     if this_ob.role == "default":
+        #         this_ob.id = 
 
     def calculate_physical_props(self):
         for this_ob in self.objects:
