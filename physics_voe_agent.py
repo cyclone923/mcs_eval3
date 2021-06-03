@@ -1,7 +1,8 @@
 from dataclasses import dataclass
+from typing import Literal
 from physicsvoe.data.data_gen import convert_output
 from physicsvoe import occlude
-from physicsvoe.framewisevoe import AppearanceViolation
+from physicsvoe.framewisevoe import AppearanceViolation, EntranceViolation, PositionViolation
 from physicsvoe.timer import Timer
 from physicsvoe.data.types import make_camera
 from fastdtw import fastdtw
@@ -98,42 +99,42 @@ class PhysicsVoeAgent:
                     return i
             return -1
     
-    @staticmethod
-    def get_object_bounding_simplices(dims):
-        y_coords = [pt["y"] for pt in dims]
-        min_y, max_y = min(y_coords), max(y_coords)
+    # @staticmethod
+    # def get_object_bounding_simplices(dims):
+    #     y_coords = [pt["y"] for pt in dims]
+    #     min_y, max_y = min(y_coords), max(y_coords)
 
-        # Assuming "nice" placement with cubes
-        # For generalizing, calculate convex hull and findout extreme simplices 
-        bottom_face = ObjectFace(corners=[pt for pt in dims if pt["y"] == min_y ])
-        top_face = ObjectFace(corners=[pt for pt in dims if pt["y"] == max_y ])
+    #     # Assuming "nice" placement with cubes
+    #     # For generalizing, calculate convex hull and findout extreme simplices 
+    #     bottom_face = ObjectFace(corners=[pt for pt in dims if pt["y"] == min_y ])
+    #     top_face = ObjectFace(corners=[pt for pt in dims if pt["y"] == max_y ])
 
-        return top_face, bottom_face
+    #     return top_face, bottom_face
 
-    def states_during_and_after_drop(self, drop_step, target_trajectory, support):
+    # def states_during_and_after_drop(self, drop_step, target_trajectory, support):
 
-        # Assuming target is moving along "y"
-        target_drop_coords = target_trajectory[drop_step]
-        _, target_bottom_face = self.get_object_bounding_simplices(target_drop_coords)
+    #     # Assuming target is moving along "y"
+    #     target_drop_coords = target_trajectory[drop_step]
+    #     _, target_bottom_face = self.get_object_bounding_simplices(target_drop_coords)
         
-        target_resting_coords = target_trajectory[-1]
-        _, target_bottom_face_end_state = self.get_object_bounding_simplices(target_resting_coords)
+    #     target_resting_coords = target_trajectory[-1]
+    #     _, target_bottom_face_end_state = self.get_object_bounding_simplices(target_resting_coords)
 
-        support_top_face, _ = self.get_object_bounding_simplices(support)
+    #     support_top_face, _ = self.get_object_bounding_simplices(support)
 
-        return target_bottom_face, support_top_face, target_bottom_face_end_state
+    #     return target_bottom_face, support_top_face, target_bottom_face_end_state
 
 
-    @staticmethod
-    def target_should_be_stable(target, support):
+    # @staticmethod
+    # def target_should_be_stable(target, support):
 
-        support_x_range = (min(pt["x"] for pt in support.corners), max(pt["x"] for pt in support.corners))
-        support_y_range = (min(pt["y"] for pt in support.corners), max(pt["x"] for pt in support.corners))
+    #     support_x_range = (min(pt["x"] for pt in support.corners), max(pt["x"] for pt in support.corners))
+    #     support_y_range = (min(pt["y"] for pt in support.corners), max(pt["x"] for pt in support.corners))
 
-        target_x_inrange = support_x_range[0] <= target.centroid[0] <= support_x_range[1]
-        target_y_inrange = support_y_range[0] <= target.centroid[1] <= support_y_range[1]
+    #     target_x_inrange = support_x_range[0] <= target.centroid[0] <= support_x_range[1]
+    #     target_y_inrange = support_y_range[0] <= target.centroid[1] <= support_y_range[1]
 
-        return target_x_inrange and target_y_inrange
+    #     return target_x_inrange and target_y_inrange
 
     @staticmethod
     def target_obj_ids(step_output):
@@ -223,6 +224,7 @@ class PhysicsVoeAgent:
         distance, path = fastdtw(pybullet_traj, unity_traj, dist=euclidean)
         return distance, path
     
+    # TODO: TRACK OBJECTS. Maybe this gets moved to another tracker module file
     def track_objects(self, step_output_dict, actor_objects):
         pass
     
@@ -237,14 +239,17 @@ class PhysicsVoeAgent:
             folder_name: Path = None
 
         self.controller.start_scene(config)
-        self.track_info: dict = dict()
+        self.track_info: dict[int, dict] = dict()
         scene_voe_detected: bool = False
         all_vios: list = list()
         all_errs: list = list()
         voe_xy_list: list = list()
 
-        for i, x in enumerate(config['goal']['action_list']):
-            step_output: self.controller.step(action=x[0])  # Get the step output
+        object_sims = None
+
+        for i, pos in enumerate(config['goal']['action_list']):
+            frame_vios: list = list()
+            step_output: self.controller.step(action=pos[0])  # Get the step output
             if step_output is None:
                 break
 
@@ -277,17 +282,19 @@ class PhysicsVoeAgent:
                     continue
             actor_objects: list = self.get_actor_ids(step_output_dict)
 
-        
+            obj_appearance_plausibility: dict[int, float] = dict()
             try:
                 # TODO: TRACK OBJECTS (MOTION AND APPEARANCE)
                 self.track_objects(step_output_dict, actor_objects)
 
-                # TODO: CHECK TRACK INFO FOR ANY APPEARANCE MATCHES
+                # CHECK TRACK INFO FOR ANY APPEARANCE MATCHES
                 for obj_id, obj in self.track_info.items():
                     # check if appearance VoE flag has been set for this object
                     if obj['appearance_voe']:
                         # TODO: Confidence score for appearance violations
-                        all_vios.append(AppearanceViolation(obj_id, obj['xy_position_history'][-1]))
+                        obj_xy_pos: dict = obj['xy_position'][-1]
+                        obj_appearance_plausibility[obj_id] = obj['appearance_match_conf'][-1]
+                        frame_vios.append(AppearanceViolation(obj_id, obj_xy_pos, obj_appearance_plausibility))
             except KeyError as e:   # Object is not in view yet
                 console.log('key error', e)
                 pass
@@ -295,21 +302,75 @@ class PhysicsVoeAgent:
                 console.log('attribute error', e)
                 pass
 
-            # TODO: CHECK FOR ENTRANCE VOE (OBJECT ENTERING SCENE IN UNEXPECTED POSITION)
-
-            # TODO: RUN PYBULLET IF NEW OBJECT IN SCENE
+            # RUN PYBULLET IF NEW OBJECT IN SCENE
             # if any objects are new and have NOT been simulated by PyBullet yet, run PyBullet
-            object_sims = None
-            if len([o for o in self.track_info.values() if len(o['position_history']) == 3 and not o['simulated']]) > 0:
+            if len([o for o in self.track_info.values() if len(o['position']) == 3 and not o['simulated']]) > 0:
                 _, object_sims = pybullet_utilities.render_in_pybullet(step_output_dict)
-                for obj in [o for o in self.track_info.values() if not o['simulated']]:
-                    obj['simulated'] = True
+                for obj_id, obj in self.track_info.items():
+                    if obj_id in object_sims.keys() and not obj['simulated']:
+                        obj['simulated'] = True
 
-            # TODO: CHECK FOR ANY POSITION-RELATED VoEs
+            # CHECK FOR ANY POSITION-RELATED VoEs
+            obj_pos_plausibility: dict[int, float] = dict()
+            for obj_id, obj in self.track_info.items():
+                unity_trajectory = [[pos['x'], pos['y'], pos['z']] for pos in obj['position']]
+                unity_xy_pos = {'x': obj['position'][-1]['x'], 'y': obj['position'][-1]['y']}
 
-            # TODO: MAKE STEP PREDICTION
+                # TODO: CHECK FOR PRESENCE VoEs
+                try:
+                    distance, _ = self.calc_simulator_voe(object_sims[obj_id]['pos'], unity_trajectory)
+                    obj_pos_plausibility[obj_id] = 100 * np.tanh(1 / (distance + 1e-9))
+                    if obj_pos_plausibility[obj_id] < 0.5:
+                        frame_vios.append(PositionViolation(obj_id, unity_xy_pos, obj_pos_plausibility[obj_id]))
+                except KeyError as e:
+                    # TODO: OBJECT NOT IN PYBULLET SIMULATION; CHECK IF OBJECT IS OCCLUDED BY ACTOR OBJECT
+                    # IF OCCLUDED BY ACTOR OBJECT, CONF = 1.0. ELSE, RAISE ENTRANCE VOE
+                    obj_pos_plausibility[obj_id] = 1.0
+                    if obj_pos_plausibility[obj_id] < 0.5:
+                        frame_vios.append(EntranceViolation(obj_id, unity_xy_pos, obj_pos_plausibility[obj_id]))
+
+            # MAKE STEP PREDICTION
+            # choice = plausible_str(True)
+            camera_aspect_ratio: tuple[int, int] = step_output_dict['camera_aspect_ratio'] if 'camera_aspect_ratio' in step_output_dict.keys() else (600, 400)
+            voe_heatmap = np.ones(camera_aspect_ratio)
+
+            all_plausibility_values: list[float] = [voe.conf for voe in frame_vios]
+            frame_confidence: float = min(all_plausibility_values)
+            if len(frame_vios) == 0:
+                # If no frame vios, all confidence values will be >= 0.5 (or whatever threshold we use)
+                self.controller.make_step_prediction(
+                    choice=plausible_str(True),
+                    confidence=frame_confidence,
+                    violations_xy_list=[{'x': -1, 'y': -1}],
+                    heatmap_img=voe_heatmap
+                )
+            else:
+                # If there are frame vios, at least one plausibility value will be < 0.5 (or whatever threshold we use)
+                # Build VoE heatmap that accounts for ALL violations
+                for voe in frame_vios:
+                    pass
+                self.controller.make_step_prediction(
+                    choice=plausible_str(False),
+                    confidence=frame_confidence,
+                    violations_xy_list=[voe.pos for voe in frame_vios],
+                    heatmap_img=voe_heatmap
+                )
+            
+            all_vios.extend(frame_vios)
+            if not scene_voe_detected and len(frame_vios) > 0:
+                scene_voe_detected = True
         
-        # TODO: MAKE SCENE PREDICTION
+        # MAKE SCENE PREDICTION
+        scene_plausibility_values: list[float] = [voe.conf for voe in all_vios]
+        scene_confidence = min(scene_plausibility_values)
+        self.controller.end_scene(
+            choice=plausible_str(False if scene_voe_detected else True),
+            confidence=scene_confidence
+        )
+        if DEBUG:
+            with open(folder_name/'viols.pkl', 'wb') as fd:
+                pickle.dump(all_vios, fd)
+        return scene_voe_detected
 
     # def run_scene(self, config, desc_name):
     #     if DEBUG:
@@ -511,5 +572,5 @@ def prob_to_mask(prob, cutoff, obj_scores):
         out_mask[am==mask_id-cutoff] = out_id
     return out_mask
 
-def plausible_str(violation_detected):
-    return 'implausible' if violation_detected else 'plausible'
+def plausible_str(plausible) -> Literal['plausible', 'implausible']:
+    return 'plausible' if plausible else 'implausible'

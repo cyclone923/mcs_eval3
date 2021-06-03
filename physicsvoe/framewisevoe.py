@@ -129,10 +129,11 @@ class NoViolation:
     pass
 
 class PositionViolation:
-    def __init__(self, object_id, pred_pos, actual_pos):
+    def __init__(self, object_id, pos, conf, pred_pos=None):
         self.object_id = object_id
-        self.pred_pos = pred_pos
-        self.actual_pos = actual_pos
+        # self.pred_pos = pred_pos
+        self.conf = conf
+        self.pos = pos
 
     def fill_heatmap(self, hmap, obj_mask):
         return hmap + (obj_mask == self.object_id)
@@ -148,14 +149,15 @@ class PositionViolation:
         return f'Object {self.object_id} is at {self.actual_pos}, but should be at {self.pred_pos}'
 
 class PresenceViolation:
-    def __init__(self, object_id, pred_pos, camera):
+    def __init__(self, object_id, pos, conf, camera):
         self.object_id = object_id
-        self.pred_pos = pred_pos
+        self.pos = pos
         self.radius = 10
+        self.conf = conf
         self._calc_mask(camera)
 
     def _calc_mask(self, camera):
-        spos = du.reverse_project(self.pred_pos, camera)
+        spos = du.reverse_project(self.pos, camera)
         rev_ratio = list(reversed(camera.aspect_ratio))
         pos = np.array(rev_ratio) * (0.5+spos.numpy()/2)
         pxs = np.stack(np.meshgrid(*[np.arange(x) for x in rev_ratio], indexing='ij'),
@@ -171,7 +173,7 @@ class PresenceViolation:
         if self.mask.sum() < 50: #Off screen!
             return True
         scene_depth = du.query_depth(depth, self.mask)
-        pred_vec = self.pred_pos - torch.tensor(camera.position)
+        pred_vec = self.pos - torch.tensor(camera.position)
         pred_depth = pred_vec[2]
         is_occluded = scene_depth < pred_depth
         return is_occluded
@@ -180,12 +182,13 @@ class PresenceViolation:
         return {'x': self.spos[0], 'y': self.spos[1]}
 
     def describe(self):
-        return f'Object {self.object_id} is not visible, but should be at {self.pred_pos}'
+        return f'Object {self.object_id} is not visible, but should be at {self.pos}'
 
 class AppearanceViolation:
-    def __init__(self, object_id, pos):
+    def __init__(self, object_id, pos, conf):
         self.object_id = object_id
         self.pos = pos
+        self.conf = conf
 
     def fill_heatmap(self, hmap, obj_mask):
         return hmap + (obj_mask == self.object_id)
@@ -198,9 +201,10 @@ class AppearanceViolation:
         return f'Object {self.object_id}\'s appearance changed'
 
 class EntranceViolation:
-    def __init__(self, object_id, entrance_pos):
+    def __init__(self, object_id, entrance_pos, conf):
         self.object_id = object_id
-        self.pos = (entrance_pos['y'], entrance_pos['x'])
+        self.pos = (entrance_pos['x'], entrance_pos['y'])
+        self.conf = conf
 
     def fill_heatmap(self, hmap, obj_mask):
         return hmap + (obj_mask == self.object_id)
