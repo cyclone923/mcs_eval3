@@ -5,7 +5,8 @@ name: Automated System Test
 
 on:
   push: 
-    branches: [ component/interactive-env.diego ] 
+    # branches: [ component/interactive-env.diego ] 
+    branches: []
 
 jobs:
   dvis_data_gpu_server:

@@ -2,7 +2,7 @@
 pip list > /tmp/python_packages.txt
 if ! grep DCNv2 /tmp/python_packages.txt; then
   cd vision/instSeg/external/DCNv2
-  python setup.py build develop
+  python setup.py clean --all build develop
   cd ../../
 
   wget https://oregonstate.box.com/shared/static/0syjouwkkpm0g1zbnt1riheshfvtd2by.pth
