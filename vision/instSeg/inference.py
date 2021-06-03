@@ -231,7 +231,7 @@ def demo_interact_segmentation():
                                   config='plus_resnet50_config_depth_MC',
                                 #   weights='./visionmodule/Result/mcsvideo3-inter/weights/test_first_v1/dvis_plus_resnet50_mul_channels_0_26_interrupt.pth')
                                 #   weights='./training_logs/dvis_plus_resnet50_mul_channels_26_19600.pth')
-                                  weights='./vision/instSeg/dvis_resnet50_mc2.pth')
+                                  weights='./vision/instSeg/dvis_resnet50_mc_eval3.pth')
 
     img_list = glob.glob('./vision/instSeg/demo/interact/*.jpg')
     for rgb_file in img_list:
