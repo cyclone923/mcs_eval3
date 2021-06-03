@@ -50,12 +50,7 @@ class Evaluation3_Agent:
             raise ValueError("Scene Config is Empty", one_scene)
         goal_type = scene_config['goal']['category']
         if goal_type == "intuitive physics":
-            if 'gravity' in scene_config['name'] or self.scene_type == 'gravity':
-                print("gravity")
-                return self.gravity_agent.run_scene(scene_config, one_scene)
-            else:
-                print("physics")
-                return self.phys_voe.run_scene(scene_config, one_scene)
+            return self.phys_voe.run_scene(scene_config, one_scene)
         elif goal_type == "agents":
             if self.level == "level1":
                 print("Agency task cannot be run in level1. Exiting")

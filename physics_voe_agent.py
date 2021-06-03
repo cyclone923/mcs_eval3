@@ -1,12 +1,13 @@
 from dataclasses import dataclass
 from physicsvoe.data.data_gen import convert_output
-from physicsvoe import framewisevoe, occlude
+from physicsvoe import occlude
+from physicsvoe.framewisevoe import AppearanceViolation
 from physicsvoe.timer import Timer
 from physicsvoe.data.types import make_camera
 from fastdtw import fastdtw
 from scipy.spatial.distance import euclidean
 from gravity import pybullet_utilities, gravity_utilities
-from vision.physics import L2DataPacketV2
+from vision.physics import L2DataPacket
 # from gravity.gravity_utilities import convert_l2_to_dict
 
 from tracker import track, appearence, filter_masks
@@ -141,7 +142,7 @@ class PhysicsVoeAgent:
         return None
 
     @staticmethod
-    def struc_obj_ids(step_output):
+    def get_actor_ids(step_output):
         filtered_keys = [
             key 
             for key in step_output["structural_object_list"].keys() 
@@ -153,9 +154,9 @@ class PhysicsVoeAgent:
         }
         )
         # console.log(out)
-        return out.get("support"), out.get("pole"), out.get("occluder")
+        return [out.get("support"), out.get("pole"), out.get("occluder")]
     
-    def convert_l2_to_dict(self, metadata):
+    def convert_meta_to_dict(self, metadata, level):
         step_output_dict = {
             "camera_field_of_view": 42.5,
             "camera_aspect_ratio": (600, 400),
@@ -167,7 +168,7 @@ class PhysicsVoeAgent:
                     "shape": metadata.floor.kind
                 }
             },
-            "object_list": {}
+            "object_list": []
         }
 
         if hasattr(metadata, "poles"):
@@ -196,7 +197,7 @@ class PhysicsVoeAgent:
             # step_output_dict["object_list"] = dict()
             
             for i, target in enumerate(metadata.targets):
-                step_output_dict["object_list"][str(i)] = {
+                step_output_dict["object_list"].append({
                     "dimensions": target.dims,
                     "position": {
                         "x": target.centroid[0],
@@ -211,8 +212,8 @@ class PhysicsVoeAgent:
                     "shape": target.kind,
                     "mass": 10.0,
                     "pixel_center": target.centroid_px,
-                    "obj_mask": target.obj_mask
-                }
+                    "obj_mask": target.obj_mask if level != 'level1' else None
+                })
 
         return step_output_dict
     
@@ -222,187 +223,275 @@ class PhysicsVoeAgent:
         distance, path = fastdtw(pybullet_traj, unity_traj, dist=euclidean)
         return distance, path
     
+    def track_objects(self, step_output_dict, actor_objects):
+        pass
+    
     def run_scene(self, config, desc_name):
         if DEBUG:
-            folder_name = Path(self.prefix)/Path(Path(desc_name).stem)
+            folder_name: Path = Path(self.prefix)/Path(Path(desc_name).stem)
             if folder_name.exists():
                 return None
             folder_name.mkdir(parents=True)
             print(folder_name)
         else:
-            folder_name = None
-        
-        self.detector = \
-            framewisevoe.FramewiseVOE(min_hist_count=3, max_hist_count=8,
-                                      dist_thresh=0.5)
+            folder_name: Path = None
+
         self.controller.start_scene(config)
-        pole_history = []  # To determine drop step
-        self.track_info = dict()
-        scene_voe_detected = False
-        all_viols = []
-        all_errs = []
-        voe_xy_list = list()
+        self.track_info: dict = dict()
+        scene_voe_detected: bool = False
+        all_vios: list = list()
+        all_errs: list = list()
+        voe_xy_list: list = list()
 
-        obj_traj_orn = None
-
-        pb_state = 'incomplete'
         for i, x in enumerate(config['goal']['action_list']):
-            step_output = self.controller.step(action=x[0]) # Get the step output
-            # Get details of the objects in the scene
-            if self.level == "oracle":
-                if step_output is None:
-                    break
-                else:
-                    step_output_dict = dict(step_output)
-                    try:
-                        step_output = L2DataPacketV2(step_number=i, step_meta=step_output, scene=desc_name)
-                    except Exception as e:
-                        print("Couldn't process step i+{}, skipping ahead".format(i))
-                        print(e)
-                        continue
+            step_output: self.controller.step(action=x[0])  # Get the step output
+            if step_output is None:
+                break
 
-                floor_object = "floor"  # Not a dynamic object ID
-                # console.log(step_output_dict)
-                target_objects = self.target_obj_ids(step_output_dict)
-                # console.log(target_objects)
-                supporting_object, pole_object, occluder_objects = self.struc_obj_ids(step_output_dict)
-            else:
-                if step_output is None:
-                    break
-                
+            # Identify actor objects
+            if self.level == 'oracle':
+                step_output_dict: dict = dict(step_output)
                 try:
-                    step_output = L2DataPacketV2(step_number=i, step_meta=step_output, scene=desc_name)
+                    step_output: L2DataPacket = L2DataPacket(step_number=i, step_meta=step_output, scene=desc_name)
                 except Exception as e:
-                    print("Couldn't process step i+{}, skipping ahead".format(i))
-                    print(e)
+                    console.log("Couldn't process step i+{}, skipping ahead".format(i))
+                    console.log(e)
                     continue
                 
-                # convert L2DataPacketV2 to dictionary
-                step_output_dict = self.convert_l2_to_dict(step_output)
-                
-                floor_object = "floor"
-                target_objects = self.target_obj_ids(step_output_dict)
-                # console.log(target_objects)
-                supporting_object, pole_object, occluder_objects = self.struc_obj_ids(step_output_dict)
-            
-            # console.log('check')
-            # Track each object's trajectory and position through the scene
-            try:
-                # Expected to not dissapear until episode ends
-                # support_coords = step_output_dict["structural_object_list"][supporting_object]["dimensions"]
-                # floor_coords = step_output_dict["structural_object_list"][floor_object]["dimensions"]
+            elif self.level == 'level2':
+                step_output_dict = self.convert_meta_to_dict(step_output, self.level)
+                try:
+                    step_output: L2DataPacket = L2DataPacket(step_number=i, step_meta=step_output, scene=desc_name)
+                except Exception as e:
+                    console.log("Couldn't process step i+{}, skipping ahead".format(i))
+                    console.log(e)
+                    continue
+            else:
+                step_output_dict = self.convert_meta_to_dict(step_output, self.level)
+                try:
+                    # TODO: L1DataPacket
+                    step_output: L2DataPacket = L2DataPacket(step_number=i, step_meta=step_output, scene=desc_name)
+                except Exception as e:
+                    console.log("Couldn't process step i+{}, skipping ahead".format(i))
+                    console.log(e)
+                    continue
+            actor_objects: list = self.get_actor_ids(step_output_dict)
 
-                # Target / Pole may not appear in view yet, start recording when available
-                for obj_id, obj in step_output_dict['object_list'].items():
-                    if obj_id not in self.track_info.keys():
-                        self.track_info[obj_id] = {
-                            'color': list(),
-                            'trajectory': list(),
-                            'position': list()
-                        }
-                    self.track_info[obj_id]['trajectory'].append(obj["dimensions"])
-                    self.track_info[obj_id]['position'].append(obj['position'])
-                    self.track_info[obj_id]['color'].append(obj['color'])
-                
-                # if self.level == 'level2':
-                #     pole_history.append({
-                #             "color": step_output_dict["structural_object_list"][pole_object]['color'],
-                #             "step_id": i
-                #         })
-                # elif self.level == "oracle":
-                #     pole_history.append(self.getMinMax(step_output_dict["structural_object_list"][pole_object]))
-            
-            except KeyError as e:  # Object / Pole is not in view yet
-                console.log("key error", e)
+        
+            try:
+                # TODO: TRACK OBJECTS (MOTION AND APPEARANCE)
+                self.track_objects(step_output_dict, actor_objects)
+
+                # TODO: CHECK TRACK INFO FOR ANY APPEARANCE MATCHES
+                for obj_id, obj in self.track_info.items():
+                    # check if appearance VoE flag has been set for this object
+                    if obj['appearance_voe']:
+                        # TODO: Confidence score for appearance violations
+                        all_vios.append(AppearanceViolation(obj_id, obj['xy_position_history'][-1]))
+            except KeyError as e:   # Object is not in view yet
+                console.log('key error', e)
                 pass
             except AttributeError as e:
-                console.log("attribute error", e)
+                console.log('attribute error', e)
                 pass
 
-            # TODO: PERFORM TARGET OBJECT APPEARANCE MATCH
+            # TODO: CHECK FOR ENTRANCE VOE (OBJECT ENTERING SCENE IN UNEXPECTED POSITION)
 
-            # TODO: CHECK FOR ENTRANCE VOE
+            # TODO: RUN PYBULLET IF NEW OBJECT IN SCENE
+            # if any objects are new and have NOT been simulated by PyBullet yet, run PyBullet
+            object_sims = None
+            if len([o for o in self.track_info.values() if len(o['position_history']) == 3 and not o['simulated']]) > 0:
+                _, object_sims = pybullet_utilities.render_in_pybullet(step_output_dict)
+                for obj in [o for o in self.track_info.values() if not o['simulated']]:
+                    obj['simulated'] = True
 
-            # TODO: RUN PYBULLET
-            if 'pole' in step_output_dict['structural_object_list'].keys():
-                drop_step = self.determine_drop_step(pole_history)
-                if drop_step != -1 and pb_state != 'complete' and len(step_output_dict['structural_object_list']['occluders']) == 0:
-                    # TEMP; NEED TO HANDLE PB OUTPUT
-                    print("rendering in pybullet")
-                    _, obj_traj_orn = pybullet_utilities.render_in_pybullet(step_output_dict)
-            else:
-                new_obj_velocity = {}
-                for obj_id, obj in self.track_info.items():
-                    if len(obj['position']) == 3:
-                        initial_position = np.array(list(obj['position'][0].values()))
-                        current_position = np.array(list(obj['position'][-1].values()))
-                        new_obj_velocity[obj_id] = (current_position - initial_position) / 5 ## average velocity of object
+            # TODO: CHECK FOR ANY POSITION-RELATED VoEs
 
-                if len(new_obj_velocity.keys()) and len(step_output_dict['object_list']):
-                    # TEMP; NEED TO HANDLE PB OUTPUT
-                    print("rendering in pybullet")
-                    _, obj_traj_orn = pybullet_utilities.render_in_pybullet(step_output_dict, velocities=new_obj_velocity)
-            
-            choice = plausible_str(False)
-            voe_heatmap = np.ones((600, 400))
-            
-            # if pb_run:
-            # TODO: Calculate distance between actual position (Unity) and expected position (PB)
-            if pb_state == 'complete' and ('pole' not in step_output_dict['structural_object_list'].keys() or (len(pole_history) > 1 and drop_step != -1)):
-                obj_confidence = dict()
-                # Calculate confidence
-                for obj_id, obj in self.track_info.items():
-                    unity_traj = [[x['x'], x['y'], x['z']] for x in obj['position']]
-                    if len(unity_traj) > 2 and unity_traj[-1] != unity_traj[-2]:
-                        obj_confidence[obj_id] = 1.0
-                    try:
-                        distance, _ = self.calc_simulator_voe(obj_traj_orn['default'][obj_id]['pos'], unity_traj)
-                        obj_confidence[obj_id] = 100 * np.tanh(1 / (distance + 1e-9))
-                    except KeyError as e:
-                        console.log(e)
-                        obj_confidence[obj_id] = 1.0
-            
-                    # TODO: If distance is sufficiently large, raise Position VoE
-                    # confidence has to be bounded between 0 and 1
-                    if obj_confidence[obj_id] >= 1:
-                        obj_confidence[obj_id] = 1.0
-                        # if confidence is 1, throw a no voe signal in the pixels, or the object in unity hasn't stopped moving
-                        voe_xy_list.append(
-                            {
-                                "x": -1, # no voe 
-                                "y": -1  # noe voe
-                            }
-                        )
-                    else:
-                        if obj_id in step_output_dict['object_list']:
-                            p_c = step_output_dict["object_list"][obj_id]["pixel_center"]
-                            voe_xy_list.append(
-                                {
-                                    "x": p_c[0],
-                                    "y": p_c[1] 
-                                }
-                            )
-                            voe_heatmap = np.float32(step_output_dict['object_list'][obj_id]['obj_mask'])
-                            voe_heatmap[np.all(1.0 == voe_heatmap, axis=-1)] = obj_confidence[obj_id]
-                            voe_heatmap[np.all(0 == voe_heatmap, axis=-1)] = 1.0
+            # TODO: MAKE STEP PREDICTION
+        
+        # TODO: MAKE SCENE PREDICTION
 
-                    # console.log(confidence)
-                    if obj_confidence[obj_id] <= 0.5:
-                        choice = plausible_str(True)
+    # def run_scene(self, config, desc_name):
+    #     if DEBUG:
+    #         folder_name = Path(self.prefix)/Path(Path(desc_name).stem)
+    #         if folder_name.exists():
+    #             return None
+    #         folder_name.mkdir(parents=True)
+    #         print(folder_name)
+    #     else:
+    #         folder_name = None
+        
+    #     self.detector = \
+    #         framewisevoe.FramewiseVOE(min_hist_count=3, max_hist_count=8,
+    #                                   dist_thresh=0.5)
+    #     self.controller.start_scene(config)
+    #     pole_history = []  # To determine drop step
+    #     self.track_info = dict()
+    #     scene_voe_detected = False
+    #     all_viols = []
+    #     all_errs = []
+    #     voe_xy_list = list()
 
-                    # TODO: If object not found in Unity but is expected in PB: raise Presence VoE
+    #     obj_traj_orn = None
+
+    #     pb_state = 'incomplete'
+    #     for i, x in enumerate(config['goal']['action_list']):
+    #         step_output = self.controller.step(action=x[0]) # Get the step output
+    #         # Get details of the objects in the scene
+    #         if self.level == "oracle":
+    #             if step_output is None:
+    #                 break
+    #             else:
+    #                 step_output_dict = dict(step_output)
+    #                 try:
+    #                     step_output = L2DataPacketV2(step_number=i, step_meta=step_output, scene=desc_name)
+    #                 except Exception as e:
+    #                     print("Couldn't process step i+{}, skipping ahead".format(i))
+    #                     print(e)
+    #                     continue
+
+    #             floor_object = "floor"  # Not a dynamic object ID
+    #             # console.log(step_output_dict)
+    #             target_objects = self.target_obj_ids(step_output_dict)
+    #             # console.log(target_objects)
+    #             supporting_object, pole_object, occluder_objects = self.struc_obj_ids(step_output_dict)
+    #         else:
+    #             if step_output is None:
+    #                 break
                 
-                # TODO: Make step prediction
-                self.controller.make_step_prediction(
-                    choice=choice, confidence=min([c for c in obj_confidence.values()]), violations_xy_list=voe_xy_list[-1],
-                    heatmap_img=voe_heatmap)
-            else:   # Not enough info to make a prediction on yet
-                self.controller.make_step_prediction(
-                    choice=choice, confidence=1.0, violations_xy_list=[{"x": -1, "y": -1}],
-                    heatmap_img=voe_heatmap)
+    #             try:
+    #                 step_output = L2DataPacketV2(step_number=i, step_meta=step_output, scene=desc_name)
+    #             except Exception as e:
+    #                 print("Couldn't process step i+{}, skipping ahead".format(i))
+    #                 print(e)
+    #                 continue
+                
+    #             # convert L2DataPacketV2 to dictionary
+    #             step_output_dict = self.convert_l2_to_dict(step_output)
+                
+    #             floor_object = "floor"
+    #             target_objects = self.target_obj_ids(step_output_dict)
+    #             # console.log(target_objects)
+    #             supporting_object, pole_object, occluder_objects = self.struc_obj_ids(step_output_dict)
+            
+    #         # console.log('check')
+    #         # Track each object's trajectory and position through the scene
+    #         try:
+    #             # Expected to not dissapear until episode ends
+    #             # support_coords = step_output_dict["structural_object_list"][supporting_object]["dimensions"]
+    #             # floor_coords = step_output_dict["structural_object_list"][floor_object]["dimensions"]
+
+    #             # Target / Pole may not appear in view yet, start recording when available
+    #             for obj_id, obj in step_output_dict['object_list'].items():
+    #                 if obj_id not in self.track_info.keys():
+    #                     self.track_info[obj_id] = {
+    #                         'color': list(),
+    #                         'trajectory': list(),
+    #                         'position': list()
+    #                     }
+    #                 self.track_info[obj_id]['trajectory'].append(obj["dimensions"])
+    #                 self.track_info[obj_id]['position'].append(obj['position'])
+    #                 self.track_info[obj_id]['color'].append(obj['color'])
+                
+    #             # if self.level == 'level2':
+    #             #     pole_history.append({
+    #             #             "color": step_output_dict["structural_object_list"][pole_object]['color'],
+    #             #             "step_id": i
+    #             #         })
+    #             # elif self.level == "oracle":
+    #             #     pole_history.append(self.getMinMax(step_output_dict["structural_object_list"][pole_object]))
+            
+    #         except KeyError as e:  # Object / Pole is not in view yet
+    #             console.log("key error", e)
+    #             pass
+    #         except AttributeError as e:
+    #             console.log("attribute error", e)
+    #             pass
+
+    #         # TODO: PERFORM TARGET OBJECT APPEARANCE MATCH
+
+    #         # TODO: CHECK FOR ENTRANCE VOE
+
+    #         # TODO: RUN PYBULLET
+    #         if 'pole' in step_output_dict['structural_object_list'].keys():
+    #             drop_step = self.determine_drop_step(pole_history)
+    #             if drop_step != -1 and pb_state != 'complete' and len(step_output_dict['structural_object_list']['occluders']) == 0:
+    #                 # TEMP; NEED TO HANDLE PB OUTPUT
+    #                 print("rendering in pybullet")
+    #                 _, obj_traj_orn = pybullet_utilities.render_in_pybullet(step_output_dict)
+    #         else:
+    #             new_obj_velocity = {}
+    #             for obj_id, obj in self.track_info.items():
+    #                 if len(obj['position']) == 3:
+    #                     initial_position = np.array(list(obj['position'][0].values()))
+    #                     current_position = np.array(list(obj['position'][-1].values()))
+    #                     new_obj_velocity[obj_id] = (current_position - initial_position) / 5 ## average velocity of object
+
+    #             if len(new_obj_velocity.keys()) and len(step_output_dict['object_list']):
+    #                 # TEMP; NEED TO HANDLE PB OUTPUT
+    #                 print("rendering in pybullet")
+    #                 _, obj_traj_orn = pybullet_utilities.render_in_pybullet(step_output_dict, velocities=new_obj_velocity)
+            
+    #         choice = plausible_str(False)
+    #         voe_heatmap = np.ones((600, 400))
+            
+    #         # if pb_run:
+    #         # TODO: Calculate distance between actual position (Unity) and expected position (PB)
+    #         if pb_state == 'complete' and ('pole' not in step_output_dict['structural_object_list'].keys() or (len(pole_history) > 1 and drop_step != -1)):
+    #             obj_confidence = dict()
+    #             # Calculate confidence
+    #             for obj_id, obj in self.track_info.items():
+    #                 unity_traj = [[x['x'], x['y'], x['z']] for x in obj['position']]
+    #                 if len(unity_traj) > 2 and unity_traj[-1] != unity_traj[-2]:
+    #                     obj_confidence[obj_id] = 1.0
+    #                 try:
+    #                     distance, _ = self.calc_simulator_voe(obj_traj_orn['default'][obj_id]['pos'], unity_traj)
+    #                     obj_confidence[obj_id] = 100 * np.tanh(1 / (distance + 1e-9))
+    #                 except KeyError as e:
+    #                     console.log(e)
+    #                     obj_confidence[obj_id] = 1.0
+            
+    #                 # TODO: If distance is sufficiently large, raise Position VoE
+    #                 # confidence has to be bounded between 0 and 1
+    #                 if obj_confidence[obj_id] >= 1:
+    #                     obj_confidence[obj_id] = 1.0
+    #                     # if confidence is 1, throw a no voe signal in the pixels, or the object in unity hasn't stopped moving
+    #                     voe_xy_list.append(
+    #                         {
+    #                             "x": -1, # no voe 
+    #                             "y": -1  # noe voe
+    #                         }
+    #                     )
+    #                 else:
+    #                     if obj_id in step_output_dict['object_list']:
+    #                         p_c = step_output_dict["object_list"][obj_id]["pixel_center"]
+    #                         voe_xy_list.append(
+    #                             {
+    #                                 "x": p_c[0],
+    #                                 "y": p_c[1] 
+    #                             }
+    #                         )
+    #                         voe_heatmap = np.float32(step_output_dict['object_list'][obj_id]['obj_mask'])
+    #                         voe_heatmap[np.all(1.0 == voe_heatmap, axis=-1)] = obj_confidence[obj_id]
+    #                         voe_heatmap[np.all(0 == voe_heatmap, axis=-1)] = 1.0
+
+    #                 # console.log(confidence)
+    #                 if obj_confidence[obj_id] <= 0.5:
+    #                     choice = plausible_str(True)
+
+    #                 # TODO: If object not found in Unity but is expected in PB: raise Presence VoE
+                
+    #             # TODO: Make step prediction
+    #             self.controller.make_step_prediction(
+    #                 choice=choice, confidence=min([c for c in obj_confidence.values()]), violations_xy_list=voe_xy_list[-1],
+    #                 heatmap_img=voe_heatmap)
+    #         else:   # Not enough info to make a prediction on yet
+    #             self.controller.make_step_prediction(
+    #                 choice=choice, confidence=1.0, violations_xy_list=[{"x": -1, "y": -1}],
+    #                 heatmap_img=voe_heatmap)
 
 
-        # TODO: Make final scene-wide prediction
+    #     # TODO: Make final scene-wide prediction
 
 def squash_masks(ref, mask_l, ids):
     flat_mask = np.ones_like(ref) * -1
