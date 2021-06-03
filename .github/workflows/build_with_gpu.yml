@@ -5,7 +5,7 @@ name: Automated System Test
 
 on:
   push: 
-    branches: [ component/interactive-env.diego ] 
+    # branches: [ component/interactive-env.diego ] 
 
 jobs:
   build_with_gpu:
