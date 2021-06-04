@@ -28,6 +28,10 @@ APP_MODEL_PATH = './tracker/model.p'
 VISION_MODEL_PATH = './visionmodule/dvis_resnet50_mc_voe.pth'
 DEBUG = False
 
+APPEARANCE_PLAUSIBILITY_THRESHOLD = 0.5 # The threshold at which to raise an appearance VoE if the plausibility score of the appearance match is below this threshold
+POSITION_PLAUSIBILITY_THRESHOLD = 0.5   # The threshold at which to raise a position VoE if the plausibility score of the object's position is below this threshold
+OBJ_TIME_TO_PASS_THROUGH = 3    # How long to let the object pass through the scene before triggering PyBullet
+
 @dataclass
 class ObjectFace:
     corners: list
@@ -226,7 +230,20 @@ class PhysicsVoeAgent:
     
     # TODO: TRACK OBJECTS. Maybe this gets moved to another tracker module file
     def track_objects(self, step_output_dict, actor_objects):
-        pass
+        # self.track_info values required by agent:
+        # - position: a list of {'x': num, 'y': num, 'z': num} dictionaries storing information on the 3D location of the object
+        # - appearance_voe: a boolean value denoting if the tracker has sensed a sufficiently robust appearance mismatch to raise an appearance VoE
+        # - appearance_match_conf: a list of numbers indicating how confident the tracker is in the appearance matching between frames
+        # - simulated: a boolean value indicating if the object has been simulated by PyBullet (the tracker module doesn't need to worry about this. It should just initialize this flag to False for new objects when they're detected by the tracker)
+
+        ## TEMP: OLD LOGIC TO CONFIRM AGENT WORKS WITHOUT FAILING ##
+        self.track_info = track.track_objects(self.track_info)
+        for obj in self.track_info['objects'].values():
+            obj['position'] = [{'x': obj['position_history'][i]['x'], 'y': obj['position_history'][i]['y'], 'z': 1} for i in obj['position_history']]
+            obj['appearance_voe'] = False
+            obj['appearance_match_conf'] = [1.0]
+            if 'simulated' not in obj.keys():
+                obj['simulated'] = False
     
     def run_scene(self, config, desc_name):
         if DEBUG:
@@ -242,8 +259,6 @@ class PhysicsVoeAgent:
         self.track_info: dict[int, dict] = dict()
         scene_voe_detected: bool = False
         all_vios: list = list()
-        all_errs: list = list()
-        voe_xy_list: list = list()
 
         object_sims = None
 
@@ -254,6 +269,7 @@ class PhysicsVoeAgent:
                 break
 
             # Identify actor objects
+            # Oracle
             if self.level == 'oracle':
                 step_output_dict: dict = dict(step_output)
                 try:
@@ -262,7 +278,8 @@ class PhysicsVoeAgent:
                     console.log("Couldn't process step i+{}, skipping ahead".format(i))
                     console.log(e)
                     continue
-                
+            
+            # Level 2
             elif self.level == 'level2':
                 step_output_dict = self.convert_meta_to_dict(step_output, self.level)
                 try:
@@ -271,28 +288,29 @@ class PhysicsVoeAgent:
                     console.log("Couldn't process step i+{}, skipping ahead".format(i))
                     console.log(e)
                     continue
+            
+            # Level 1
             else:
                 step_output_dict = self.convert_meta_to_dict(step_output, self.level)
                 try:
-                    # TODO: L1DataPacket
+                    # TODO: L1DataPacket (since we won't have everything thing Level 2 has)
                     step_output: L2DataPacket = L2DataPacket(step_number=i, step_meta=step_output, scene=desc_name)
                 except Exception as e:
                     console.log("Couldn't process step i+{}, skipping ahead".format(i))
                     console.log(e)
                     continue
-            actor_objects: list = self.get_actor_ids(step_output_dict)
+            actor_objects: list = self.get_actor_ids(step_output_dict)  # Extract IDs of actor objects
 
-            obj_appearance_plausibility: dict[int, float] = dict()
+            obj_appearance_plausibility: dict[int, float] = dict()  # plausibility score for each object
             try:
                 # TODO: TRACK OBJECTS (MOTION AND APPEARANCE)
                 self.track_objects(step_output_dict, actor_objects)
 
                 # CHECK TRACK INFO FOR ANY APPEARANCE MATCHES
-                for obj_id, obj in self.track_info.items():
+                for obj_id, obj in self.track_info['objects'].items():
                     # check if appearance VoE flag has been set for this object
-                    if obj['appearance_voe']:
-                        # TODO: Confidence score for appearance violations
-                        obj_xy_pos: dict = obj['xy_position'][-1]
+                    if i > 0 and obj['appearance_voe']:
+                        obj_xy_pos: dict = {'x': obj['position'][-1]['x'], 'y': obj['position'][-1]['y']}
                         obj_appearance_plausibility[obj_id] = obj['appearance_match_conf'][-1]
                         frame_vios.append(AppearanceViolation(obj_id, obj_xy_pos, obj_appearance_plausibility))
             except KeyError as e:   # Object is not in view yet
@@ -304,29 +322,29 @@ class PhysicsVoeAgent:
 
             # RUN PYBULLET IF NEW OBJECT IN SCENE
             # if any objects are new and have NOT been simulated by PyBullet yet, run PyBullet
-            if len([o for o in self.track_info.values() if len(o['position']) == 3 and not o['simulated']]) > 0:
+            if len([o for o in self.track_info['objects'].values() if len(o['position']) == OBJ_TIME_TO_PASS_THROUGH and not o['simulated']]) > 0:
                 _, object_sims = pybullet_utilities.render_in_pybullet(step_output_dict)
-                for obj_id, obj in self.track_info.items():
+                for obj_id, obj in self.track_info['objects'].items():
                     if obj_id in object_sims.keys() and not obj['simulated']:
                         obj['simulated'] = True
 
             # CHECK FOR ANY POSITION-RELATED VoEs
             obj_pos_plausibility: dict[int, float] = dict()
-            for obj_id, obj in self.track_info.items():
-                unity_trajectory = [[pos['x'], pos['y'], pos['z']] for pos in obj['position']]
-                unity_xy_pos = {'x': obj['position'][-1]['x'], 'y': obj['position'][-1]['y']}
+            for obj_id, obj in self.track_info['objects'].items():
+                unity_trajectory = [[pos['x'], pos['y'], pos['z']] for pos in obj['position']]  # Get actual object trajectory
+                unity_xy_pos = {'x': obj['position'][-1]['x'], 'y': obj['position'][-1]['y']}   # Get actual object position
 
                 # TODO: CHECK FOR PRESENCE VoEs
                 try:
-                    distance, _ = self.calc_simulator_voe(object_sims[obj_id]['pos'], unity_trajectory)
+                    distance, _ = self.calc_simulator_voe(object_sims[obj_id]['pos'], unity_trajectory) # Calculate difference in actual and simulated trajectory
                     obj_pos_plausibility[obj_id] = 100 * np.tanh(1 / (distance + 1e-9))
-                    if obj_pos_plausibility[obj_id] < 0.5:
+                    if obj_pos_plausibility[obj_id] < POSITION_PLAUSIBILITY_THRESHOLD:
                         frame_vios.append(PositionViolation(obj_id, unity_xy_pos, obj_pos_plausibility[obj_id]))
                 except KeyError as e:
                     # TODO: OBJECT NOT IN PYBULLET SIMULATION; CHECK IF OBJECT IS OCCLUDED BY ACTOR OBJECT
                     # IF OCCLUDED BY ACTOR OBJECT, CONF = 1.0. ELSE, RAISE ENTRANCE VOE
                     obj_pos_plausibility[obj_id] = 1.0
-                    if obj_pos_plausibility[obj_id] < 0.5:
+                    if obj_pos_plausibility[obj_id] < POSITION_PLAUSIBILITY_THRESHOLD:
                         frame_vios.append(EntranceViolation(obj_id, unity_xy_pos, obj_pos_plausibility[obj_id]))
 
             # MAKE STEP PREDICTION
@@ -337,7 +355,7 @@ class PhysicsVoeAgent:
             all_plausibility_values: list[float] = [voe.conf for voe in frame_vios]
             frame_confidence: float = min(all_plausibility_values)
             if len(frame_vios) == 0:
-                # If no frame vios, all confidence values will be >= 0.5 (or whatever threshold we use)
+                # If no frame vios, all confidence values will be >= POSITION_PLAUSIBILITY_THRESHOLD
                 self.controller.make_step_prediction(
                     choice=plausible_str(True),
                     confidence=frame_confidence,
@@ -345,7 +363,7 @@ class PhysicsVoeAgent:
                     heatmap_img=voe_heatmap
                 )
             else:
-                # If there are frame vios, at least one plausibility value will be < 0.5 (or whatever threshold we use)
+                # If there are frame vios, at least one plausibility value will be < POSITION_PLAUSIBILITY_THRESHOLD
                 # Build VoE heatmap that accounts for ALL violations
                 for voe in frame_vios:
                     pass
