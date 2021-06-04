@@ -1,5 +1,4 @@
 from exploration.mcs_env.mcs_wrapper import McsWrapper
-# from machine_common_sense.controller import PERFORMER_CAMERA_Y
 import math
 
 INIT_X = 0
