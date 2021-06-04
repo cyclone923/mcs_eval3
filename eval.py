@@ -35,7 +35,7 @@ class Evaluation3_Agent:
         self.level = config_ini['MCS']['metadata']
         assert self.level in ['oracle', 'level1', 'level2']
 
-        self.exploration_agent = SequenceGenerator(None, self.controller, self.level)
+        self.exploration_agent = SequenceGenerator(None, self.controller, self.level, None)
         self.scene_type = scene_type
         # self.agency_voe_agent = AgencyVoeAgent(self.controller, self.level)
         self.gravity_agent = gravity_agent.GravityAgent(self.controller, self.level)

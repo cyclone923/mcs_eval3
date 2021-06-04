@@ -13,9 +13,9 @@ def make_parser():
 
     parser.add_argument('--start_scene', default=0, type=int)
     parser.add_argument('--end_scene', default=268, type=int)
-    parser.add_argument('--outdir', default='simple_task_e4c')
+    parser.add_argument('--outdir', default='simple_task_e3c')
     parser.add_argument('--dir1', default='interaction_scenes')
-    parser.add_argument('--dir2', default='e4_container')
+    parser.add_argument('--dir2', default='eval3_containers')
 
     return parser
 
