@@ -194,7 +194,7 @@ def createObjectShape(obj):
     elif "letter l" in obj["shape"]:
         meshScale = [meshScale[0], meshScale[1], meshScale[2] * 0.75] # hard coded transformations to compensate for unknown wonkiness... needs to be tested
         start_orientation = [start_orientation[0], start_orientation[1], 90, 0.011]
-        visualShapeId = p.createVisualShape(shapeType=p.GEOM_MESH,fileName="l_joint.obj", rgbaColor=rgba_color, specularColor=[0.4,.4,0], visualFramePosition=shift, meshScale=meshScale)
+        visualShapeId = p.createVisualShape(shapeType=p.GEOM_MESH,fileName="L_joint.obj", rgbaColor=rgba_color, specularColor=[0.4,.4,0], visualFramePosition=shift, meshScale=meshScale)
         collisionShapeId = p.createCollisionShape(shapeType=p.GEOM_MESH, fileName="L_joint.obj", collisionFramePosition=shift, meshScale=meshScale)
     elif "triangular prism" == obj["shape"]:
         meshScale = [meshScale[1], meshScale[2], meshScale[0]]
