@@ -299,9 +299,9 @@ class PhysicsVoeAgent:
             
             # Level 2
             elif self.level == 'level2':
-                step_output_dict = self.convert_meta_to_dict(step_output, self.level)
                 try:
                     step_output: L2DataPacket = L2DataPacket(step_number=i, step_meta=step_output, scene=desc_name)
+                    step_output_dict = self.convert_meta_to_dict(step_output, self.level)
                 except Exception as e:
                     console.log("Couldn't process step i+{}, skipping ahead".format(i))
                     console.log(e)
@@ -344,9 +344,14 @@ class PhysicsVoeAgent:
                 new_obj_velocity = {}
                 for obj_id, obj in self.track_info['objects'].items():
                     if len(obj['position']) == 3:
+                        # transform unity position to pybullet position
                         initial_position = np.array(list(obj['position'][0].values()))
+                        initial_position = np.array([initial_position[1], initial_position[2], initial_position[0]])
+                        
                         current_position = np.array(list(obj['position'][-1].values()))
-                        new_obj_velocity[obj_id] = (current_position - initial_position) / 5 ## average velocity of object
+                        current_position = np.array([current_position[1], current_position[2], current_position[0]])
+
+                        new_obj_velocity[obj_id] = (current_position - initial_position) / 3 ## average velocity of object
                 console.log(new_obj_velocity)
                 _, object_sims = pybullet_utilities.render_in_pybullet(step_output_dict, new_obj_velocity)
                 for obj_id, obj in self.track_info['objects'].items():
@@ -390,7 +395,7 @@ class PhysicsVoeAgent:
                 )
             else:
                 # If there are frame vios, at least one plausibility value will be < POSITION_PLAUSIBILITY_THRESHOLD
-                # Build VoE heatmap that accounts for ALL violations
+                # TODO: Build VoE heatmap that accounts for ALL violations
                 for voe in frame_vios:
                     pass
                 self.controller.make_step_prediction(

@@ -365,7 +365,7 @@ class L2DataPacket:
     def __post_init__(self):
 
         self.get_images_from_meta()
-        self.non_actor_objects = self.segment_objects()
+        self.objects = self.segment_objects()
         self.determine_obj_roles()
         self.calculate_physical_props()
         self.guess_object_kinds()
@@ -426,13 +426,14 @@ class L2DataPacket:
 
             objects.append(this_ob)
 
+        print(len(objects))
         return objects
 
     def determine_obj_roles(self):
         # assert 3 <= len(self.objects) <= 5, "Support, floor & wall should always be in scene"
         # Determining floor & wall
         floor_found, wall_found = False, False
-        for this_ob in self.non_actor_objects:
+        for this_ob in self.objects:
 
             w, h = Object._get_obj_dims(this_ob.obj_mask)
             cX, cY = self._get_obj_moments(this_ob.obj_mask)
@@ -451,20 +452,20 @@ class L2DataPacket:
         smallest_cY = float("inf")
         mid_cY = self.rgb_im.shape[0] / 2
         pole_idx = None
-        for idx, this_ob in enumerate(self.non_actor_objects):
+        for idx, this_ob in enumerate(self.objects):
             if this_ob.role not in ["floor", "back-wall"]:
                 _, cY = self._get_obj_moments(this_ob.obj_mask)
                 if cY <= smallest_cY and cY < mid_cY/2:
                     pole_idx = idx
                     smallest_cY = cY
             if pole_idx is not None:
-                self.non_actor_objects[pole_idx].role = "pole"
+                self.objects[pole_idx].role = "pole"
                 pole_idx = None
 
         # Determine occluder(s) by finding large objects with centroids near the horizontal axis
         occluder_idx = None
         nearest_cY = float("inf")
-        for idx, this_ob in enumerate(self.non_actor_objects):
+        for idx, this_ob in enumerate(self.objects):
             if this_ob.role not in ["floor", "back-wall", "pole"]:
                 _, cY = self._get_obj_moments(this_ob.obj_mask)
                 w, h = Object._get_obj_dims(this_ob.obj_mask)
@@ -473,20 +474,16 @@ class L2DataPacket:
                     occluder_idx = idx
                     smallest_cY = cY
             if occluder_idx is not None:
-                self.non_actor_objects[occluder_idx].role = "occluder"
+                self.objects[occluder_idx].role = "occluder"
                 occluder_idx = None
 
-        # for idx, this_ob in enumerate(self.objects):
-        #     if this_ob.role == "default":
-        #         this_ob.id = 
-
     def calculate_physical_props(self):
-        for this_ob in self.non_actor_objects:
+        for this_ob in self.objects:
             this_ob.extract_physical_props()
 
     def guess_object_kinds(self):
 
-        for this_ob in self.non_actor_objects:
+        for this_ob in self.objects:
             this_ob.find_obj_kind_nn()
 
     def load_roles_as_attr(self):
@@ -494,7 +491,7 @@ class L2DataPacket:
         self.occluders = []
         self.targets = []
         
-        for this_ob in self.non_actor_objects:
+        for this_ob in self.objects:
             
             # In their order of appearance
             if this_ob.role == "floor":

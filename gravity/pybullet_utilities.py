@@ -29,9 +29,8 @@ def render_in_pybullet(step_output, velocities=None):
     total_objects = 0
     # target / supports
     for obj_id, obj in step_output["object_list"].items():
-        
+
         boxId = createObjectShape(obj)
-        print(boxId)
         console.log(boxId)
         if boxId == -1:
             print("error creating obj: {}".format(obj.shape))
@@ -60,7 +59,7 @@ def render_in_pybullet(step_output, velocities=None):
                 boxId = obj_dict['default'][obj_id]['id']
                 pos, orn = p.getBasePositionAndOrientation(boxId)
                 obj_vel = velocities[obj_id]
-                p.applyExternalForce(boxId, linkIndex=-1, forceObj=100*obj_vel, posObj=pos, flags=p.WORLD_FRAME)
+                p.applyExternalForce(boxId, linkIndex=-1, forceObj=10*obj_vel, posObj=pos, flags=p.WORLD_FRAME)
 
         at_rest = []
         for i, obj in obj_dict["default"].items():
@@ -104,7 +103,8 @@ def render_in_pybullet(step_output, velocities=None):
             obj_dict["default"][i] = obj
 
         # all objects are at rest, go ahead and end the simulation early 
-        if steps > 1 and all(at_rest):
+        if steps > 100 and all(at_rest):
+            print("at rest")
             break
 
         steps += 1
