@@ -1,4 +1,4 @@
-from vision.instSeg.backbone import ResNetBackbone, VGGBackbone, ResNetBackboneGN, DarkNetBackbone
+from backbone import ResNetBackbone, VGGBackbone, ResNetBackboneGN, DarkNetBackbone
 from math import sqrt
 import json
 import torch
@@ -372,16 +372,20 @@ def change_instance_input(base_config,
     return new_config
 
 # ---------------------------------------------------------------------#
-def overwrite_from_json_config(fpath, args, option):
+def overwrite_args_from_json(fpath, args):
     with open(fpath, 'r') as f:
-        rd = json.load(f)
+        json_dict = json.load(f)
 
-    for key in rd:
-        if(key == 'args'):
-            for kk in rd[key]:
-                setattr(args, kk, rd[key][kk])
-        else: # option
-            for kk in rd[key]:
-                option[kk] = rd[key][kk]
+    key = 'args'
+    if key in json_dict:
+        for kk in json_dict[key]:
+            setattr(args, kk, json_dict[key][kk])
 
+    return json_dict
+
+
+def overwrite_params_from_json(json_dict, option=dict(), key='option'):
+    if key in json_dict:
+        for kk in json_dict[key]:
+            option[kk] = json_dict[key][kk]
 

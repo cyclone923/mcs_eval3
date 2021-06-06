@@ -46,6 +46,8 @@ class AnnotationTransform(object):
             a list containing lists of bounding boxes [xmin, ymin, xmax, ymax, class_idx]
         """
         raise NotImplementedError
+    def getLabelMap(self):
+        return self.label_map
 
 class FromImageAnnotationTransform(AnnotationTransform):
     """ Transform labeled instance image and semantic image into a tensor of bbox coords and label index as (x0, y0, x1, y1, cls_id)
@@ -122,14 +124,13 @@ class Detection(data.Dataset):
         prep_crowds (bool): Whether or not to prepare crowds for the evaluation step.
     """
 
-    def __init__(self, image_path, mask_ch=1, sem_weights=None,
+    def __init__(self, image_path, mask_ch=1,
                  transform=None, target_transform=None,
                  running_mode='test', model_mode='InstSeg', sem_fg_stCH=1):
         '''
         Args: model_mode: 'InstSeg' | 'SemSeg' | 'ObjDet'
         '''
         self.root = image_path
-        self.sem_weights = sem_weights
 
         self.transform = transform
         self.target_transform = target_transform
@@ -156,26 +157,23 @@ class Detection(data.Dataset):
             print('ObjDet')
             pass
         else:
-            instGT, semGT, wghts, target = self.construct_inst_sem_label(masks, target,
-                                                                 self.mask_out_ch,
-                                                                 self.sem_weights,
+            instGT, semGT, target = self.construct_inst_sem_label(masks, target, self.mask_out_ch,
                                                                  num_crowds=num_crowds,
-                                                                 sem_fg_stCH=self.sem_fg_stCH,
-                                                                 isTrain=self.isTrain)
+                                                                 sem_fg_stCH=self.sem_fg_stCH)
             if self.model_mode == 'InstSeg':
-                masks = torch.from_numpy(np.concatenate([instGT, wghts], axis=0))
+                masks = torch.from_numpy(instGT)
             else:
                 masks= torch.from_numpy(semGT)
 
         if False:
             from matplotlib import pyplot as plt
             vis_img = im.permute(1,2,0).detach().numpy()
-            fig, ax = plt.subplots(1, 4)
+            fig, ax = plt.subplots(1, 3)
             ax[0].imshow(vis_img[:,:,:3])
             ax[1].imshow(instGT.argmax(axis=0))
             ax[2].imshow(semGT[0])
-            ax[3].imshow(wghts[0])
-            plt.show()
+            plt.show();
+            ta = self.pull_item(index)
 
         return im, (target, masks, num_crowds)
 
@@ -209,15 +207,8 @@ class Detection(data.Dataset):
         pass
 
 
-    def construct_inst_sem_label(self, masks, target, mask_out_ch=64,
-                                        sem_weights=None, num_crowds=0,
-                                        sem_fg_stCH=1, isTrain=False, fg_thr=0.3):
-        def _compute_weights_one_instance(mask, sem_id, base_cnt):
-            inst_wght = np.cbrt(base_cnt/(mask.sum()+1.))
-            sem_wght  = 1.0 if sem_weights is None else sem_weights[sem_id]
-            return np.clip(sem_wght*inst_wght, 1.0, 10.0)
-
-        # main process.
+    def construct_inst_sem_label(self, masks, target, mask_out_ch=64, num_crowds=0,
+                                       sem_fg_stCH=1, fg_thr=0.3):
         sem_masks, masks = masks[:sem_fg_stCH], masks[sem_fg_stCH:]
         target = target[sem_fg_stCH:]
 
@@ -236,7 +227,6 @@ class Detection(data.Dataset):
         # allocate buffer
         instGT = np.zeros([mask_out_ch, ht, wd], dtype=np.float32)
         semGT  = np.zeros([1, ht, wd], dtype=np.float32)
-        wghts  = np.zeros_like(semGT, dtype=np.float32)
         new_target = np.zeros([mask_out_ch, 5], dtype=np.float32)
         base_cnt = float(ht*wd)
 
@@ -246,7 +236,6 @@ class Detection(data.Dataset):
         for k in range(sem_fg_stCH):
             semGT[0, semI==k] = k
             instGT[k, semI==k] = 1
-            wghts[0, semI==k] = _compute_weights_one_instance(instGT[k], 0, base_cnt)
 
         # compute FG value
         for ik, k in enumerate(idx[:mask_out_ch-1]):
@@ -258,10 +247,7 @@ class Detection(data.Dataset):
             instGT[ik+sem_fg_stCH]     = masks[k]>fg_thr
 
             semGT[0, masks[k]>0]  = target[k, -1]
-            wghts[0, masks[k]>0]  = _compute_weights_one_instance(masks[k]>0,
-                                                                 int(target[k, -1]),
-                                                                 base_cnt)
-        return instGT, semGT, wghts, new_target
+        return instGT, semGT, new_target
 
 
     def pull_item(self, index):

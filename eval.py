@@ -57,6 +57,7 @@ class Evaluation3_Agent:
                 return
             self.agency_voe_agent.run_scene(scene_config)
         elif goal_type == "retrieval":
+            print("\nPLAYROOM SCENE...\n")
             self.exploration_agent.run_scene(scene_config)
         else:
             print("Current goal type: {}".format(goal_type))
@@ -69,7 +70,7 @@ def make_parser():
     parser.add_argument('--config', default='mcs_config.ini')
     parser.add_argument('--prefix', default='out')
     parser.add_argument('--scenes', default='different_scenes')
-    parser.add_argument('--scene-type', default='physics')
+    parser.add_argument('--scene-type', default='')
     return parser
 
 
