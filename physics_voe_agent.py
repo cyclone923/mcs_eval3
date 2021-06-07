@@ -343,7 +343,7 @@ class PhysicsVoeAgent:
             if len([o for o in self.track_info['objects'].values() if len(o['position']) == OBJ_TIME_TO_PASS_THROUGH and not o['simulated']]) > 0:
                 new_obj_velocity = {}
                 for obj_id, obj in self.track_info['objects'].items():
-                    if len(obj['position']) == 3:
+                    if len(obj['position']) == OBJ_TIME_TO_PASS_THROUGH:
                         # transform unity position to pybullet position
                         initial_position = np.array(list(obj['position'][0].values()))
                         initial_position = np.array([initial_position[1], initial_position[2], initial_position[0]])
