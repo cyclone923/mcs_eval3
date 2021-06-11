@@ -19,10 +19,13 @@ import operator
 from functools import reduce
 
 class SequenceGenerator(object):
-    def __init__(self,sess, env, level, frame_collector=None):
+    def __init__(self, sess, env, level, frame_collector=None):
         #print ("seq generator init")
         self.controller = env
-        self.agent = graph_agent.GraphAgent(env ,level, frame_collector=frame_collector, reuse=True)
+        self.agent = graph_agent.GraphAgent(env ,
+                                            level, 
+                                            frame_collector=frame_collector, 
+                                            reuse=True)
         self.game_state = self.agent.game_state
         #self.action_util = self.game_state.action_util
         self.planner_prob = 0.5
@@ -31,12 +34,12 @@ class SequenceGenerator(object):
         self.scene_name = None
         self.outermost_poly = None
 
-    def run_scene(self,scene_config,config_filename=None,frame_collector=None):
-        try :
-            self.step_output = self.controller.start_scene(scene_config)
-            self.explore_scene_view(self.step_output,config_filename,frame_collector)
-        except Exception as e :
-            print (e)
+    def run_scene(self, scene_config, config_filename=None, frame_collector=None):
+        # try :
+        self.step_output = self.controller.start_scene(scene_config)
+        self.explore_scene_view(self.step_output, config_filename, frame_collector)
+        # except Exception as e :
+            # print (e)
             
 
     def explore_scene_view(self, event, config_filename=None, frame_collector=None):
@@ -299,15 +302,16 @@ class SequenceGenerator(object):
             if going_closer_counter > 2:
                 break
   
-    ''' 
-    Function to update the status of the world after a pick up action
-    
-    If the pick up was successfull and it was the trophy - we are done
-    If the pick up was successfull and it isnt the trophy - we drop it
-    If the pick up was not successfull - we update the object with whatever info we get    
 
-    '''
-    def update_picked_up(self,target_obj):          
+    def update_picked_up(self,target_obj):
+        """ 
+        Function to update the status of the world after a pick up action
+        
+        If the pick up was successfull and it was the trophy - we are done
+        If the pick up was successfull and it isnt the trophy - we drop it
+        If the pick up was not successfull - we update the object with whatever info we get    
+        """
+                  
         if self.agent.game_state.event.return_status == "SUCCESSFUL" :
             #print ("object picked up rewards attained = " , self.agent.game_state.event.reward)
             if self.agent.game_state.event.reward > -1* (self.agent.game_state.number_actions*0.001) +0.5 :
@@ -319,14 +323,12 @@ class SequenceGenerator(object):
                 self.agent.game_state.step(action)
                 self.look_straight()
             return True
-                
         elif self.agent.game_state.event.return_status == "NOT_INTERACTABLE" or  \
                 self.agent.game_state.event.return_status == "NOT_OBJECT" or  \
                 self.agent.game_state.event.return_status == "NOT_PICKUPABLE" :
             self.update_object_picked_up(target_obj,True)
             self.look_straight()
             return True
-
         else :
             return False
 
@@ -335,8 +337,6 @@ class SequenceGenerator(object):
             if target_obj.id == obstacle.id :
                 self.agent.game_state.global_obstacles[i].is_picked_and_not_trophy = pick_up_status
                 return 
-
-
 
     def get_obj_pixels(self,target_obj,get_goal_pixels=False):
         #arr_mask = np.array(self.agent.game_state.event.object_mask_list[-1])

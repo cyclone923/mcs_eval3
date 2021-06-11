@@ -132,9 +132,9 @@ class BoundingBoxNavigator:
 			#print ("time taken till creating FOV after roadmap",time_taken_part_1)
 
 
-			SHOW_ANIMATION = False
+			# SHOW_ANIMATION = False
 			if SHOW_ANIMATION:
-			#if True:
+			# if True:
 				plt.cla()
 				plt.xlim((-7, 7))
 				plt.ylim((-7, 7))
@@ -149,7 +149,7 @@ class BoundingBoxNavigator:
 				#self.scene_obstacles_dict[obj_id].plot("green")
 
 				plt.axis("equal")
-				plt.pause(1)
+				# plt.pause(1)
 				print ("in show animation and trying to save fig")
 				#plt.savefig("bounding_box_add_shapely_output.png")
 			obj_id += 1
@@ -184,7 +184,7 @@ class BoundingBoxNavigator:
 		return self.scene_obstacles_dict
 
 	def go_to_goal(self, goal_pose, agent, success_distance, stepBack=False):
-
+		print("MS go to goal called")
 		self.current_nav_steps = 0
 		self.agentX = agent.game_state.position['x']
 		self.agentY = agent.game_state.position['z']
@@ -203,6 +203,8 @@ class BoundingBoxNavigator:
 
 		# create initial plan
 		roadmap = DiscreteActionPlanner(self.radius*1.1, self.scene_obstacles_dict.values(), self.epsilon)
+		print(f"roadmap {roadmap}")
+		# assert True == False
 		plan = []
 
 		while True:
@@ -257,7 +259,7 @@ class BoundingBoxNavigator:
 				
 			
 			#plot out the state if enabled
-			if SHOW_ANIMATION:
+			if True:
 				fov = FieldOfView([self.agentX, self.agentY, 0], 42.5 / 180.0 * math.pi, self.scene_obstacles_dict.values())
 				fov.agentX = self.agentX
 				fov.agentY = self.agentY
