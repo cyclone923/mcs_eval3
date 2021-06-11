@@ -39,7 +39,7 @@ class Evaluation3_Agent:
         self.scene_type = scene_type
         # self.agency_voe_agent = AgencyVoeAgent(self.controller, self.level)
         self.gravity_agent = gravity_agent.GravityAgent(self.controller, self.level)
-        self.phys_voe = physics_voe_agent.VoeAgent(self.controller, self.level, prefix)
+        self.phys_voe = physics_voe_agent.PhysicsVoeAgent(self.controller, self.level, prefix)
 
         if seed != -1:
             random.seed(seed)
@@ -50,16 +50,14 @@ class Evaluation3_Agent:
             raise ValueError("Scene Config is Empty", one_scene)
         goal_type = scene_config['goal']['category']
         if goal_type == "intuitive physics":
-            if 'gravity' in scene_config['name'] or self.scene_type == 'gravity':
-                return self.gravity_agent.run_scene(scene_config, one_scene)
-            else:
-                return self.phys_voe.run_scene(scene_config, one_scene)
+            return self.phys_voe.run_scene(scene_config, one_scene)
         elif goal_type == "agents":
             if self.level == "level1":
                 print("Agency task cannot be run in level1. Exiting")
                 return
             self.agency_voe_agent.run_scene(scene_config)
         elif goal_type == "retrieval":
+            print("\nPLAYROOM SCENE...\n")
             self.exploration_agent.run_scene(scene_config)
         else:
             print("Current goal type: {}".format(goal_type))
@@ -72,7 +70,7 @@ def make_parser():
     parser.add_argument('--config', default='mcs_config.ini')
     parser.add_argument('--prefix', default='out')
     parser.add_argument('--scenes', default='different_scenes')
-    parser.add_argument('--scene-type', default='gravity')
+    parser.add_argument('--scene-type', default='')
     return parser
 
 

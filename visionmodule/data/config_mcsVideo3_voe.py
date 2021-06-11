@@ -1,4 +1,4 @@
-from data.base_config import *
+from .base_config import *
 
 # ----------------------- DATASETS ----------------------- #
 
@@ -8,10 +8,10 @@ MCSVIDEO_VOE_CLASSES = MCSVIDEO_VOE_CLASSES_BG + MCSVIDEO_VOE_CLASSES_FG
 
 
 MCSVIDEO_VOE_LABEL_FG = {1:1, 2:2, 3:3}
-MCSVIDEO_VOE_LABEL_MAP = { 0:0, 255:255}
+MCSVIDEO_VOE_LABEL_MAP = {0:0, 255:255}
 MCSVIDEO_VOE_LABEL_MAP.update(MCSVIDEO_VOE_LABEL_FG)
 
-MCSVIDEO_VOE_SEM_WEIGHTS = { 0:1.0000, 255:0.0, 2:2.0, 3:2.0}
+MCSVIDEO_VOE_SEM_WEIGHTS = {0:1.0000, 255:0.0, 2:2.0, 3:2.0}
 for key in MCSVIDEO_VOE_LABEL_MAP:
     if key in MCSVIDEO_VOE_SEM_WEIGHTS:
         continue
@@ -43,17 +43,18 @@ mcsvideo_dataset_base = Config({
     'sem_weights': None,
 
     'sem_fg_stCH': 1,
+    # i.e. use depth images as input too
     'extra_input': False
 })
 
 mcsvideo3_voe_dataset = mcsvideo_dataset_base.copy({
     'name': 'mcs video voe',
 
-    'train_images': '../dataset/mcsvideo/',
-    'train_info': '../dataset/mcsvideo3/intphy_scenes/train.txt',
+    'train_images': './data/dataset/MCSvideo3/',
+    'train_info': './data/dataset/MCSvideo3/intphy_scenes/train.txt',
 
-    'valid_images': '../dataset/mcsvideo/',
-    'valid_info': '../dataset/mcsvideo3/intphy_scenes/val.txt',
+    'valid_images': './data/dataset/MCSvideo/',
+    'valid_info': './data/dataset/MCSvideo3/intphy_scenes/val.txt',
 
     'class_names': MCSVIDEO_VOE_CLASSES,
     'label_map': MCSVIDEO_VOE_LABEL_MAP,
@@ -66,11 +67,11 @@ mcsvideo3_voe_dataset = mcsvideo_dataset_base.copy({
 mcsvideo3_voe_depth_dataset = mcsvideo_dataset_base.copy({
     'name': 'mcs video voe',
 
-    'train_images': '../dataset/mcsvideo3/',
-    'train_info': '../dataset/mcsvideo3/intphy_scenes/train.txt',
+    'train_images': './data/dataset/MCSvideo3/',
+    'train_info': './data/dataset/MCSvideo3/intphy_scenes/train.txt',
 
-    'valid_images': '../dataset/mcsvideo3/',
-    'valid_info': '../dataset/mcsvideo3/intphy_scenes/val.txt',
+    'valid_images': './data/dataset/MCSvideo3/',
+    'valid_info': './data/dataset/MCSvideo3/intphy_scenes/val.txt',
 
     'class_names': MCSVIDEO_VOE_CLASSES,
     'label_map': MCSVIDEO_VOE_LABEL_MAP,
