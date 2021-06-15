@@ -1,0 +1,25 @@
+# This workflow will install Python dependencies, run tests and lint with a single version of Python
+# For more information see: https://help.github.com/actions/language-and-framework-guides/using-python-with-github-actions
+
+# name: Automated System Test
+
+# on:
+  # push: 
+    # branches: [ component/interactive-env.diego ] 
+
+# jobs:
+#   dvis_data_gpu_server:
+#     runs-on: [pelican]
+#     timeout-minutes: 2880
+#     defaults:
+#       run:
+#         shell: bash -l {0}
+#     steps:
+#       - uses: actions/checkout@v2
+#       - name: submit slurm gpu job
+#         timeout-minutes: 2880
+#         run: |
+#           # copy scripts over to the submit server
+#           scp $GITHUB_WORKSPACE/.github/workflows/dvis_data_slurm.sh $USER@submit-b.hpc.engr.oregonstate.edu:/tmp/dvis_data_slurm.sh
+#           scp $GITHUB_WORKSPACE/.github/workflows/dvis_data_submit.sh $USER@submit-b.hpc.engr.oregonstate.edu:/tmp/dvis_data_submit.sh
+#           ssh -tt $USER@submit-b.hpc.engr.oregonstate.edu "/bin/chmod +x /tmp/dvis_data_submit.sh; /tmp/dvis_data_submit.sh"

@@ -19,10 +19,13 @@ import operator
 from functools import reduce
 
 class SequenceGenerator(object):
-    def __init__(self,sess, env,level):
+    def __init__(self, sess, env, level, frame_collector=None):
         #print ("seq generator init")
         self.controller = env
-        self.agent = graph_agent.GraphAgent(env,level, reuse=True)
+        self.agent = graph_agent.GraphAgent(env ,
+                                            level, 
+                                            frame_collector=frame_collector, 
+                                            reuse=True)
         self.game_state = self.agent.game_state
         #self.action_util = self.game_state.action_util
         self.planner_prob = 0.5
@@ -31,12 +34,12 @@ class SequenceGenerator(object):
         self.scene_name = None
         self.outermost_poly = None
 
-    def run_scene(self,scene_config,config_filename=None,frame_collector=None):
-        try :
-            self.step_output = self.controller.start_scene(scene_config)
-            self.explore_scene_view(self.step_output,config_filename,frame_collector)
-        except Exception as e :
-            print (e)
+    def run_scene(self, scene_config, config_filename=None, frame_collector=None):
+        # try :
+        self.step_output = self.controller.start_scene(scene_config)
+        self.explore_scene_view(self.step_output, config_filename, frame_collector)
+        # except Exception as e :
+            # print (e)
             
 
     def explore_scene_view(self, event, config_filename=None, frame_collector=None):
@@ -48,7 +51,7 @@ class SequenceGenerator(object):
 
         self.position = self.agent.game_state.position
         self.event = self.agent.game_state.event
-        #print ("beginning of explore scene view")
+        # print ("beginning of explore scene view")
 
         #rotation = self.agent.game_state.event.rotation / 180 * math.pi
         cover_floor.update_seen(self.agent.game_state.position['x'],self.agent.game_state.position['z'],self.agent.game_state,self.agent.game_state.rotation,self.event.camera_field_of_view,self.agent.nav.scene_obstacles_dict.values())
@@ -100,26 +103,28 @@ class SequenceGenerator(object):
         #self.pick_up_obstacles(all_obstacles=True)
 
         if self.agent.game_state.trophy_picked_up == True:
+            # print("TROPHY PICKED UP, RETURNING")
             return
         if self.agent.game_state.goals_found :
-            #print ("Object found returning to main ")
+            # print ("Object found returning to main")
             self.pick_up_obstacles(possible_trophy_obstacles=True)
 
         if self.agent.game_state.trophy_picked_up == True:
+            # print("TROPHY PICKED UP, RETURNING")
             return
     
         overall_area = 102
         pose = game_util.get_pose(self.game_state)[:3]
-        #print ("overall area",overall_area)
-        #print (" poly area " , self.agent.game_state.world_poly.area)
+        # print ("overall area",overall_area)
+        # print (" poly area " , self.agent.game_state.world_poly.area)
         while overall_area * 0.85 >  self.agent.game_state.world_poly.area or len(self.agent.game_state.global_obstacles) == 0 :
-            #print ("In the main for loop of executtion")
+            # print ("In the main for loop of executtion")
             points_checked = 0
             #z+=1
             max_visible_position = []
             processed_points = {}
             start_time = time.time()
-            #print(exploration_routine)
+            print(exploration_routine)
             min_distance = 20
             while (len(max_visible_position) == 0):
                 max_visible = 0
@@ -146,7 +151,7 @@ class SequenceGenerator(object):
             end_time = time.time()
 
             time_taken = end_time-start_time
-            #print("time taken to select next position", end_time - start_time)
+            # print("time taken to select next position", end_time - start_time)
             if len(max_visible_position) == 0:
                 break
             new_end_point = [0] * 3
@@ -154,47 +159,56 @@ class SequenceGenerator(object):
             new_end_point[1] = max_visible_position[-1][1] *constants.AGENT_STEP_SIZE
             new_end_point[2] = pose[2]
 
-            #print("New goal selected : ", new_end_point)
+            # print("New goal selected : ", new_end_point)
 
             nav_success = self.agent.nav.go_to_goal(new_end_point, self.agent, success_distance)
             exploration_routine.remove(max_visible_position[-1])
 
-            if nav_success == False :
-                continue
+            # if nav_success == False :
+            #     print(9)
+            #     continue
 
             if self.agent.game_state.goals_found:
                 self.pick_up_obstacles(possible_trophy_obstacles=True)
 
             if self.agent.game_state.trophy_picked_up == True:
+                # print(8)
                 return
             cover_floor.explore_point(self.agent.game_state.position['x'], self.agent.game_state.position['z'], self.agent,
                                       self.agent.nav.scene_obstacles_dict.values())
             if self.agent.game_state.trophy_picked_up == True:
+                # print(7)
                 return
             if self.agent.game_state.goals_found :
+                # print(6)
                 self.pick_up_obstacles(possible_trophy_obstacles=True)
                 #self.go_to_goal_and_pick()
             if self.agent.game_state.trophy_picked_up == True:
+                # print(5)
                 return
 
             if self.agent.game_state.number_actions > constants.MAX_STEPS :
-                #print ("Too many actions performed")
+                # print ("Too many actions performed")
                 return
             if len(exploration_routine) == 0:
+                # print(4)
                 #self.go_to_goal_and_pick()
                 #print ("explored a lot of points but objects not found")
                 break
 
-        if self.agent.game_state.trophy_picked_up == True:
-            return
-        if self.agent.game_state.goals_found :
-            self.pick_up_obstacles(possible_trophy_obstacles=True)
-        if self.agent.game_state.trophy_picked_up == True:
-            return
+        # if self.agent.game_state.trophy_picked_up == True:
+        #     # print(3)
+        #     return
+        # if self.agent.game_state.goals_found :
+        #     self.pick_up_obstacles(possible_trophy_obstacles=True)
+        # if self.agent.game_state.trophy_picked_up == True:
+        #     # print(1)
+        #     return
 
-        self.explore_all_objects()
-        if self.agent.game_state.trophy_picked_up == True:
-            return
+        # self.explore_all_objects()
+        # if self.agent.game_state.trophy_picked_up == True:
+        #     # print(2)
+        #     return
         self.pick_up_obstacles(all_obstacles=True)
     
         #for obstacle in self.agent.game_state.global_obstacles :
@@ -288,15 +302,16 @@ class SequenceGenerator(object):
             if going_closer_counter > 2:
                 break
   
-    ''' 
-    Function to update the status of the world after a pick up action
-    
-    If the pick up was successfull and it was the trophy - we are done
-    If the pick up was successfull and it isnt the trophy - we drop it
-    If the pick up was not successfull - we update the object with whatever info we get    
 
-    '''
-    def update_picked_up(self,target_obj):          
+    def update_picked_up(self,target_obj):
+        """ 
+        Function to update the status of the world after a pick up action
+        
+        If the pick up was successfull and it was the trophy - we are done
+        If the pick up was successfull and it isnt the trophy - we drop it
+        If the pick up was not successfull - we update the object with whatever info we get    
+        """
+                  
         if self.agent.game_state.event.return_status == "SUCCESSFUL" :
             #print ("object picked up rewards attained = " , self.agent.game_state.event.reward)
             if self.agent.game_state.event.reward > -1* (self.agent.game_state.number_actions*0.001) +0.5 :
@@ -308,14 +323,12 @@ class SequenceGenerator(object):
                 self.agent.game_state.step(action)
                 self.look_straight()
             return True
-                
         elif self.agent.game_state.event.return_status == "NOT_INTERACTABLE" or  \
                 self.agent.game_state.event.return_status == "NOT_OBJECT" or  \
                 self.agent.game_state.event.return_status == "NOT_PICKUPABLE" :
             self.update_object_picked_up(target_obj,True)
             self.look_straight()
             return True
-
         else :
             return False
 
@@ -324,8 +337,6 @@ class SequenceGenerator(object):
             if target_obj.id == obstacle.id :
                 self.agent.game_state.global_obstacles[i].is_picked_and_not_trophy = pick_up_status
                 return 
-
-
 
     def get_obj_pixels(self,target_obj,get_goal_pixels=False):
         #arr_mask = np.array(self.agent.game_state.event.object_mask_list[-1])

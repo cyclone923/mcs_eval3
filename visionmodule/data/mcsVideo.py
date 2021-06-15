@@ -35,7 +35,6 @@ class MCSVIDEODetection(Detection):
         '''
         super(MCSVIDEODetection, self).__init__(image_path,
                                             mask_out_ch,
-                                            option.sem_weights,
                                             transform,
                                             AnnotationTransform(option),
                                             running_mode,
@@ -64,7 +63,7 @@ class MCSVIDEODetection(Detection):
         key = '.jpg'
         image_set_index = []
         for fdir in fdir_list:
-            glob_imgs = glob(osp.join(base_dir, fdir, '*'+key))
+            glob_imgs = glob(osp.join(base_dir, fdir, '*' + key))
             img_list = [osp.join(fdir, osp.basename(v).split(key)[0]) for v in glob_imgs]
             image_set_index += img_list
         return image_set_index
@@ -108,18 +107,29 @@ class MCSVIDEODetection(Detection):
 
         # read image
         img = cv2.imread(osp.join(self.root, sub_folder, fname + '.jpg'))
+        if img is None:
+            print(osp.join(self.root, sub_folder, fname + '.jpg'))
         height, width, _ = img.shape
 
         if self.read_depth:
             depth_file = osp.join(self.root, sub_folder, fname.replace('original', 'depth') + '.png')
+
+            # check if the file exists, if not, skip current example
             if os.path.exists(depth_file):
                 depthI = smisc.imread(depth_file, mode='P')
                 depthI = depthI[:, :, None]
             else:
+                return self.pull_item((index+1) % len(self.ids))
                 sys.exit("can not find the depth file", depth_file)
 
         num_crowds = 0
         if self.has_gt:
+            # check if the file exists, if not, skip current example
+            sem_file  = osp.join(self.root, sub_folder, fname.replace('original', 'cls')+'.png')
+            inst_file  = osp.join(self.root, sub_folder, fname.replace('original', 'inst')+'.png')
+            if (not os.path.exists(sem_file)) or (not os.path.exists(inst_file)):
+                return self.pull_item((index+1) % len(self.ids))
+            
             anns = self.pull_anno(index)
             semI, masks, target = anns['sem'], anns['inst_mask'], anns['bbox']
             if self.select_semids is not None and \

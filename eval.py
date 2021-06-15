@@ -35,7 +35,7 @@ class Evaluation3_Agent:
         self.level = config_ini['MCS']['metadata']
         assert self.level in ['oracle', 'level1', 'level2']
 
-        self.exploration_agent = SequenceGenerator(None, self.controller, self.level)
+        self.exploration_agent = SequenceGenerator(None, self.controller, self.level, None)
         self.scene_type = scene_type
         # self.agency_voe_agent = AgencyVoeAgent(self.controller, self.level)
         self.gravity_agent = gravity_agent.GravityAgent(self.controller, self.level)
@@ -51,8 +51,10 @@ class Evaluation3_Agent:
         goal_type = scene_config['goal']['category']
         if goal_type == "intuitive physics":
             if 'gravity' in scene_config['name'] or self.scene_type == 'gravity':
+                print("\nGRAVITY SCENE...\n")
                 return self.gravity_agent.run_scene(scene_config, one_scene)
             else:
+                print("\nPHYSICS VOE SCENE...\n")
                 return self.phys_voe.run_scene(scene_config, one_scene)
         elif goal_type == "agents":
             if self.level == "level1":
@@ -60,6 +62,7 @@ class Evaluation3_Agent:
                 return
             self.agency_voe_agent.run_scene(scene_config)
         elif goal_type == "retrieval":
+            print("\nPLAYROOM SCENE...\n")
             self.exploration_agent.run_scene(scene_config)
         else:
             print("Current goal type: {}".format(goal_type))
@@ -72,7 +75,7 @@ def make_parser():
     parser.add_argument('--config', default='mcs_config.ini')
     parser.add_argument('--prefix', default='out')
     parser.add_argument('--scenes', default='different_scenes')
-    parser.add_argument('--scene-type', default='gravity')
+    parser.add_argument('--scene-type', default='')
     return parser
 
 

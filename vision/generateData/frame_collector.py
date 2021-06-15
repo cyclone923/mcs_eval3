@@ -6,7 +6,7 @@ from vision.generateData.instSeg_parse_mask import setup_configuration
 class Frame_collector:
 
     def __init__(self, scene_dir, start_scene_number,
-                       scene_type='voe', fg_class_en=False):
+                       scene_type='interact', fg_class_en=False):
         """
         @Param: scene_dir -- directory to saveout data
                 start_scene_number -- INT
@@ -26,6 +26,8 @@ class Frame_collector:
         self.shap_new_keys   = []
         self.stru_new_keys   = []
 
+        self.unique_shapes = set()
+
         self.count_hist = {'all': 0}
         for key in self.shape_keys:
             self.count_hist[key] = 0
@@ -33,6 +35,11 @@ class Frame_collector:
     def save_frame(self, step_output, saveImage=True):
         # print("Save Image!")
         if saveImage:
+            # print("start save_frame() step_#: ", self.step)
+            # print("start save_frame() scene_#: ", self.scene_number)
+            # print("len(step_output.image_list): ", len(step_output.image_list))
+            # print("start save_frame(): ", self.result_dir)
+
             for j in range(len(step_output.image_list)):
                 step_output.image_list[j].save(f'{self.result_dir}/original-{self.step}-{j}.jpg')
                 maskI = np.asarray(step_output.object_mask_list[j]) # [ht, wd, 3] in RGB
@@ -44,8 +51,11 @@ class Frame_collector:
 
                 save_depth_image(np.asarray(step_output.depth_map_list[j]),
                                             result_dir = self.result_dir, sname=f'-{self.step}-{j}')
+                # print(self.result_dir, np.sum(np.asarray(step_output.depth_map_list[j])))
             self.step += 1
+            # print("post save_frame(): ", self.result_dir)
         else:
+            print("Not saving image...")
             pass
 
         # for checking the FG objects and BG objects
@@ -55,6 +65,7 @@ class Frame_collector:
                 self.count_hist[i.shape] = 0
             self.count_hist[i.shape] += 1
             self.count_hist['all'] += 1
+            self.unique_shapes.add(i.shape)
 
         for i in step_output.structural_object_list:
             if not any(s in i.uuid for s in (self.uuid_keys+self.stru_new_keys)):
@@ -62,12 +73,16 @@ class Frame_collector:
                 #print(i.uuid, i.color) # uuid need to be finely categorized
 
     def reset(self):
+        print("self.result_dir pre-reset: ", self.result_dir)
         self.scene_number += 1
+        print("self.step", self.step)
         self.step = 0
         self.result_dir = os.path.join(self.scene_dir, 'scene_'+str(self.scene_number))
         os.makedirs(self.result_dir, exist_ok=True)
+        print("self.result_dir: ", self.result_dir)
         print("Reset, Current Scene: {}".format(self.scene_number))
         #print("un-set uuid key including: ", self.stru_new_keys)
         #print("un-set shape key including: ", self.shap_new_keys)
         print("statistical shape key counts: ", self.count_hist)
+        print("Unique shapes: ", self.unique_shapes)
         print("--------------------------------------------------------")

@@ -1,4 +1,4 @@
-from vision.instSeg.data.base_config import *
+from .base_config import *
 
 # ----------------------- DATASETS ----------------------- #
 MCSVIDEO_INTER_CLASSES_BG = ['others_bg', 'floor', 'ceiling', 'wall'] #0~3
@@ -49,11 +49,11 @@ mcsvideo_dataset_base = Config({
 mcsvideo3_interact_dataset = mcsvideo_dataset_base.copy({
     'name': 'mcs interaction',
 
-    'train_images': '../dataset/mcsvideo3/',
-    'train_info': '../dataset/mcsvideo3/interaction_scenes/train.txt',
+    'train_images': './data/dataset/mcsvideo/interaction_scenes/',
+    'train_info': './data/dataset/mcsvideo/interaction_scenes/train.txt',
 
-    'valid_images': '../dataset/mcsvideo3/',
-    'valid_info': '../dataset/mcsvideo3/interaction_scenes/val.txt',
+    'valid_images': './data/dataset/mcsvideo/interaction_scenes/',
+    'valid_info': './data/dataset/mcsvideo/interaction_scenes/val.txt',
 
     'class_names': MCSVIDEO_INTER_CLASSES,
     'label_map': MCSVIDEO_INTER_LABEL_MAP,
@@ -66,11 +66,11 @@ mcsvideo3_interact_dataset = mcsvideo_dataset_base.copy({
 mcsvideo3_interact_depth_dataset = mcsvideo_dataset_base.copy({
     'name': 'mcs interaction',
 
-    'train_images': '../dataset/mcsvideo3/',
-    'train_info': '../dataset/mcsvideo3/interaction_scenes/train.txt',
+    'train_images': './data/dataset/mcsvideo/interaction_scenes/',
+    'train_info': './data/dataset/mcsvideo/interaction_scenes/train.txt',
 
-    'valid_images': '../dataset/mcsvideo3/',
-    'valid_info': '../dataset/mcsvideo3/interaction_scenes/val.txt',
+    'valid_images': './data/dataset/mcsvideo/interaction_scenes/',
+    'valid_info': './data/dataset/mcsvideo/interaction_scenes/val.txt',
 
     'class_names': MCSVIDEO_INTER_CLASSES,
     'label_map': MCSVIDEO_INTER_LABEL_MAP,
@@ -90,7 +90,7 @@ mcsvideo3_base_config = Config({
     'num_fg_classes': len(MCSVIDEO_INTER_CLASSES_FG),
     'gt_inst_ch':  24, # channels to parse GT instances mask
 
-    'max_iter': 400000,
+    'max_iter': 400000, # REDUCE IT
 
     # The maximum number of detections for evaluation
     'max_num_detections': 50,

@@ -5,10 +5,10 @@ fastdtw==0.3.4
 numpy-indexed==0.3.5
 numpy-quaternion==2020.5.19.15.27.24
 pathfinding==0.0.4
-open3d==0.12.0
 pip-chill==1.0.1
 pybullet==3.1.0
 ray==1.0.1
 rich==9.13.0
 scikit-image==0.17.2
 webcolors==1.11.1
+open3d==0.9

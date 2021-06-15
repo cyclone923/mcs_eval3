@@ -16,14 +16,7 @@ class McsEnv:
     """
     Wrapper base class
     """
-    def __init__(self, task=None, scene_type=None, seed=None, start_scene_number=0, frame_collector=None, set_trophy=False, trophy_prob=1):
-
-        if platform.system() == "Linux":
-            app = "unity_app/MCS-AI2-THOR-Unity-App-v0.3.5.x86_64"
-        elif platform.system() == "Darwin":
-            app = "unity_app/MCSai2thor.app/Contents/MacOS/MCSai2thor"
-        else:
-            app = None
+    def __init__(self, task=None, scene_type=None, seed=None, start_scene_number=0, frame_collector=None, set_trophy=False, trophy_prob=1, controller = None):
 
         self.trophy_config = None
         self.trophy_prob = None
@@ -31,9 +24,8 @@ class McsEnv:
             goal_dir = os.path.join(task, "eval3")
             all_scenes = sorted(os.listdir(goal_dir))
             all_scenes = [os.path.join(goal_dir, one_scene) for one_scene in all_scenes]
-            print (len(all_scenes))
             assert len(all_scenes) == 1
-            self.trophy_config, _ = mcs.load_config_json_file(all_scenes[0])
+            self.trophy_config, _ = mcs.load_scene_json_file(all_scenes[0])
             self.debug_dir = os.path.join(task, "debug")
             self.trophy_prob = trophy_prob
             try:
@@ -42,10 +34,11 @@ class McsEnv:
                 pass
             os.makedirs(self.debug_dir, exist_ok=True)
 
-        os.environ['MCS_CONFIG_FILE_PATH'] = os.path.join(os.getcwd(), "mcs_config.yaml")
+        os.environ['MCS_CONFIG_FILE_PATH'] = os.path.join(os.getcwd(), "mcs_config.ini")
 
         self.controller = mcs.create_controller(
-            os.path.join(app)
+            "unity_app/MCS-AI2-THOR-Unity-App-v0.4.3.x86_64",
+            config_file_path = os.environ['MCS_CONFIG_FILE_PATH']
         )
 
         if task and scene_type:
@@ -55,6 +48,7 @@ class McsEnv:
         else:
             self.all_scenes = [os.path.join("scenes", "playroom.json")]
 
+        # print(self.all_scenes)
         self.current_scene = start_scene_number - 1
 
         if seed:
@@ -62,7 +56,6 @@ class McsEnv:
 
         self.add_obstacle_func = None
         self.frame_collector = frame_collector
-        print("Frame collector: {}".format(self.frame_collector))
 
     def step(self, **kwargs):
         self.step_output = self.controller.step(**kwargs)
@@ -78,12 +71,12 @@ class McsEnv:
     def reset(self, random_init=False, repeat_current=False):
         if not repeat_current:
             if not random_init:
+                print("Current Scene: ", self.all_scenes[self.current_scene])
+                self.scene_config, status = mcs.load_scene_json_file(self.all_scenes[self.current_scene])
                 self.current_scene += 1
-                # print(self.all_scenes[self.current_scene])
-                self.scene_config, status = mcs.load_config_json_file(self.all_scenes[self.current_scene])
             else:
                 self.current_scene = random.randint(0, len(self.all_scenes) - 1)
-                self.scene_config, status = mcs.load_config_json_file(self.all_scenes[self.current_scene])
+                self.scene_config, status = mcs.load_scene_json_file(self.all_scenes[self.current_scene])
 
         # if "goal" in self.scene_config:
         #     print(self.scene_config['goal']["description"])
@@ -91,16 +84,13 @@ class McsEnv:
         #     print(self.scene_config['answer']["choice"])
 
         if self.trophy_config:
+            print("Trohpy config??? ")
             self.scene_config = set_goal_with_trophy(self.scene_config, self.trophy_config, trophy_prob=self.trophy_prob)
             with open(os.path.join(self.debug_dir, 'box_trophy_{0:0=4d}.json'.format(self.current_scene)), 'w') as fp:
                 json.dump(self.scene_config, fp, indent=4)
 
+        # print(self.scene_config)
         self.step_output = self.controller.start_scene(self.scene_config)
-        # self.step_output = self.controller.step(action="Pass")
-
-
-
-
 
 if __name__ == '__main__':
     McsEnv()

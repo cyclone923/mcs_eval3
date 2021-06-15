@@ -189,6 +189,27 @@ def display_segment_result(bgrI, depthI, net_out):
 
     print('-- object class score: \n', np.round(net_out['obj_class_score'], 3))
 
+
+    from vision.instSeg.data.config_mcsVideo3_inter import MCSVIDEO_INTER_CLASSES_FG
+
+    SOCCER_INDEX = MCSVIDEO_INTER_CLASSES_FG.index('trophy') + 1
+    BOX_INDEX = MCSVIDEO_INTER_CLASSES_FG.index('box') + 1
+
+    cls = np.argmax(net_out['obj_class_score'], axis=1)
+    print("all object scores : ", net_out["obj_class_score"])
+    print("Soccer Ball idx ", SOCCER_INDEX)
+    print("Container idx ", BOX_INDEX)
+    print("cls ", cls)
+    print("net-mask ", len(net_out['net-mask']))
+    print("mask_prob ", len(net_out['mask_prob']))
+    n_th_obj = None
+    if SOCCER_INDEX in cls:
+        n_th_obj = np.where(cls == SOCCER_INDEX)[0]
+        print("find trophy in {}th fg object".format(n_th_obj))
+
+    # self.debug_out(bgrI, depthI, ret)
+
+
     fig, ax = plt.subplots(2,2)
     ax[0,0].imshow(bgrI[..., [2,1,0]])
     ax[0,1].imshow(depthI, cmap='gray')
@@ -208,6 +229,8 @@ def demo_interact_segmentation():
 
     model = MaskAndClassPredictor(dataset='mcsvideo3_inter',
                                   config='plus_resnet50_config_depth_MC',
+                                #   weights='./visionmodule/Result/mcsvideo3-inter/weights/test_first_v1/dvis_plus_resnet50_mul_channels_0_26_interrupt.pth')
+                                #   weights='./training_logs/dvis_plus_resnet50_mul_channels_26_19600.pth')
                                   weights='./vision/instSeg/dvis_resnet50_mc.pth')
 
     img_list = glob.glob('./vision/instSeg/demo/interact/*.jpg')
@@ -242,7 +265,7 @@ def demo_voe_segmentation():
 
 if __name__=='__main__':
 
-    demo_voe_segmentation()
+    # demo_voe_segmentation()
 
-    #demo_interact_segmentation()
+    demo_interact_segmentation()
 

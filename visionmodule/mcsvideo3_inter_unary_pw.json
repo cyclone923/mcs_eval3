@@ -1,0 +1,49 @@
+{
+    "args":{
+        "dataset": "mcsvideo3_interact_depth_dataset",
+        "batch_size": 5,
+        "num_workers": 4,
+        "start_iter": 0,
+        "config": "plus_resnet50_config_depth_MC",
+        "resume": "../vision/instSeg/dvis_resnet50_mc.pth",
+        "save_folder": "./Result/mcsvideo3-inter/weights/",
+        "log_folder": "./Result/mcsvideo3-inter/logs/",
+        "exp_name": "test_first_v1",
+        "lr": 1e-5,
+        "save_interval": 200
+    },
+    "option":{
+        "pi_alpha": 0.3,
+        "pi_margin": 1.0,
+        "pi_smpl_pairs": 4096,
+        "pi_smpl_wght_en": 1,
+        "pi_hasBG": 1,
+
+        "binary_alpha": 10.0,
+        "binary_margin":1.0,
+        "binary_loss_type": "l1",
+
+        "eval_en": 1,
+        "eval_size_thrs":1,
+        "eval_iou_thr":0.5,
+        "eval_classes":[1],
+
+        "cls_en":1.0,
+        "cls_cls_alpha":1.0,
+        "cls_iou_alpha":0.5,
+        "cls_pos_iou_thr": 0.2,
+
+        "regul_alpha": 0.1,
+        "iou_alpha": 1.0,
+        
+        "model_firstLayer_en": 1, 
+        "model_lastLayer_en": 1, 
+        "model_clsLayer_en": 1, 
+        
+        "bkb_lr_alpha": 1.0,
+        "fpn_lr_alpha": 1.0,
+        "proto_net_lr_alpha": 1.0,
+        "cls_lr_alpha": 1.0,
+        "iou_lr_alpha": 100.0
+    }
+}

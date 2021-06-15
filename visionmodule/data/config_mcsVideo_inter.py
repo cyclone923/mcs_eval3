@@ -94,7 +94,7 @@ mcsvideo_base_config = Config({
     'num_fg_classes': len(MCSVIDEO_INTER_CLASSES_FG),
     'gt_inst_ch':  24, # channels to parse GT instances mask
 
-    'max_iter': 400000,
+    'max_iter': 50000,
 
     # The maximum number of detections for evaluation
     'max_num_detections': 50,
