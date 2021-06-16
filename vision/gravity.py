@@ -506,6 +506,9 @@ class ObjectV2:
         These range from (-1, 1), with the top left pixel at index [0,0] having
         UV coords (-1, 1).
         """
+        depth_scale_correction_factor = 255 / CAM_CLIP_PLANES[1]
+        depth = (depth_scale_correction_factor * depth).astype(np.uint8)
+
         aspect_ratio = (depth.shape[1], depth.shape[0])
         #print ("aspect ratio" ,aspect_ratio)
 
@@ -533,6 +536,7 @@ class ObjectV2:
         const_zs = np.ones((px_dir_vec.shape[0:2])+(1,))
         px_dir_vec = np.concatenate((px_dir_vec, const_zs), axis=-1)
         camera_offsets = px_dir_vec * np.expand_dims(z_depth, axis=-1)
+        camera_offsets /= depth_scale_correction_factor
 
         return camera_offsets
 
@@ -552,7 +556,7 @@ class ObjectV2:
         scene_point_cloud.points = o3d.utility.Vector3dVector(scene_points)
         
         obj_idx = np.nonzero(obj.obj_mask.reshape(-1))[0]
-        obj_point_cloud = scene_point_cloud.select_by_index(obj_idx)
+        obj_point_cloud = scene_point_cloud.select_down_sample(obj_idx)
         self.obj_cloud = obj_point_cloud
 
         assert obj_point_cloud.dimension() == 3, "RGB-D couldn't return a 3D object!"
