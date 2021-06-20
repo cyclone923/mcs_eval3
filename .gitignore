@@ -71,6 +71,8 @@ tracker/training_dataset.p
 tracker/training_data/
 masks-occluder/training_dataset.p
 masks-occluder/SCENE_HISTORY/
+masks-occluder/scenes
+scene_points/
 
 
 #other

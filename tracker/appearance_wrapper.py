@@ -55,7 +55,7 @@ def object_appearance_match(image, scene_name,frame_num,objects_info, device, le
         image_area = np.prod(obj_current_image.size)
         #wait till object is in clear view
         if 'base_image' not in objects_info[obj_key].keys() or \
-            (len(objects_info[obj_key]['position_history'])<5 and image_area>objects_info[obj_key]['base_image']['image_area']):
+            (len(objects_info[obj_key]['position_history'])<3 and image_area>=objects_info[obj_key]['base_image']['image_area']):
             objects_info[obj_key]['base_image'] = dict()
             objects_info[obj_key]['base_image']['image_area'] = np.prod(obj_current_image.size)
             objects_info[obj_key]['base_image']['prev_img'] = [obj_current_image,]
@@ -69,8 +69,8 @@ def object_appearance_match(image, scene_name,frame_num,objects_info, device, le
 
         # if we have enough object images?
         if len(objects_info[obj_key]['base_image']['prev_img'])>5:
-            previousObjs = objects_info[obj_key]['base_image']['prev_img'][-6:]
-            current_obj = previousObjs[-1]
+            previousObjs = objects_info[obj_key]['base_image']['prev_img'][:6]
+            current_obj = objects_info[obj_key]['base_image']['prev_img'][-1]
             # objects_info[obj_key]['base_image']['prev_img'][-2].save('/home/gulsh/mcs_opics/my-2' + str(obj_key)+'.png')
             meanMatch = []
             # doing frame by frame object match between cuurent object [-1] and all objects seen before that
@@ -101,7 +101,7 @@ def object_appearance_match(image, scene_name,frame_num,objects_info, device, le
                     # img1 = img1.reshape(32,32,3)
                     # img1 = np.swapaxes(img1, 0,2)
                     plt.imshow(img1)
-                    plt.text(52,52,str(matchScore))
+                    plt.text(48,58,str(matchScore), fontsize='large', color='black')
                     fig.add_subplot(1,2,2)
                     # obj2 = PIL.Image.fromarray(np.uint8(objects_info[obj_key]['base_image']['prev_img'][i])[:,:,::-1])
                     # obj2 = transform(obj2).unsqueeze(0).reshape(3,32,32)
