@@ -43,7 +43,7 @@ Functions to add in main() function of eval4_data_gen.py to generate relevant da
 2. get_data_for_tracking(env, paths, train_dataset_path) --> For RGBD frames and track information of objects as per MOT data format.
 Running this function will generate data files for scenes present in masks-occluder/scenes/ directory
 
-Data generated from get_data_for_tracking() function gets stored in tracking_data directory. The directory structure is as follows:
+Data generated from get_data_for_tracking function gets stored in tracking_data directory. The directory structure is as follows:
 
 tracking_data
     -Depth
