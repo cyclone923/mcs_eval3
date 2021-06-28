@@ -45,7 +45,7 @@ FOCAL = 30.85795
 OBJ_KIND_MODEL_NAME = "model.p"
 
 @dataclass
-class ObjectV2:
+class Object:
     rgb_im: np.ndarray  # Isomeric view
     obj_mask: np.ndarray
     depth_map: np.ndarray
@@ -189,7 +189,7 @@ class ObjectV2:
         z = sum(pt["z"] for pt in self.dims) / 8
         self.centroid = (x, y, z)
 
-        self.centroid_px = L2DataPacketV2._get_obj_moments(self.obj_mask)
+        self.centroid_px = L2DataPacket._get_obj_moments(self.obj_mask)
 
     @staticmethod
     def _apply_good_contours(img, min_area=20, min_width=5, min_height=5) -> tuple:
@@ -356,7 +356,7 @@ class ObjectV2:
         self.kind = kind_pred
         
 @dataclass
-class L2DataPacketV2:
+class L2DataPacket:
 
     step_number: int
     step_meta: mcs.StepMetadata
@@ -418,7 +418,7 @@ class L2DataPacketV2:
         # Determining floor & wall
         floor_found, wall_found = False, False
         for obj in obj_masks:
-            this_ob = ObjectV2(
+            this_ob = Object(
                 rgb_im=self.rgb_im,
                 obj_mask=obj,
                 depth_map=self.depth_map,
@@ -426,6 +426,7 @@ class L2DataPacketV2:
 
             objects.append(this_ob)
 
+        print(len(objects))
         return objects
 
     def determine_obj_roles(self):
@@ -434,7 +435,7 @@ class L2DataPacketV2:
         floor_found, wall_found = False, False
         for this_ob in self.objects:
 
-            w, h = ObjectV2._get_obj_dims(this_ob.obj_mask)
+            w, h = Object._get_obj_dims(this_ob.obj_mask)
             cX, cY = self._get_obj_moments(this_ob.obj_mask)
 
             if w > 0.9 * MAX_X: # Wide enough to be wall or floor
@@ -467,7 +468,7 @@ class L2DataPacketV2:
         for idx, this_ob in enumerate(self.objects):
             if this_ob.role not in ["floor", "back-wall", "pole"]:
                 _, cY = self._get_obj_moments(this_ob.obj_mask)
-                w, h = ObjectV2._get_obj_dims(this_ob.obj_mask)
+                w, h = Object._get_obj_dims(this_ob.obj_mask)
                 # if centroid is sufficiently near the middle of the screen and tall enough to be an occluder
                 if np.abs(mid_cY - cY) < nearest_cY and np.abs(mid_cY - cY) < 50 and h > (2/3) * MAX_Y:
                     occluder_idx = idx
@@ -475,10 +476,6 @@ class L2DataPacketV2:
             if occluder_idx is not None:
                 self.objects[occluder_idx].role = "occluder"
                 occluder_idx = None
-
-        # for idx, this_ob in enumerate(self.objects):
-        #     if this_ob.role == "default":
-        #         this_ob.id = 
 
     def calculate_physical_props(self):
         for this_ob in self.objects:

@@ -5,7 +5,7 @@ import numpy as np
 import types
 from numpy import random
 from math import sqrt
-from vision.instSeg.data import MEANS, STD
+from data import MEANS, STD
 
 
 def intersect(box_a, box_b):
