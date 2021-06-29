@@ -48,18 +48,24 @@ def render_in_pybullet(step_output, velocities=None):
                 "aab_max": []
             }
 
+    # initial velocities
+    for obj_id in velocities:
+        if obj_id in obj_dict['default']:
+            boxId = obj_dict['default'][obj_id]['id']
+            pos, orn = p.getBasePositionAndOrientation(boxId)
+            obj_vel = velocities[obj_id]
+
+            base_vel = p.getBaseVelocity(boxId)
+            console.log(base_vel)
+            console.log(obj_vel)
+
+            p.resetBaseVelocity(boxId, linearVelocity=obj_vel)
+
     steps = 0
     # let simulation run
     while steps < 1000:
         p.stepSimulation()
         time.sleep(1./400.)
-
-        for obj_id in velocities:
-            if obj_id in obj_dict['default']:
-                boxId = obj_dict['default'][obj_id]['id']
-                pos, orn = p.getBasePositionAndOrientation(boxId)
-                obj_vel = velocities[obj_id]
-                p.applyExternalForce(boxId, linkIndex=-1, forceObj=3*obj_vel, posObj=pos, flags=p.WORLD_FRAME)
 
         at_rest = []
         for i, obj in obj_dict["default"].items():
