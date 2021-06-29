@@ -345,13 +345,19 @@ class PhysicsVoeAgent:
                 for obj_id, obj in self.track_info['objects'].items():
                     if len(obj['position']) == OBJ_TIME_TO_PASS_THROUGH:
                         # transform unity position to pybullet position
-                        initial_position = np.array(list(obj['position'][0].values()))
+                        initial_position = list(obj['position'][0].values())
                         initial_position = np.array([initial_position[1], initial_position[2], initial_position[0]])
                         
-                        current_position = np.array(list(obj['position'][-1].values()))
+                        current_position = list(obj['position'][-1].values())
                         current_position = np.array([current_position[1], current_position[2], current_position[0]])
 
-                        new_obj_velocity[obj_id] = (current_position - initial_position) / 3 ## average velocity of object
+                        # TODO: If object is moving down during pass through, we can remove velocity
+                        new_vel = (current_position - initial_position) / OBJ_TIME_TO_PASS_THROUGH ## average velocity of object
+                        
+                        new_obj_velocity[obj_id] = new_vel
+
+
+
                 console.log(new_obj_velocity)
                 _, object_sims = pybullet_utilities.render_in_pybullet(step_output_dict, new_obj_velocity)
                 for obj_id, obj in self.track_info['objects'].items():
