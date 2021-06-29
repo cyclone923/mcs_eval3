@@ -51,15 +51,18 @@ def render_in_pybullet(step_output, velocities=None):
     # initial velocities
     for obj_id in velocities:
         if obj_id in obj_dict['default']:
-            boxId = obj_dict['default'][obj_id]['id']
-            pos, orn = p.getBasePositionAndOrientation(boxId)
-            obj_vel = velocities[obj_id]
-
+            # DEBUG
             base_vel = p.getBaseVelocity(boxId)
             console.log(base_vel)
-            console.log(obj_vel)
+            console.log(velocities[obj_id])
 
-            p.resetBaseVelocity(boxId, linearVelocity=obj_vel)
+            # get object id
+            boxId = obj_dict['default'][obj_id]['id']
+            # set initial velocity of the object
+            p.resetBaseVelocity(boxId, linearVelocity=velocities[obj_id])
+            
+
+
 
     steps = 0
     # let simulation run
@@ -121,6 +124,7 @@ def render_in_pybullet(step_output, velocities=None):
     
 
 def getDims(obj):
+    # define initial conditions
     dims = obj["dimensions"]
     min_x = sys.maxsize
     min_y = sys.maxsize
@@ -129,6 +133,7 @@ def getDims(obj):
     max_y = -1*sys.maxsize
     max_z = -1*sys.maxsize
     
+    # deduce min and max dimensions from 3D bounding box
     for dim in dims:
         if dim['x'] <= min_x:
             min_x = dim['x']
@@ -144,10 +149,11 @@ def getDims(obj):
             min_z = dim['z']
         if dim['z'] >= max_z:
             max_z = dim['z']
-    # print([max_x, min_x, max_z, min_z, max_y, min_y])
+
     return [max_x - min_x, max_z - min_z, max_y - min_y]
 
 def getColor(color_vals):
+    # simple transformation to compatible space
     colors = list(color_vals.values())
     colors = np.divide(colors, 255)
     colors = list(colors)
@@ -157,32 +163,30 @@ def getColor(color_vals):
 def createObjectShape(obj):
     meshScale = getDims(obj)
     if obj["shape"] != "structural":
-        # generate noise on position and orientation
-        shift = [0, 0, 0]
-        # print(list(obj["rotation"].values()))
+        # initial object conditions
+        shift = [0, 0, 0] # change to initial orientation = 0
         start_orientation = p.getQuaternionFromEuler(shift)
-         
         start_position = list(obj["position"].values())
+         
+        # TODO: generate noise on position and orientation
         # pos_noise = np.random.normal(0,0.5,len(start_position))
         # start_position = start_position + pos_noise
+        
+        # convert between coordinate spaces
         start_position = [start_position[0], start_position[2], start_position[1]]
     else:
         shift = list(obj["rotation"].values())
         shift = [round(shift[0]), round(shift[2]), round(shift[1])]
         start_orientation = p.getQuaternionFromEuler(shift)
         
-        # shift = [0, 0, 0]
         start_position = list(obj["position"].values())
         start_position = [start_position[0], start_position[2], start_position[1]]
+    
     # set color
     rgba_color = getColor(obj["color"])
 
     visualShapeId = ''
     collisionShapeId = ''
-
-    # TESTING - load duck instead of object
-    # if obj["shape"] != "structural":
-    #     return p.loadURDF("duck_vhacd.urdf", basePosition=start_position, baseOrientation=start_orientation)
 
     # create visual and colision shapes
     if obj["shape"] == "cube" or obj["shape"] == "structural":
