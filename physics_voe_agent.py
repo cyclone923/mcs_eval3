@@ -351,9 +351,14 @@ class PhysicsVoeAgent:
                         current_position = list(obj['position'][-1].values())
                         current_position = np.array([current_position[1], current_position[2], current_position[0]])
 
-                        # TODO: If object is moving down during pass through, we can remove velocity
                         new_vel = (current_position - initial_position) / OBJ_TIME_TO_PASS_THROUGH ## average velocity of object
                         
+                        # TODO: this is temporary because we are using pixel coordinates in track_info
+                        new_vel[-1] = -1 * new_vel[-1]
+                        # if velocity is strictly free-fall - based on the assumption that it is being manually lowered
+                        if new_vel[2] < 0 and new_vel[0] == 0.0 and new_vel[1] == 0.0:
+                            new_vel[2] = 0.0 # set vertical velocity to none,  
+
                         new_obj_velocity[obj_id] = new_vel
 
 
