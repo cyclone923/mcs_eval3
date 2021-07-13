@@ -122,7 +122,7 @@ class DiscreteActionPlanner:
         return math.sqrt( (loc_x - goal_x)**2 + (loc_y - goal_y)**2)
 
     def heurstic(self,loc_x,loc_y, goal_x, goal_y):
-        return self.euclidean_distance(self,loc_x,loc_y, goal_x, goal_y)
+        return self.euclidean_distance(loc_x, loc_y, goal_x, goal_y)
 
     def manhattan_distance(self,loc_x,loc_y, goal_x, goal_y):
         return (abs(loc_x - goal_x) + abs(loc_y - goal_y))
