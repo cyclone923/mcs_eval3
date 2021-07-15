@@ -7,7 +7,9 @@ INIT_Z = 0
 INIT_R = 0
 INIT_H = 0
 
-ABS_MOVE = 0.5
+MOVE_DISTANCE = 0.5
+ABS_MOVE = MOVE_DISTANCE
+
 ABS_ROTATE = 10
 
 def similar(a, b, eps=1e-2):

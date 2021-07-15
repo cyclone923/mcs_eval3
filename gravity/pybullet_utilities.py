@@ -5,84 +5,114 @@ import sys
 import numpy as np
 import os
 import json
+import PIL
+from PIL import Image
+import matplotlib.pyplot as plt
+from rich.console import Console
 
-def render_in_pybullet(step_output, target, supporting, level):
-    # physicsClient = p.connect(p.GUI)#or p.DIRECT for non-graphical version
-    physicsClient = p.connect(p.DIRECT)
+console = Console()
 
+def render_in_pybullet(step_output, velocities=None):
+    physicsClient = p.connect(p.GUI)#or p.DIRECT for non-graphical version
+    # physicsClient = p.connect(p.DIRECT)
+    
     p.setAdditionalSearchPath(os.getcwd() + "/gravity/pybullet_objects/") #optionally
     p.setGravity(0,0,-10)
     planeId = p.loadURDF("plane100.urdf")
-    print(planeId)
     
     p.resetDebugVisualizerCamera(3, 0, -42.5, [0,0,0])
     
-    # get objects from output
-    obj_dict = {}
-    boxId = createObjectShape(step_output["structural_object_list"][supporting])
-    print(boxId)
-    if boxId == -1:
-        print("trouble building supporting object")
-    else:
-        obj_dict[supporting] = {
-        "boxID": boxId,
-        "orn": [],
-        "pos": []
-        }
+    # build objects in the object_list:
+    obj_dict = {
+        "default": {}
+    }
+    total_objects = 0
+    # target / supports
+    for obj_id, obj in step_output["object_list"].items():
 
-    # print(json.dumps(step_output["object_list"][target], indent=4))
-    # print(json.dumps(step_output["structural_object_list"][supporting], indent=4))
-    # quit()
-    boxId = createObjectShape(step_output["object_list"][target])
-    print(boxId)
-    
-    if boxId == -1:
-        print("trouble building target object")
-    else:
-        obj_dict[target] = {
-            "boxID": boxId,
-            "pos": [],
-            "orn": [],
-            "support_contact": [],
-            "floor_contact": [],
-            "aabbMin": [],
-            "aabbMax": []
-        }
+        boxId = createObjectShape(obj)
+        console.log(boxId)
+        if boxId == -1:
+            print("error creating obj: {}".format(obj.shape))
+        else:
+            total_objects += 1
+            obj_dict["default"][obj_id] = {
+                "id": boxId,
+                "pos": [],
+                "orn": [],
+                "floor_contact": [],
+                # a dict where each key is the box_id of another object, the value of that key is a list t entries long with pybullet
+                # contact calculation output. contacts[boxID][t] = () means no contact, contacts[boxID][t] != () means contact 
+                "object_contacts": {},
+                "aab_min": [],
+                "aab_max": []
+            }
 
-    # p.setRealTimeSimulation()
-    for i in range(750):
+    steps = 0
+    # let simulation run
+    while steps < 1000:
         p.stepSimulation()
         time.sleep(1./400.)
+
+        for obj_id in velocities:
+            if obj_id in obj_dict['default']:
+                boxId = obj_dict['default'][obj_id]['id']
+                pos, orn = p.getBasePositionAndOrientation(boxId)
+                obj_vel = velocities[obj_id]
+                p.applyExternalForce(boxId, linkIndex=-1, forceObj=3*obj_vel, posObj=pos, flags=p.WORLD_FRAME)
+
+        at_rest = []
+        for i, obj in obj_dict["default"].items():
+            # get position and orientation
+            cubePos, cubeOrn = p.getBasePositionAndOrientation(obj["id"])
+
+            # get bounding box
+            aabb_min, aabb_max = p.getAABB(obj["id"])
+            
+            # get floor contact of object
+            floor_contact = p.getContactPoints(obj["id"], planeId)
+
+            # get contact of other objects
+            for j, obj2 in obj_dict["default"].items():
+                if i != j:
+                    contact = p.getContactPoints(obj["id"], obj2["id"])
+
+                    # on first pass, we need to instantiate the list of contact over time
+                    if not obj2["id"] in obj["object_contacts"].keys():
+                        obj["object_contacts"][obj2["id"]] = [contact]
+                    else:
+                        obj["object_contacts"][obj2["id"]].append(contact)
+
+            # if object has not moved or rotated, say it is at rest
+            if steps > 1:
+                prev_pos = obj["pos"][-1]
+                prev_orn = obj["orn"][-1]
+                if np.isclose(cubePos, prev_pos, rtol=1e-04, atol=1e-05).all() and np.isclose(cubeOrn, prev_orn).all():
+                    at_rest.append(True)
+                else:
+                    at_rest.append(False)
+
+            # update lists for new point in time
+            obj["floor_contact"].append(floor_contact)
+            obj["aab_min"].append(aabb_min)
+            obj["aab_max"].append(aabb_max)
+            obj["pos"].append(cubePos)
+            obj["orn"].append(cubeOrn)
+
+            # save updates to obj_dict
+            obj_dict["default"][i] = obj
+
+        # all objects are at rest, go ahead and end the simulation early 
+        if steps > 100 and all(at_rest):
+            print("at rest")
+            break
+
+        steps += 1
     
-        # confirm there aren't any overlaps on target object
-        aabb_min, aabb_max = p.getAABB(obj_dict[target]["boxID"])
-        overlaps = p.getOverlappingObjects(aabb_min, aabb_max)
-        # print("overlaps", overlaps)
-        
-        # get contact points between target and supporting
-        object_contact = p.getContactPoints(obj_dict[target]["boxID"], obj_dict[supporting]["boxID"])
-        floor_contact = p.getContactPoints(obj_dict[target]["boxID"], planeId)
-        # if contact != ():
-        #     print("support and target are making contact")
-        #     print(contact)
-
-        # keep track of obj position
-        for obj in obj_dict:
-            if obj == target:
-                obj_dict[obj]["support_contact"].append(object_contact)
-                obj_dict[obj]["floor_contact"].append(floor_contact)
-                obj_dict[obj]["aabbMin"].append(aabb_min)
-                obj_dict[obj]["aabbMax"].append(aabb_max)
-            cubePos, cubeOrn = p.getBasePositionAndOrientation(obj_dict[obj]["boxID"])
-            obj_dict[obj]["pos"].append(cubePos)
-            obj_dict[obj]["orn"].append(cubeOrn)
-
     p.disconnect()
 
-    if level == "oracle":
-        return obj_dict
-    else:
-        return obj_dict
+    return steps, obj_dict    
+    
 
 def getDims(obj):
     dims = obj["dimensions"]
@@ -120,7 +150,6 @@ def getColor(color_vals):
 
 def createObjectShape(obj):
     meshScale = getDims(obj)
-    print(meshScale)
     if obj["shape"] != "structural":
         # generate noise on position and orientation
         shift = [0, 0, 0]
@@ -139,7 +168,6 @@ def createObjectShape(obj):
         # shift = [0, 0, 0]
         start_position = list(obj["position"].values())
         start_position = [start_position[0], start_position[2], start_position[1]]
-    print(start_position)
     # set color
     rgba_color = getColor(obj["color"])
 
@@ -151,7 +179,6 @@ def createObjectShape(obj):
     #     return p.loadURDF("duck_vhacd.urdf", basePosition=start_position, baseOrientation=start_orientation)
 
     # create visual and colision shapes
-    print("obj shape", obj["shape"])
     if obj["shape"] == "cube" or obj["shape"] == "structural":
         visualShapeId = p.createVisualShape(shapeType=p.GEOM_MESH,fileName="cube.obj", rgbaColor=rgba_color, specularColor=[0.4,.4,0], visualFramePosition=shift, meshScale=meshScale)
         collisionShapeId = p.createCollisionShape(shapeType=p.GEOM_MESH, fileName="cube.obj", collisionFramePosition=shift,meshScale=meshScale)
@@ -167,8 +194,8 @@ def createObjectShape(obj):
     elif "letter l" in obj["shape"]:
         meshScale = [meshScale[0], meshScale[1], meshScale[2] * 0.75] # hard coded transformations to compensate for unknown wonkiness... needs to be tested
         start_orientation = [start_orientation[0], start_orientation[1], 90, 0.011]
-        visualShapeId = p.createVisualShape(shapeType=p.GEOM_MESH,fileName="l_joint.obj", rgbaColor=rgba_color, specularColor=[0.4,.4,0], visualFramePosition=shift, meshScale=meshScale)
-        collisionShapeId = p.createCollisionShape(shapeType=p.GEOM_MESH, fileName="l_joint.obj", collisionFramePosition=shift, meshScale=meshScale)
+        visualShapeId = p.createVisualShape(shapeType=p.GEOM_MESH,fileName="L_joint.obj", rgbaColor=rgba_color, specularColor=[0.4,.4,0], visualFramePosition=shift, meshScale=meshScale)
+        collisionShapeId = p.createCollisionShape(shapeType=p.GEOM_MESH, fileName="L_joint.obj", collisionFramePosition=shift, meshScale=meshScale)
     elif "triangular prism" == obj["shape"]:
         meshScale = [meshScale[1], meshScale[2], meshScale[0]]
         visualShapeId = p.createVisualShape(shapeType=p.GEOM_MESH,fileName="triangular prism.obj", rgbaColor=rgba_color, specularColor=[0.4,.4,0], visualFramePosition=shift, meshScale=meshScale)
