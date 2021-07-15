@@ -1,4 +1,3 @@
-import machine_common_sense as mcs
 import shapely.geometry.polygon as sp
 import math
 from exploration.roadmap.fov import FieldOfView

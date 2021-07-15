@@ -18,7 +18,7 @@ class McsEnv:
         os.environ['MCS_CONFIG_FILE_PATH'] = str(base/'mcs_config.yaml')
 
         if platform.system() == "Linux":
-            app = base/'MCS-AI2-THOR-Unity-App-v0.3.3.x86_64'
+            app = base/'MCS-AI2-THOR-Unity-App-v0.4.3.x86_64'
         elif platform.system() == "Darwin":
             app = base/"MCSai2thor"
         else:

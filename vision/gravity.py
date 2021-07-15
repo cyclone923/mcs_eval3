@@ -506,6 +506,9 @@ class ObjectV2:
         These range from (-1, 1), with the top left pixel at index [0,0] having
         UV coords (-1, 1).
         """
+        depth_scale_correction_factor = 255 / CAM_CLIP_PLANES[1]
+        depth = (depth_scale_correction_factor * depth).astype(np.uint8)
+
         aspect_ratio = (depth.shape[1], depth.shape[0])
         #print ("aspect ratio" ,aspect_ratio)
 
@@ -533,6 +536,7 @@ class ObjectV2:
         const_zs = np.ones((px_dir_vec.shape[0:2])+(1,))
         px_dir_vec = np.concatenate((px_dir_vec, const_zs), axis=-1)
         camera_offsets = px_dir_vec * np.expand_dims(z_depth, axis=-1)
+        camera_offsets /= depth_scale_correction_factor
 
         return camera_offsets
 
