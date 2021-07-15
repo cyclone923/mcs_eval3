@@ -12,10 +12,10 @@ def make_parser():
     parser = argparse.ArgumentParser()
 
     parser.add_argument('--start_scene', default=0, type=int)
-    parser.add_argument('--end_scene', default=268, type=int)
-    parser.add_argument('--outdir', default='simple_task_e3c')
+    parser.add_argument('--end_scene', default=70, type=int)
+    parser.add_argument('--outdir', default='containers_ms')
     parser.add_argument('--dir1', default='interaction_scenes')
-    parser.add_argument('--dir2', default='eval3_containers')
+    parser.add_argument('--dir2', default='container_debug')
 
     return parser
 
