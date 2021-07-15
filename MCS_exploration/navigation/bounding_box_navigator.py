@@ -183,7 +183,7 @@ class BoundingBoxNavigator:
 		return self.scene_obstacles_dict
 
 	def go_to_goal(self, goal_pose, agent, success_distance, stepBack=False):
-		print("MS go to goal called")
+		# print("MS go to goal called")
 		self.current_nav_steps = 0
 		self.agentX = agent.game_state.position['x']
 		self.agentY = agent.game_state.position['z']
@@ -202,7 +202,7 @@ class BoundingBoxNavigator:
 
 		# create initial plan
 		roadmap = DiscreteActionPlanner(self.radius*1.1, self.scene_obstacles_dict.values(), self.epsilon)
-		print(f"roadmap {roadmap}")
+		# print(f"roadmap {roadmap}")
 		# assert True == False
 		plan = []
 

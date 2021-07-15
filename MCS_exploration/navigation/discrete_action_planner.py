@@ -118,8 +118,14 @@ class DiscreteActionPlanner:
     def validSuccessors(self, loc, goal, poly):
         return [ Node(loc.x+x, loc.y+y, self.heurstic(loc.x+x, loc.y+y, goal.x, goal.y), loc.g+self.step, loc) for x,y in self.offsets if self.validEdge( (loc.x, loc.y), (loc.x+x, loc.y+y), poly, self.robot_radius) ]
        
-    def heurstic(self,loc_x,loc_y, goal_x, goal_y):
+    def euclidean_distance(self,loc_x,loc_y, goal_x, goal_y):
         return math.sqrt( (loc_x - goal_x)**2 + (loc_y - goal_y)**2)
+
+    def heurstic(self,loc_x,loc_y, goal_x, goal_y):
+        return self.euclidean_distance(loc_x, loc_y, goal_x, goal_y)
+
+    def manhattan_distance(self,loc_x,loc_y, goal_x, goal_y):
+        return (abs(loc_x - goal_x) + abs(loc_y - goal_y))
 
     def isStuck(self, pos):
         poly = prep(self.obstacles)
