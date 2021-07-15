@@ -15,7 +15,7 @@ class McsEnv:
         base = Path(base)
         scenes = Path(scenes)
         os.environ['MCS_CONFIG_FILE_PATH'] = str(base/'mcs_config.yaml')
-        app = base/'MCS-AI2-THOR-Unity-App-v0.3.3.x86_64'
+        app = base/'MCS-AI2-THOR-Unity-App-v0.4.3.x86_64'
         self.controller = mcs.create_controller(str(app), depth_maps=True,
                                                 object_masks=True)
         self.read_scenes(scenes, filter)

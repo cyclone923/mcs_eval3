@@ -65,9 +65,6 @@ def create_env(x_display=constants.X_DISPLAY,
     
     
     else : 
-        #unity_app_file_path = "/home/rajesh/rajesh/mcs_data/MCS-AI2-THOR-Unity-App-v0.0.6.x86_64" 
-        #unity_app_file_path = "/Users/rajesh/Rajesh/Subjects/Research/aiThor/mcs_playroom_old/algorithms/a3c/gym_ai2thor/MCSai2thor.app/Contents/MacOS/MCSai2thor"
-
         '''
         env = controller.Controller(
                 quality='Medium',
