@@ -269,7 +269,7 @@ class PhysicsVoeAgent:
 
         for i, pos in enumerate(config['goal']['action_list']):
             frame_vios: list = list()
-            step_output = self.controller.step(action=pos[0])  # Get the step output
+            step_output = self.controller.step(action=pos[0][0])  # Get the step output
             if step_output is None:
                 break
             
