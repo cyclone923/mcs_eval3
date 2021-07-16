@@ -21,10 +21,9 @@ class McsEnv:
         if platform.system() == "Linux":
             app = base/'MCS-AI2-THOR-Unity-App-v0.4.1.1.x86_64'
         elif platform.system() == "Darwin":
-            app = base/"MCSai2thor"
+            app = base
         else:
             app = None
-        
         # with open("../unity_path.yaml", 'r') as config_file:
         #     config = yaml.safe_load(config_file)
 
@@ -36,7 +35,6 @@ class McsEnv:
         #     config_file_path=config_path
         # )
 
-        print(base, type(base))
         self.controller = mcs.create_controller(str(app), config_file_path=str(configPath))
         self.read_scenes(scenes, filter)
 
@@ -51,7 +49,7 @@ class McsEnv:
         scene_config,_= mcs.load_scene_json_file(scene_path)
         step_output = self.controller.start_scene(scene_config)
         for action in scene_config['goal']['action_list']:
-            step_output = self.controller.step(action=action[0])
+            step_output = self.controller.step(action=action[0][0])
             yield step_output
 
 if __name__ == '__main__':

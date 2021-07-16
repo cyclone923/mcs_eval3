@@ -60,8 +60,9 @@ def get_data_for_tracking(env, paths, train_dataset_path):
         if idx not in jsonData:
             jsonData[idx] = {}
         # print(depthDir, type(rgbDir), jsonDir)
+         
         scene_output = [convert_frame(o, i) for i, o in enumerate(env.run_scene(scene_path))]
-        
+       	 
         for framenum, frame in enumerate(scene_output): 
             camera_info = frame.camera_info  
             img = frame.image
@@ -71,8 +72,7 @@ def get_data_for_tracking(env, paths, train_dataset_path):
             obj_masks = split_obj_masks(frame.obj_mask, len(objs))
             #struct_masks = split_obj_masks(frame.struct_mask, len(structs))
             obj_pos, obj_present = calc_world_pos(depth, frame.obj_mask, camera_info)
-            
-            
+             
             cv2.imwrite(f'{rgbDir}'+'rgbImg_'+f'{framenum}'+'.png', np.float32(img))
 
             plt.imshow(depth)
@@ -297,7 +297,7 @@ def make_parser():
     parser.add_argument('--sim', type=Path, default=Path('data/thor'))
     parser.add_argument('--scenes', type=Path, default=Path('/home/gulsh/mcs_opics/masks-occluder/scenes/'))
     parser.add_argument('--train_dataset_path', type=Path,default=Path('/home/gulsh/mcs_opics/masks-occluder/tracking_data/'))
-    parser.add_argument('--config', type=Path, default=Path('/home/gulsh/mcs_opics/mcs_config.ini'))
+    parser.add_argument('--config', type=Path, default=Path('/Users/jaypatravali/Documents/mcs_opics/mcs_config.ini'))
     parser.add_argument('--filter', type=str, default=None)
     return parser
 
