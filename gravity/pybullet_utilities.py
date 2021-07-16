@@ -29,9 +29,8 @@ def render_in_pybullet(step_output, velocities=None):
     total_objects = 0
     # target / supports
     for obj_id, obj in step_output["object_list"].items():
-
         boxId = createObjectShape(obj)
-        console.log(boxId)
+        console.log(obj_id)
         if boxId == -1:
             print("error creating obj: {}".format(obj.shape))
         else:
@@ -48,31 +47,48 @@ def render_in_pybullet(step_output, velocities=None):
                 "aab_max": []
             }
 
-    # initial velocities
+    for obj_id, obj in step_output["structural_object_list"].items():
+        if "floor" not in obj_id:
+            boxId = createObjectShape(obj)
+            console.log(obj_id)
+            if boxId == -1:
+                print("error creating obj: {}".format(obj.shape))
+            else:
+                total_objects += 1
+                obj_dict["default"][obj_id] = {
+                    "id": boxId,
+                    "pos": [],
+                    "orn": [],
+                    "floor_contact": [],
+                    # a dict where each key is the box_id of another object, the value of that key is a list t entries long with pybullet
+                    # contact calculation output. contacts[boxID][t] = () means no contact, contacts[boxID][t] != () means contact
+                    "object_contacts": {},
+                    "aab_min": [],
+                    "aab_max": []
+                }
+
+    # # initial velocities
     for obj_id in velocities:
         if obj_id in obj_dict['default']:
             # DEBUG
             base_vel = p.getBaseVelocity(boxId)
-            console.log(base_vel)
-            console.log(velocities[obj_id])
-
             # get object id
             boxId = obj_dict['default'][obj_id]['id']
             # set initial velocity of the object
-            p.resetBaseVelocity(boxId, linearVelocity=velocities[obj_id])
+            p.resetBaseVelocity(boxId, linearVelocity=50*velocities[obj_id])
             
-
-
-
     steps = 0
     # let simulation run
-    while steps < 1000:
+    while steps < 10000:
         p.stepSimulation()
         time.sleep(1./400.)
 
         at_rest = []
         for i, obj in obj_dict["default"].items():
             # get position and orientation
+            # if i in velocities:
+            #     p.resetBaseVelocity(boxId, linearVelocity=50*velocities[i])
+
             cubePos, cubeOrn = p.getBasePositionAndOrientation(obj["id"])
 
             # get bounding box
@@ -112,7 +128,7 @@ def render_in_pybullet(step_output, velocities=None):
             obj_dict["default"][i] = obj
 
         # all objects are at rest, go ahead and end the simulation early 
-        if steps > 100 and all(at_rest):
+        if steps > 1000 and all(at_rest):
             print("at rest")
             break
 
@@ -173,7 +189,7 @@ def createObjectShape(obj):
         # start_position = start_position + pos_noise
         
         # convert between coordinate spaces
-        start_position = [start_position[0], start_position[2], start_position[1]]
+        start_position = [start_position[0], start_position[2], abs(start_position[1])]
     else:
         shift = list(obj["rotation"].values())
         shift = [round(shift[0]), round(shift[2]), round(shift[1])]
@@ -181,6 +197,7 @@ def createObjectShape(obj):
         
         start_position = list(obj["position"].values())
         start_position = [start_position[0], start_position[2], start_position[1]]
+        obj['mass']=0
     
     # set color
     rgba_color = getColor(obj["color"])

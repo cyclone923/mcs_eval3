@@ -14,7 +14,7 @@ def l2_distance(src_pos, dest_pos):
     return np.sqrt(sum((src_pos[axis] - dest_pos[axis]) ** 2 for axis in ['x', 'y']))
 
 
-def track_objects(frame_mask, track_info={}):
+def track_objects(frame_mask, step_output=None, track_info={}):
     if 'object_index' not in track_info:
         track_info['object_index'] = 0
     if 'objects' not in track_info:
@@ -32,49 +32,74 @@ def track_objects(frame_mask, track_info={}):
 
     # process objects
     resolved_objs = []
-    for frame_obj_mask in obj_masks:
-        frame_obj_position = get_obj_position(frame_obj_mask)
-        track_to_exist_obj = []
-        for exist_obj_key, exist_obj in track_info['objects'].items():
-            if exist_obj_key not in resolved_objs:
-                theta, flag = obj_matches_track(exist_obj['position_history'], frame_obj_position)
-                if flag:
-                    dis = l2_distance(exist_obj['position_history'][-1], frame_obj_position)
-                    track_to_exist_obj.append((theta, dis, exist_obj_key))
+    # if oracle
+    if step_output:
+        for obj_id, obj in step_output['object_list'].items():
+            # if we've already seen the object
+            if obj_id in track_info['objects'].keys():
+                track_info['objects'][obj_id]['bounding_box'] = obj['dimensions']
+                position = obj['position']
+                track_info['objects'][obj_id]['position_history'].append(position)
+                track_info['objects'][obj_id]['visible'] = obj['visible']
+                track_info['objects'][obj_id]['hidden_for'] = 0 if obj['visible'] else track_info['objects'][obj_id]['hidden_for'] + 1
+                track_info['objects'][obj_id]['visible_count'] = track_info['objects'][obj_id]['visible_count'] + 1 if obj['visible'] else 0
+            # if we've seen it before but don't see it now
+            elif obj_id not in track_info['objects'].keys():
+                track_info['objects'][obj_id] = {'position_history': [], 'area_history': [], 'hidden_for': 0, 'visible_count': 0}
+                track_info['objects'][obj_id]['bounding_box'] = obj['dimensions']
+                position = obj['position']
+                track_info['objects'][obj_id]['position_history'].append(
+                    position)
+                track_info['objects'][obj_id]['visible'] = obj['visible']
+                track_info['objects'][obj_id]['hidden_for'] = 0 if obj['visible'] else track_info['objects'][obj_id]['hidden_for'] + 1
+                track_info['objects'][obj_id]['visible_count'] = track_info['objects'][obj_id]['visible_count'] + \
+                    1 if obj['visible'] else 0
+                 
+            
+    else:
+        for frame_obj_mask in obj_masks:
+            frame_obj_position = get_obj_position(frame_obj_mask)
+            track_to_exist_obj = []
+            for exist_obj_key, exist_obj in track_info['objects'].items():
+                if exist_obj_key not in resolved_objs:
+                    theta, flag = obj_matches_track(exist_obj['position_history'], frame_obj_position)
+                    if flag:
+                        dis = l2_distance(exist_obj['position_history'][-1], frame_obj_position)
+                        track_to_exist_obj.append((theta, dis, exist_obj_key))
 
-        (top_left_x, top_left_y), (bottom_right_x, bottom_right_y) = get_mask_box(frame_obj_mask)
-        position = {'x': (top_left_x + bottom_right_x) / 2, 'y': (top_left_y + bottom_right_y) / 2}
+            (top_left_x, top_left_y), (bottom_right_x, bottom_right_y) = get_mask_box(frame_obj_mask)
+            position = {'x': (top_left_x + bottom_right_x) / 2, 'y': (top_left_y + bottom_right_y) / 2}
 
-        if len(track_to_exist_obj) == 0:
-            # add as a new object
-            _key = track_info['object_index']
-            track_info['object_index'] += 1
-            if 'objects' not in track_info:
-                track_info['objects'] = {}
-            track_info['objects'][_key] = {'position_history': [], 'area_history': [], 'hidden_for': 0, 'visible_count': 0}
+            if len(track_to_exist_obj) == 0:
+                # add as a new object
+                _key = track_info['object_index']
+                track_info['object_index'] += 1
+                if 'objects' not in track_info:
+                    track_info['objects'] = {}
+                track_info['objects'][_key] = {'position_history': [], 'area_history': [], 'hidden_for': 0, 'visible_count': 0}
 
-        else:
-            _, _, _key = min(track_to_exist_obj)
+            else:
+                _, _, _key = min(track_to_exist_obj)
 
-        resolved_objs.append(_key)
-        track_info['objects'][_key]['bounding_box'] = (top_left_x, top_left_y, bottom_right_x, bottom_right_y)
-        track_info['objects'][_key]['position_history'].append(position)
-        track_info['objects'][_key]['mask'] = frame_obj_mask
-        track_info['objects'][_key]['area_history'].append(frame_obj_mask.sum())
-        track_info['objects'][_key]['visible'] = True
-        track_info['objects'][_key]['hidden_for'] = 0
-        track_info['objects'][_key]['visible_count'] += 1
+            resolved_objs.append(_key)
+            track_info['objects'][_key]['bounding_box'] = (top_left_x, top_left_y, bottom_right_x, bottom_right_y)
+            track_info['objects'][_key]['position_history'].append(position)
+            track_info['objects'][_key]['mask'] = frame_obj_mask
+            track_info['objects'][_key]['area_history'].append(frame_obj_mask.sum())
+            track_info['objects'][_key]['visible'] = True
+            track_info['objects'][_key]['hidden_for'] = 0
+            track_info['objects'][_key]['visible_count'] += 1
 
-    for obj_key, obj in track_info['objects'].items():
-        if obj_key not in resolved_objs:
-            obj['visible'] = False
-            prev_mask = track_info['objects'][obj_key]['mask']
-            track_info['objects'][obj_key]['mask'] = np.zeros_like(prev_mask)
-            track_info['objects'][obj_key]['hidden_for'] += 1
+        for obj_key, obj in track_info['objects'].items():
+            if obj_key not in resolved_objs:
+                obj['visible'] = False
+                prev_mask = track_info['objects'][obj_key]['mask']
+                track_info['objects'][obj_key]['mask'] = np.zeros_like(prev_mask)
+                track_info['objects'][obj_key]['hidden_for'] += 1
 
     visible_obj_tracked = len([o for o in track_info['objects'].values() if o['visible']])
-    assert objs == visible_obj_tracked, \
-        ' no. of objects are not matching, {} {}'.format(objs, visible_obj_tracked)
+    # assert objs == visible_obj_tracked, \
+    #     ' no. of objects are not matching, {} {}'.format(objs, visible_obj_tracked)
 
     return track_info
 

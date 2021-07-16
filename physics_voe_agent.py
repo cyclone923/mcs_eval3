@@ -236,9 +236,9 @@ class PhysicsVoeAgent:
         # - simulated: a boolean value indicating if the object has been simulated by PyBullet (the tracker module doesn't need to worry about this. It should just initialize this flag to False for new objects when they're detected by the tracker)
 
         ## TEMP: OLD LOGIC TO CONFIRM AGENT WORKS WITHOUT FAILING ##
-        self.track_info = track.track_objects(masks, self.track_info)
+        self.track_info = track.track_objects(masks, step_output_dict, self.track_info)
         for obj in self.track_info['objects'].values():
-            obj['position'] = [{'x': pos['x'], 'y': pos['y'], 'z': 1} for pos in obj['position_history']]
+            obj['position'] = [{'x': pos['x'], 'y': pos['y'], 'z': pos['z']} for pos in obj['position_history']]
             obj['appearance_voe'] = False
             obj['appearance_match_conf'] = [1.0]
             if 'simulated' not in obj.keys():
@@ -269,7 +269,7 @@ class PhysicsVoeAgent:
 
         for i, pos in enumerate(config['goal']['action_list']):
             frame_vios: list = list()
-            step_output = self.controller.step(action=pos[0])  # Get the step output
+            step_output = self.controller.step(action=pos[0][0])  # Get the step output
             if step_output is None:
                 break
             
@@ -289,9 +289,8 @@ class PhysicsVoeAgent:
             # Identify actor objects
             # Oracle
             if self.level == 'oracle':
-                step_output_dict: dict = dict(step_output)
                 try:
-                    step_output: L2DataPacket = L2DataPacket(step_number=i, step_meta=step_output, scene=desc_name)
+                    step_output_dict: dict = dict(step_output)
                 except Exception as e:
                     console.log("Couldn't process step i+{}, skipping ahead".format(i))
                     console.log(e)
@@ -346,27 +345,24 @@ class PhysicsVoeAgent:
                     if len(obj['position']) == OBJ_TIME_TO_PASS_THROUGH:
                         # transform unity position to pybullet position
                         initial_position = list(obj['position'][0].values())
-                        initial_position = np.array([initial_position[1], initial_position[2], initial_position[0]])
+                        initial_position = np.array([initial_position[0], initial_position[2], initial_position[1]])
                         
                         current_position = list(obj['position'][-1].values())
-                        current_position = np.array([current_position[1], current_position[2], current_position[0]])
+                        current_position = np.array([current_position[0], current_position[2], current_position[1]])
 
                         new_vel = (current_position - initial_position) / OBJ_TIME_TO_PASS_THROUGH ## average velocity of object
                         
-                        # TODO: this is temporary because we are using pixel coordinates in track_info
-                        new_vel[-1] = -1 * new_vel[-1]
-                        # if velocity is strictly free-fall - based on the assumption that it is being manually lowered
-                        if new_vel[2] < 0 and new_vel[0] == 0.0 and new_vel[1] == 0.0:
-                            new_vel[2] = 0.0 # set vertical velocity to none,  
+                        # # TODO: this is temporary because we are using pixel coordinates in track_info
+                        # new_vel[-1] = -1 * new_vel[-1]
+                        # # if velocity is strictly free-fall - based on the assumption that it is being manually lowered
+                        # if new_vel[2] < 0 and new_vel[0] == 0.0 and new_vel[1] == 0.0:
+                        #     new_vel[2] = 0.0 # set vertical velocity to none,  
 
                         new_obj_velocity[obj_id] = new_vel
-
-
-
                 console.log(new_obj_velocity)
                 _, object_sims = pybullet_utilities.render_in_pybullet(step_output_dict, new_obj_velocity)
                 for obj_id, obj in self.track_info['objects'].items():
-                    if obj_id in object_sims.keys() and not obj['simulated']:
+                    if obj_id in object_sims["default"].keys() and not obj['simulated']:
                         obj['simulated'] = True
 
             # CHECK FOR ANY POSITION-RELATED VoEs
