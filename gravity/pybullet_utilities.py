@@ -168,6 +168,7 @@ def createObjectShape(obj):
         # shift = [0, 0, 0]
         start_position = list(obj["position"].values())
         start_position = [start_position[0], start_position[2], start_position[1]]
+        obj["mass"] = 0
     # set color
     rgba_color = getColor(obj["color"])
 

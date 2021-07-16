@@ -1,8 +1,9 @@
+import machine_common_sense
 import shapely.geometry.polygon as sp
 import math
 from exploration.roadmap.fov import FieldOfView
 
-MOVE_DISTANCE = 0.5
+MOVE_DISTANCE = machine_common_sense.controller.MOVE_DISTANCE
 SCENE_X_RANGE = [-5, 5]
 SCENE_Z_RANGE = [-5, 5]
 ROUND_SCENE_X_RANGE = [int(i / MOVE_DISTANCE) for i in SCENE_X_RANGE]

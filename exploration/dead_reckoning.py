@@ -1,14 +1,13 @@
 from exploration.mcs_env.mcs_wrapper import McsWrapper
-
+from machine_common_sense.controller import MOVE_DISTANCE, PERFORMER_CAMERA_Y
 import math
 
 INIT_X = 0
-INIT_Y = 0.762
+INIT_Y = PERFORMER_CAMERA_Y
 INIT_Z = 0
 INIT_R = 0
 INIT_H = 0
 
-MOVE_DISTANCE = 0.5
 ABS_MOVE = MOVE_DISTANCE
 ABS_ROTATE = 10
 
