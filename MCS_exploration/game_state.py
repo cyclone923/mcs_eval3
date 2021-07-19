@@ -9,7 +9,7 @@ from MCS_exploration.utils import game_util
 #from darknet_object_detection import detector
 from machine_common_sense import StepMetadata
 from machine_common_sense import ObjectMetadata
-from machine_common_sense import Util
+# from machine_common_sense import Util
 from cover_floor import *
 import shapely.geometry.polygon as sp
 from MCS_exploration.navigation.visibility_road_map import ObstaclePolygon,IncrementalVisibilityRoadMap
@@ -47,8 +47,8 @@ def retrieve_object_list( scene_event):
                 if object_metadata['visible'] or object_metadata['isPickedUp']], key=lambda x: x.uuid)
 
 def retrieve_object_output( object_metadata, object_id_to_color):
-    material_list = list(filter(Util.verify_material_enum_string, [material.upper() for material in \
-            object_metadata['salientMaterials']])) if object_metadata['salientMaterials'] is not None else []
+    # material_list = list(filter(Util.verify_material_enum_string, [material.upper() for material in \
+            # object_metadata['salientMaterials']])) if object_metadata['salientMaterials'] is not None else []
 
     rgb = object_id_to_color[object_metadata['objectId']] if object_metadata['objectId'] in object_id_to_color \
             else [None, None, None]
