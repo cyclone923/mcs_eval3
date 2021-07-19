@@ -23,19 +23,16 @@ def render_in_pybullet(step_output, velocities=None):
     p.resetDebugVisualizerCamera(3, 0, -42.5, [0,0,0])
     
     # build objects in the object_list:
-    obj_dict = {
-        "default": {}
-    }
+    obj_dict = {}
     total_objects = 0
     # target / supports
     for obj_id, obj in step_output["object_list"].items():
         boxId = createObjectShape(obj)
-        console.log(obj_id)
         if boxId == -1:
             print("error creating obj: {}".format(obj.shape))
         else:
             total_objects += 1
-            obj_dict["default"][obj_id] = {
+            obj_dict[obj_id] = {
                 "id": boxId,
                 "pos": [],
                 "orn": [],
@@ -50,12 +47,11 @@ def render_in_pybullet(step_output, velocities=None):
     for obj_id, obj in step_output["structural_object_list"].items():
         if "floor" not in obj_id:
             boxId = createObjectShape(obj)
-            console.log(obj_id)
             if boxId == -1:
                 print("error creating obj: {}".format(obj.shape))
             else:
                 total_objects += 1
-                obj_dict["default"][obj_id] = {
+                obj_dict[obj_id] = {
                     "id": boxId,
                     "pos": [],
                     "orn": [],
@@ -69,11 +65,11 @@ def render_in_pybullet(step_output, velocities=None):
 
     # # initial velocities
     for obj_id in velocities:
-        if obj_id in obj_dict['default']:
+        if obj_id in obj_dict:
             # DEBUG
             base_vel = p.getBaseVelocity(boxId)
             # get object id
-            boxId = obj_dict['default'][obj_id]['id']
+            boxId = obj_dict[obj_id]['id']
             # set initial velocity of the object
             p.resetBaseVelocity(boxId, linearVelocity=50*velocities[obj_id])
             
@@ -84,11 +80,10 @@ def render_in_pybullet(step_output, velocities=None):
         time.sleep(1./400.)
 
         at_rest = []
-        for i, obj in obj_dict["default"].items():
+        for i, obj in obj_dict.items():
             # get position and orientation
             # if i in velocities:
             #     p.resetBaseVelocity(boxId, linearVelocity=50*velocities[i])
-
             cubePos, cubeOrn = p.getBasePositionAndOrientation(obj["id"])
 
             # get bounding box
@@ -98,7 +93,7 @@ def render_in_pybullet(step_output, velocities=None):
             floor_contact = p.getContactPoints(obj["id"], planeId)
 
             # get contact of other objects
-            for j, obj2 in obj_dict["default"].items():
+            for j, obj2 in obj_dict.items():
                 if i != j:
                     contact = p.getContactPoints(obj["id"], obj2["id"])
 
@@ -125,10 +120,10 @@ def render_in_pybullet(step_output, velocities=None):
             obj["orn"].append(cubeOrn)
 
             # save updates to obj_dict
-            obj_dict["default"][i] = obj
+            obj_dict[i] = obj
 
         # all objects are at rest, go ahead and end the simulation early 
-        if steps > 1000 and all(at_rest):
+        if steps > 100 and all(at_rest):
             print("at rest")
             break
 
@@ -228,9 +223,10 @@ def createObjectShape(obj):
         visualShapeId = p.createVisualShape(shapeType=p.GEOM_MESH,fileName="triangular prism.obj", rgbaColor=rgba_color, specularColor=[0.4,.4,0], visualFramePosition=shift, meshScale=meshScale)
         collisionShapeId = p.createCollisionShape(shapeType=p.GEOM_MESH, fileName="triangular prism.obj", collisionFramePosition=shift, meshScale=meshScale)
     else:
-        meshScale = [min(meshScale), min(meshScale), min(meshScale)]
-        visualShapeId = p.createVisualShape(shapeType=p.GEOM_MESH,fileName="sphere_smooth.obj", rgbaColor=rgba_color, specularColor=[0.4,.4,0], visualFramePosition=shift, meshScale=meshScale)
-        collisionShapeId = p.createCollisionShape(shapeType=p.GEOM_MESH, fileName="sphere_smooth.obj", collisionFramePosition=shift, meshScale=meshScale)
+        # meshScale = [min(meshScale), min(meshScale), min(meshScale)]
+        start_position[2] = start_position[2] + min(meshScale)
+        visualShapeId = p.createVisualShape(shapeType=p.GEOM_MESH,fileName="cube.obj", rgbaColor=rgba_color, specularColor=[0.4,.4,0], visualFramePosition=shift, meshScale=meshScale)
+        collisionShapeId = p.createCollisionShape(shapeType=p.GEOM_MESH, fileName="cube.obj", collisionFramePosition=shift, meshScale=meshScale)
     # return body
     return p.createMultiBody(baseMass=obj["mass"], baseOrientation=start_orientation, baseInertialFramePosition=[0, 0, 0], baseCollisionShapeIndex=collisionShapeId, baseVisualShapeIndex=visualShapeId, basePosition=start_position)
     

@@ -359,23 +359,34 @@ class PhysicsVoeAgent:
                         #     new_vel[2] = 0.0 # set vertical velocity to none,  
 
                         new_obj_velocity[obj_id] = new_vel
-                console.log(new_obj_velocity)
-                _, object_sims = pybullet_utilities.render_in_pybullet(step_output_dict, new_obj_velocity)
+                sim_length, object_sims = pybullet_utilities.render_in_pybullet(step_output_dict, new_obj_velocity)
                 for obj_id, obj in self.track_info['objects'].items():
-                    if obj_id in object_sims["default"].keys() and not obj['simulated']:
+                    if obj_id in object_sims.keys() and not obj['simulated']:
                         obj['simulated'] = True
 
             # CHECK FOR ANY POSITION-RELATED VoEs
             if object_sims:
                 obj_pos_plausibility: dict[int, float] = dict()
                 for obj_id, obj in self.track_info['objects'].items():
-                    unity_trajectory = [[pos['x'], pos['y'], pos['z']] for pos in obj['position']]  # Get actual object trajectory
+                    unity_trajectory = [[pos['x'], pos['z'], pos['y']] for pos in obj['position']]  # Get actual object trajectory
                     unity_xy_pos = {'x': obj['position'][-1]['x'], 'y': obj['position'][-1]['y']}   # Get actual object position
 
                     # TODO: CHECK FOR PRESENCE VoEs
                     try:
-                        distance, _ = self.calc_simulator_voe(object_sims[obj_id]['pos'], unity_trajectory) # Calculate difference in actual and simulated trajectory
-                        obj_pos_plausibility[obj_id] = 100 * np.tanh(1 / (distance + 1e-9))
+                        total_distance, track = self.calc_simulator_voe(object_sims[obj_id]['pos'], unity_trajectory) # Calculate difference in actual and simulated trajectory
+                        
+                        track = np.array(track)
+                        # track is a list of tuples where each tuple is i, j in unity_trajectory[i], object_trajectory[j]
+                        # we want to compare the trajectories up to this point in "time"
+                        # so where i_t == current timestep, we want all points in track where i < i_t
+                        track_idx = np.where(track[:,1] < len(unity_trajectory) - 1)[0]
+                        dist = 0
+                        for idx in track_idx:
+                            pb_idx, unity_idx = track[idx]
+                            dist += np.linalg.norm(np.array(object_sims[obj_id]['pos'][pb_idx]) - np.array(unity_trajectory[unity_idx]))
+
+                        console.log(obj_id, np.tanh(1000 / (dist + 1e-9)))
+                        obj_pos_plausibility[obj_id] = np.tanh(1000 / (dist + 1e-9))
                         if obj_pos_plausibility[obj_id] < POSITION_PLAUSIBILITY_THRESHOLD:
                             frame_vios.append(PositionViolation(obj_id, unity_xy_pos, obj_pos_plausibility[obj_id]))
                     except KeyError as e:
