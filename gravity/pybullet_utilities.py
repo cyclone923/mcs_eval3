@@ -228,8 +228,9 @@ def createObjectShape(obj):
         visualShapeId = p.createVisualShape(shapeType=p.GEOM_MESH,fileName="triangular prism.obj", rgbaColor=rgba_color, specularColor=[0.4,.4,0], visualFramePosition=shift, meshScale=meshScale)
         collisionShapeId = p.createCollisionShape(shapeType=p.GEOM_MESH, fileName="triangular prism.obj", collisionFramePosition=shift, meshScale=meshScale)
     else:
-        visualShapeId = p.createVisualShape(shapeType=p.GEOM_MESH,fileName="cube.obj", rgbaColor=rgba_color, specularColor=[0.4,.4,0], visualFramePosition=shift, meshScale=meshScale)
-        collisionShapeId = p.createCollisionShape(shapeType=p.GEOM_MESH, fileName="cube.obj", collisionFramePosition=shift, meshScale=meshScale)
+        meshScale = [min(meshScale), min(meshScale), min(meshScale)]
+        visualShapeId = p.createVisualShape(shapeType=p.GEOM_MESH,fileName="sphere_smooth.obj", rgbaColor=rgba_color, specularColor=[0.4,.4,0], visualFramePosition=shift, meshScale=meshScale)
+        collisionShapeId = p.createCollisionShape(shapeType=p.GEOM_MESH, fileName="sphere_smooth.obj", collisionFramePosition=shift, meshScale=meshScale)
     # return body
     return p.createMultiBody(baseMass=obj["mass"], baseOrientation=start_orientation, baseInertialFramePosition=[0, 0, 0], baseCollisionShapeIndex=collisionShapeId, baseVisualShapeIndex=visualShapeId, basePosition=start_position)
     
