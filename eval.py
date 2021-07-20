@@ -58,7 +58,7 @@ class Evaluation3_Agent:
             self.agency_voe_agent.run_scene(scene_config)
         elif goal_type == "retrieval":
             print("\nPLAYROOM SCENE...\n")
-            self.exploration_agent.run_scene(scene_config)
+            self.exploration_agent.run_scene(scene_config, one_scene)
         else:
             print("Current goal type: {}".format(goal_type))
             raise ValueError("Goal type not clear! It should be either: , 'intuitive physics', 'agents' or 'retrieval'")

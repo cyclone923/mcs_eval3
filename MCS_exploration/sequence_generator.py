@@ -38,6 +38,8 @@ class SequenceGenerator(object):
         # try :
         self.step_output = self.controller.start_scene(scene_config)
         self.explore_scene_view(self.step_output, config_filename, frame_collector)
+        print(f"SCENE NAME {config_filename} OUTCOME {self.agent.game_state.trophy_picked_up}")
+        self.controller.end_scene("")
         # except Exception as e :
             # print (e)
             
