@@ -90,7 +90,8 @@ class Evaluation4_Agent:
             
             if not os.path.exists("./{}/Depth".format(scene_config["name"])):
                 os.mkdir("./{}/Depth/".format(scene_config["name"]))
-            cv2.imwrite("./{}/Depth/{}.jpg".format(scene_config["name"], i), depth_map)
+            cv2.imwrite("./{}/Depth/{}.jpg".format(
+                scene_config["name"], i), depth_map * 255. / depth_map.max())
             
             if not os.path.exists("./{}/Mask".format(scene_config["name"])):
                 os.mkdir("./{}/Mask/".format(scene_config["name"]))
