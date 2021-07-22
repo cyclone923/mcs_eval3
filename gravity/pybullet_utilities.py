@@ -75,7 +75,7 @@ def render_in_pybullet(step_output, velocities=None):
             
     steps = 0
     # let simulation run
-    while steps < 10000:
+    while steps < 1000:
         p.stepSimulation()
         time.sleep(1./400.)
 
@@ -107,7 +107,7 @@ def render_in_pybullet(step_output, velocities=None):
             if steps > 1:
                 prev_pos = obj["pos"][-1]
                 prev_orn = obj["orn"][-1]
-                if np.isclose(cubePos, prev_pos, rtol=1e-04, atol=1e-05).all() and np.isclose(cubeOrn, prev_orn).all():
+                if np.isclose(cubePos, prev_pos, rtol=1e-03, atol=1e-05).all() and np.isclose(cubeOrn, prev_orn).all():
                     at_rest.append(True)
                 else:
                     at_rest.append(False)
